@@ -1,0 +1,72 @@
+          ## Glossary
+          \small
+          \begin{longtable}{@{}p{2.75cm}p{8.5cm}p{0.7cm}p{0.35cm}@{}} 
+$C_{L, s}$ & Labor cost in sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlC[L, s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlC[L, s]} \\
+ \midrule 
+$CU_{s}$ & Unit cost of production in sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlCU[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlCU[s]} \\
+ \midrule 
+$CUR_{s}$ & Capacity utilization ratio of the sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlCUR[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlCUR[s]} \\
+ \midrule 
+$DISPINC^{AT,VAL}$ & Disposable income after tax expressed in value & \RaggedLeft \ref{Equations_MESANGE.mdlDISPINC_AT_VAL}, & \RaggedLeft \pageref{Equations_MESANGE.mdlDISPINC_AT_VAL} \\
+ \midrule 
+$ES_{f, ff, s}$ &  & \RaggedLeft \ref{Equations_MESANGE.mdlES[f, ff, s] :}, & \RaggedLeft \pageref{Equations_MESANGE.mdlES[f, ff, s] :} \\
+ \midrule 
+$F^{n}_{f, s}$ & Demand for production factor $f$ by sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlF_n[f, s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlF_n[f, s]} \\
+ \midrule 
+$G_{c}$ &  Government final consumption of commodity $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlG[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlG[c]} \\
+ \midrule 
+$INC^{G,VAL}$ & Aggregate incomes of the Government expressed in value & \RaggedLeft \ref{Equations_MESANGE.mdlINC_G_VAL}, & \RaggedLeft \pageref{Equations_MESANGE.mdlINC_G_VAL} \\
+ \midrule 
+$INC^{SOC,TAX,VAL}$ & Income and social taxes expressed in value & \RaggedLeft \ref{Equations_MESANGE.mdlINC_SOC_TAX_VAL}, & \RaggedLeft \pageref{Equations_MESANGE.mdlINC_SOC_TAX_VAL} \\
+ \midrule 
+$\mu^{n}_{s}$ & Notional mark-up of the sector $s$ (specification 1) & \RaggedLeft \ref{Equations_MESANGE.mdlMARKUP_n[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlMARKUP_n[s]} \\
+ \midrule 
+$PCH_{c}$ & Market price of households final consumption $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlPCH[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPCH[c]} \\
+ \midrule 
+$PCHD_{c}$ & Market price of domestically produced households final consumption $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlPCHD[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPCHD[c]} \\
+ \midrule 
+$PCHM_{c}$ & Market price of imported households final consumption $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlPCHM[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPCHM[c]} \\
+ \midrule 
+$PCID_{c, s}$ & Market price of domestically produced intermediate consumption $c$ purchased by sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlPCID[c, s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPCID[c, s]} \\
+ \midrule 
+$PCIM_{c, s}$ & Market price of imported intermediate consumption $c$ purchased by sector $s$ --> DIFFERE & \RaggedLeft \ref{Equations_MESANGE.mdlPCIM[c, s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPCIM[c, s]} \\
+ \midrule 
+$PM_{c}$ & Price of imported commodity $c$, expressed at basic price & \RaggedLeft \ref{Equations_MESANGE.mdlPM[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPM[c]} \\
+ \midrule 
+$PY^{n}_{s}$ & Notional production price of sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlPY_n[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlPY_n[s]} \\
+ \midrule 
+$RSC_{s}$ & Employers' social security contribution paid by sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlRSC[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlRSC[s]} \\
+ \midrule 
+$SUBST^{F,n}_{f, s}$ & Notional substitution between input $f$ and the other inputs $ff$ & \RaggedLeft \ref{Equations_MESANGE.mdlSUBST_F_n[f, s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlSUBST_F_n[f, s]} \\
+ \midrule 
+$SUBST^{X,n}_{c}$ & Notional substitution effect induced by a change in the relative price between export prices and (converted in domestic currency) international prices for the commodity $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlSUBST_X_n[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlSUBST_X_n[c]} \\
+ \midrule 
+$X_{c}$ & Foreign demand for exports of commodity $c$ & \RaggedLeft \ref{Equations_MESANGE.mdlX[c]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlX[c]} \\
+ \midrule 
+$YCAP_{s}$ & Production capacity of the sector $s$ & \RaggedLeft \ref{Equations_MESANGE.mdlYCAP[s]}, & \RaggedLeft \pageref{Equations_MESANGE.mdlYCAP[s]} \\
+\end{longtable}
+  \ifx\fulldoc\undefined
+  \end{document}
+  \fi
+\repeatablebody{Equations_MESANGE.mdlRSC[s]}{RSC_{s} \; PRSC_{s} = W_{s} \; F_{L, s} \; RRSC_{s} - T2VAL^{SEC} . \frac{F_{L, s}}{F_{L} \; REDIS^{CT,RRSC}}$${#eq-\repeatablebody{Equations_MESANGE_mdlRSC[s]}{RSC_{s} \; PRSC_{s} = W_{s} \; F_{L, s} \; RRSC_{s} _ T2VAL^{SEC} _ \frac{F_{L, s}}{F_{L} \; REDIS^{CT,RRSC}}}}
+$$INC^{G,VAL} = PNTAXC . NTAXC + NTAXS^{VAL} + INC^{SOC,TAX,VAL} + PRSC . RSC + PROP^{INC,G,VAL}$${#eq-Equations_MESANGE_mdlINC_G_VAL}
+\repeatablebody{Equations_MESANGE.mdlG[c]}{\varDelta \left(\operatorname{log} G_{c}\right) = \varDelta \left(\operatorname{log} EXPG\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlG[c]}{\varDelta \left(\operatorname{log} G_{c}\right) = \varDelta \left(\operatorname{log} EXPG\right)}}
+$$INC^{SOC,TAX,VAL} = RINC^{SOC,TAX} . DISPINC^{BT,VAL} - T2VAL^{CH} . REDIS^{CT,H}$${#eq-Equations_MESANGE_mdlINC_SOC_TAX_VAL}
+$$DISPINC^{AT,VAL} = DISPINC^{BT,VAL} - INC^{SOC,TAX,VAL}$${#eq-Equations_MESANGE_mdlDISPINC_AT_VAL}
+\repeatablebody{Equations_MESANGE.mdlF_n[f, s]}{\varDelta \left(\operatorname{log} F^{n}_{f, s}\right) = \varDelta \left(\operatorname{log} Y_{s}\right) - \varDelta \left(\operatorname{log} PROG_{f, s}\right) + \varDelta \left(SUBST^{F}_{f, s}\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlF_n[f, s]}{\varDelta \left(\operatorname{log} F^{n}_{f, s}\right) = \varDelta \left(\operatorname{log} Y_{s}\right) _ \varDelta \left(\operatorname{log} PROG_{f, s}\right) + \varDelta \left(SUBST^{F}_{f, s}\right)}}
+\repeatablebody{Equations_MESANGE.mdlSUBST_F_n[f, s]}{\varDelta \left(SUBST^{F,n}_{f, s}\right) = \sum_{ff} -ES_{f, ff, s} \; \varphi_{ff, s, t-1} \; \varDelta \left(\operatorname{log} \frac{C_{f, s}}{PROG_{f, s}} - \operatorname{log} \frac{C_{ff, s}}{PROG_{ff, s}}\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlSUBST_F_n[f, s]}{\varDelta \left(SUBST^{F,n}_{f, s}\right) = \sum_{ff} _ES_{f, ff, s} \; \varphi_{ff, s, t_1} \; \varDelta \left(\operatorname{log} \frac{C_{f, s}}{PROG_{f, s}} _ \operatorname{log} \frac{C_{ff, s}}{PROG_{ff, s}}\right)}}
+\repeatablebody{Equations_MESANGE.mdlC[L, s]}{C_{L, s} \; F_{L, s} = W_{s} \; F_{L, s} + RSC_{s} \; PRSC_{s}$${#eq-\repeatablebody{Equations_MESANGE_mdlC[L, s]}{C_{L, s} \; F_{L, s} = W_{s} \; F_{L, s} + RSC_{s} \; PRSC_{s}}}
+\repeatablebody{Equations_MESANGE.mdlCU[s]}{CU_{s} \; Y_{s} = \sum_{f} C_{f, s} \; F_{f, s} + NTAXS^{VAL}_{s}$${#eq-\repeatablebody{Equations_MESANGE_mdlCU[s]}{CU_{s} \; Y_{s} = \sum_{f} C_{f, s} \; F_{f, s} + NTAXS^{VAL}_{s}}}
+\repeatablebody{Equations_MESANGE.mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)$${#eq-\repeatablebody{Equations_MESANGE_mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)}}
+\repeatablebody{Equations_MESANGE.mdlPM[c]}{PM_{c} = EXR . PWD_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPM[c]}{PM_{c} = EXR _ PWD_{c}}}
+\repeatablebody{Equations_MESANGE.mdlPCHD[c]}{PCHD_{c} = PYQS_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPCHD[c]}{PCHD_{c} = PYQS_{c}}}
+\repeatablebody{Equations_MESANGE.mdlPCHM[c]}{PCHM_{c} = PMS_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPCHM[c]}{PCHM_{c} = PMS_{c}}}
+\repeatablebody{Equations_MESANGE.mdlPCID[c, s]}{PCID_{c, s} = PYQS_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPCID[c, s]}{PCID_{c, s} = PYQS_{c}}}
+\repeatablebody{Equations_MESANGE.mdlPCIM[c, s]}{PCIM_{c, s} = PMS_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPCIM[c, s]}{PCIM_{c, s} = PMS_{c}}}
+\repeatablebody{Equations_MESANGE.mdlYCAP[s]}{\varDelta \left(\operatorname{log} YCAP_{s}\right) = \sum_{f} \varphi_{f, s, t-1} \; \varDelta \left(\operatorname{log} \left(F_{f, s} \; PROG_{f, s}\right)\right) + \alpha^{YCAP,Y}_{s} \; \left( \operatorname{log} Y_{s, t-1} - \operatorname{log} \left(YCAP_{s, t-1} \; CUR_{s, t_0}\right) \right)$${#eq-\repeatablebody{Equations_MESANGE_mdlYCAP[s]}{\varDelta \left(\operatorname{log} YCAP_{s}\right) = \sum_{f} \varphi_{f, s, t_1} \; \varDelta \left(\operatorname{log} \left(F_{f, s} \; PROG_{f, s}\right)\right) + \alpha^{YCAP,Y}_{s} \; \left( \operatorname{log} Y_{s, t_1} _ \operatorname{log} \left(YCAP_{s, t_1} \; CUR_{s, t_0}\right) \right)}}
+\repeatablebody{Equations_MESANGE.mdlCUR[s]}{CUR_{s} = \frac{Y_{s}}{YCAP_{s}}$${#eq-\repeatablebody{Equations_MESANGE_mdlCUR[s]}{CUR_{s} = \frac{Y_{s}}{YCAP_{s}}}}
+\repeatablebody{Equations_MESANGE.mdlMARKUP_n[s]}{\varDelta \left(\operatorname{log} \left(1 + \mu^{n}_{s}\right)\right) = \rho^{\mu,Y} . \varDelta \left(\operatorname{log} CUR_{s}\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlMARKUP_n[s]}{\varDelta \left(\operatorname{log} \left(1 + \mu^{n}_{s}\right)\right) = \rho^{\mu,Y} _ \varDelta \left(\operatorname{log} CUR_{s}\right)}}
+\repeatablebody{Equations_MESANGE.mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)$${#eq-\repeatablebody{Equations_MESANGE_mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)}}
+\repeatablebody{Equations_MESANGE.mdlPCH[c]}{PCH_{c} \; CH_{c} = PCHD_{c} \; CHD_{c} + PCHM_{c} \; CHM_{c}$${#eq-\repeatablebody{Equations_MESANGE_mdlPCH[c]}{PCH_{c} \; CH_{c} = PCHD_{c} \; CHD_{c} + PCHM_{c} \; CHM_{c}}}
+\repeatablebody{Equations_MESANGE.mdlX[c]}{\varDelta \left(\operatorname{log} X_{c}\right) = \varDelta \left(\operatorname{log} WD_{c}\right) + \varDelta \left(SUBST^{X}_{c}\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlX[c]}{\varDelta \left(\operatorname{log} X_{c}\right) = \varDelta \left(\operatorname{log} WD_{c}\right) + \varDelta \left(SUBST^{X}_{c}\right)}}
+\repeatablebody{Equations_MESANGE.mdlSUBST_X_n[c]}{\varDelta \left(SUBST^{X,n}_{c}\right) = -\eta^{X}_{c} \; \varDelta \left(\operatorname{log} PX_{c} - \operatorname{log} \left(EXR . PWD_{c}\right)\right)$${#eq-\repeatablebody{Equations_MESANGE_mdlSUBST_X_n[c]}{\varDelta \left(SUBST^{X,n}_{c}\right) = _\eta^{X}_{c} \; \varDelta \left(\operatorname{log} PX_{c} _ \operatorname{log} \left(EXR _ PWD_{c}\right)\right)}}

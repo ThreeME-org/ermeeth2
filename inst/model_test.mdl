@@ -1,0 +1,23 @@
+## \begin{Center} \begin{LARGE}  \textbf{01. Walras model} \end{LARGE} \end{Center}
+
+##### Endogenous variables' equations
+
+##! Production (GDP)
+Y = CH + I + G
+## This equation is an identity or accountancy relation. \\
+
+##! Price 
+p*Y = w*L + p*(delta + r)*K
+
+##! Households'consumption
+CH = (1 - sigma) * (w*L + p*r*K)
+
+##! Labor demand
+L = (Y / PROD_L) * ((Phi_L) ^ rho) * (w/(p * PROD_L)) ^ (-rho)
+## This equation is derived from a cost minimization assuming a CES production function technology. \\
+
+##! Capital demand (from CES function)
+K_CES = (Y / PROD_K) * ((Phi_K) ^ rho) * ((delta + r)/PROD_K) ^ (-rho)
+
+##! Capital (from accumulation equation)
+d(K) = I{-1} - delta * K{-1}

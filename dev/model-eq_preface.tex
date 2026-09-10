@@ -1,0 +1,46 @@
+\repeatablebody{Equations_MESANGE.mdlRSC[s]}{RSC_{s} \; PRSC_{s} = W_{s} \; F_{L, s} \; RRSC_{s} - T2VAL^{SEC} . \frac{F_{L, s}}{F_{L} \; REDIS^{CT,RRSC}}}
+
+\repeatablebody{Equations_MESANGE.mdlINC_G_VAL}{INC^{G,VAL} = PNTAXC . NTAXC + NTAXS^{VAL} + INC^{SOC,TAX,VAL} + PRSC . RSC + PROP^{INC,G,VAL}}
+
+\repeatablebody{Equations_MESANGE.mdlG[c]}{\varDelta \left(\operatorname{log} G_{c}\right) = \varDelta \left(\operatorname{log} EXPG\right)}
+
+\repeatablebody{Equations_MESANGE.mdlINC_SOC_TAX_VAL}{INC^{SOC,TAX,VAL} = RINC^{SOC,TAX} . DISPINC^{BT,VAL} - T2VAL^{CH} . REDIS^{CT,H}}
+
+\repeatablebody{Equations_MESANGE.mdlDISPINC_AT_VAL}{DISPINC^{AT,VAL} = DISPINC^{BT,VAL} - INC^{SOC,TAX,VAL}}
+
+\repeatablebody{Equations_MESANGE.mdlF_n[f, s]}{\varDelta \left(\operatorname{log} F^{n}_{f, s}\right) = \varDelta \left(\operatorname{log} Y_{s}\right) - \varDelta \left(\operatorname{log} PROG_{f, s}\right) + \varDelta \left(SUBST^{F}_{f, s}\right)}
+
+\repeatablebody{Equations_MESANGE.mdlSUBST_F_n[f, s]}{\varDelta \left(SUBST^{F,n}_{f, s}\right) = \sum_{ff} -ES_{f, ff, s} \; \varphi_{ff, s, t-1} \; \varDelta \left(\operatorname{log} \frac{C_{f, s}}{PROG_{f, s}} - \operatorname{log} \frac{C_{ff, s}}{PROG_{ff, s}}\right)}
+
+\repeatablebody{Equations_MESANGE.mdlC[L, s]}{C_{L, s} \; F_{L, s} = W_{s} \; F_{L, s} + RSC_{s} \; PRSC_{s}}
+
+\repeatablebody{Equations_MESANGE.mdlCU[s]}{CU_{s} \; Y_{s} = \sum_{f} C_{f, s} \; F_{f, s} + NTAXS^{VAL}_{s}}
+
+\repeatablebody{Equations_MESANGE.mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)}
+
+\repeatablebody{Equations_MESANGE.mdlPM[c]}{PM_{c} = EXR . PWD_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlPCHD[c]}{PCHD_{c} = PYQS_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlPCHM[c]}{PCHM_{c} = PMS_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlPCID[c, s]}{PCID_{c, s} = PYQS_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlPCIM[c, s]}{PCIM_{c, s} = PMS_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlYCAP[s]}{\varDelta \left(\operatorname{log} YCAP_{s}\right) = \sum_{f} \varphi_{f, s, t-1} \; \varDelta \left(\operatorname{log} \left(F_{f, s} \; PROG_{f, s}\right)\right) + \alpha^{YCAP,Y}_{s} \; \left( \operatorname{log} Y_{s, t-1} - \operatorname{log} \left(YCAP_{s, t-1} \; CUR_{s, t_0}\right) \right)}
+
+\repeatablebody{Equations_MESANGE.mdlCUR[s]}{CUR_{s} = \frac{Y_{s}}{YCAP_{s}}}
+
+\repeatablebody{Equations_MESANGE.mdlMARKUP_n[s]}{\varDelta \left(\operatorname{log} \left(1 + \mu^{n}_{s}\right)\right) = \rho^{\mu,Y} . \varDelta \left(\operatorname{log} CUR_{s}\right)}
+
+\repeatablebody{Equations_MESANGE.mdlPY_n[s]}{PY^{n}_{s} = CU^{n}_{s} \; \left( 1 + \mu_{s} \right)}
+
+\repeatablebody{Equations_MESANGE.mdlPCH[c]}{PCH_{c} \; CH_{c} = PCHD_{c} \; CHD_{c} + PCHM_{c} \; CHM_{c}}
+
+\repeatablebody{Equations_MESANGE.mdlX[c]}{\varDelta \left(\operatorname{log} X_{c}\right) = \varDelta \left(\operatorname{log} WD_{c}\right) + \varDelta \left(SUBST^{X}_{c}\right)}
+
+\repeatablebody{Equations_MESANGE.mdlSUBST_X_n[c]}{\varDelta \left(SUBST^{X,n}_{c}\right) = -\eta^{X}_{c} \; \varDelta \left(\operatorname{log} PX_{c} - \operatorname{log} \left(EXR . PWD_{c}\right)\right)}
+
+
+

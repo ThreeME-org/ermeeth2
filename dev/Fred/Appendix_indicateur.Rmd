@@ -1,0 +1,715 @@
+---
+title: "Appendix: ThreeME Additional indicators"
+author: "ThreeME team"
+date: "`r format(Sys.Date(), '%d %B %y')`"
+output: slidy_presentation
+# output:
+#   ioslides_presentation: default
+#   slidy_presentation: default
+subtitle: 'Scenario: `r params$scenario_name`'
+params:
+  startyear: 2020
+  endyear: 2050
+  scenario_name: carbontax300_lux
+  
+  classification: c23_s26
+  template_default: ofce
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  message = FALSE,
+  warning = FALSE,
+  results = "hide"
+)
+```
+
+
+```{r Plots default options}
+
+
+startyear <- params$startyear
+endyear <- params$endyear
+scenario_name <- params$scenario_name
+classification <- params$classification
+template_default <- params$template_default
+
+```
+
+
+
+```{r Required packages, message=FALSE, warning=FALSE}
+
+# Load functions
+source("src/functions.R")
+
+
+```
+
+
+
+
+```{r Create database function, eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+
+# Create the database for further processing
+source("src/0_create_databases.R")
+
+```
+
+
+
+
+
+```{r load data and bridges}
+
+data_full<-readRDS(file = paste0("databases/",scenario_name,"_",classification,".rds"))
+### loading the sector and commodity aggregated database 
+data_sector <- readRDS(file = paste0("databases/",scenario_name,"_",classification,"_commodities_sectors.rds")) 
+
+
+source(paste0("bridges/bridge_",classification,".R"))
+source(paste0("bridges/codenames_",classification,".R"))
+
+
+
+
+```
+
+
+```{r Add short names for Bridge}
+
+short_names_c <- c("Agriculture","Forestry","Food","Vehicles","Non-metallic minerals","Chemicals","Plastics","Metals","Other industries","Other consumers","Construction","Rail","Road","Water","Air","Business","Finance","Public","Non-energy mining","Coal","Oil","Natural gas","Electricity","TOTAL.1","TOTAL.2","TOTAL.3","TOTAL.4","TOTAL.5","TOTAL.6","TOTAL.7","TOTAL.8")
+
+names_commodities <- names_commodities %>% cbind(short_names_c) %>% purrr::set_names(c("name","code","short_name"))
+
+short_names_s <- c("Agriculture","Forestry","Food","Vehicles","Non-metallic minerals","Chemicals","Plastics","Metallurgy","Other industries","Other consumers","Construction","Rail","Road","Water","Air","Business","Finance","Public","Mining","Fossil energy","Oil elec.","Gas elec.","Wind elec.","Solar elec.","Hydro elec.","Other elec.","TOTAL.1","TOTAL.2","TOTAL.3","TOTAL.4","TOTAL.5","TOTAL.6","TOTAL.7","TOTAL.8")
+
+
+names_sectors <- names_sectors %>% cbind(short_names_s) %>% purrr::set_names(c("name","code","short_name"))
+
+```
+
+
+```{r Calculation of new indicators}
+
+  ### step 0: prepare database
+variables_selection <-   c(variables_like(data_full,"^F_L_S[A-Z0-9]{3}$",FALSE),"F_L",
+                           variables_like(data_full,"^F_K_S[A-Z0-9]{3}$",FALSE),"F_K",
+                           variables_like(data_full,"^F_MAT_S[A-Z0-9]{3}$",FALSE),"F_MAT",
+                           variables_like(data_full,"^F_E_S[A-Z0-9]{3}$",FALSE),"F_E",
+                           variables_like(data_full,"^I_S[A-Z0-9]{3}$",FALSE),"I",
+                           variables_like(data_full,"^C_L_S[A-Z0-9]{3}$",FALSE),"C_L",
+                           variables_like(data_full,"^C_K_S[A-Z0-9]{3}$",FALSE),"C_K",
+                           variables_like(data_full,"^C_MAT_S[A-Z0-9]{3}$",FALSE),"C_MAT",
+                           variables_like(data_full,"^C_E_S[A-Z0-9]{3}$",FALSE),"C_E",
+                           variables_like(data_full,"^Y_S[A-Z0-9]{3}$",FALSE),"Y",
+                           variables_like(data_full,"^PY_S[A-Z0-9]{3}$",FALSE),"PY",
+                           variables_like(data_full,"^VA_VAL_S[A-Z0-9]{3}$",FALSE),"PVA","VA",
+                           variables_like(data_full,"^VA_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_full,"^MGS_C[A-Z0-9]{3}$",FALSE), "MGS",
+                           #only 3 commodities,"MGS_CPRI" "MGS_CRAI" "MGS_CROA"
+                           variables_like(data_full,"^CI_C[A-Z0-9]{3}$",FALSE), "CI", #CCOI missing
+                           variables_like(data_full,"^F_E_C[A-Z0-9]{3}$",FALSE), #doesn't existing in database
+                           variables_like(data_full,"^CH_C[A-Z0-9]{3}$",FALSE),"CH",
+                           variables_like(data_full,"^G_C[A-Z0-9]{3}$",FALSE), "G", #CCOI missing
+                           variables_like(data_full,"^I_C[A-Z0-9]{3}$",FALSE), #CCOI missing
+                           variables_like(data_full,"^X_C[A-Z0-9]{3}$",FALSE),"X", #CCOI missing
+                           variables_like(data_full,"^M_C[A-Z0-9]{3}$",FALSE),"M", #CCOI missing
+                           variables_like(data_full,"^EMS_CI_C[A-Z0-9]{3}$",FALSE),"EMS_CI",
+                           variables_like(data_full,"^EMS_CH_C[A-Z0-9]{3}$",FALSE),"EMS_CH",
+                           variables_like(data_full,"^EMS_CI_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_full,"^GDP_C[A-Z0-9]{3}$",FALSE),
+                           "GDP","PGDP",
+                           "EMS",
+                           "SPEND_G_VAL","INC_G_VAL","PNTAXC","NTAXC",
+                           variables_like(data_sector,"^F_L_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^F_K_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^F_MAT_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^F_E_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^I_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^C_L_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^C_K_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^C_MAT_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^C_E_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^Y_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^PY_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^MGS_C[A-Z0-9]{3}$",FALSE), 
+                           variables_like(data_sector,"^CI_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^F_E_C[A-Z0-9]{3}$",FALSE), 
+                           variables_like(data_sector,"^CH_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^G_C[A-Z0-9]{3}$",FALSE), 
+                           variables_like(data_sector,"^I_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^X_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^M_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^VA_VAL_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^EMS_CI_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^EMS_CH_C[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^EMS_CI_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^VA_S[A-Z0-9]{3}$",FALSE),
+                           variables_like(data_sector,"^GDP_C[A-Z0-9]{3}$",FALSE)
+                           ) %>% str_remove("GDP_CONT") # what is GDP_CONT?
+
+data_ratio <- rbind(dplyr::filter(data_full,variable %in% variables_selection),
+                    dplyr::filter(data_sector,variable %in% variables_selection)) %>%
+              unique()
+
+
+  ### step 1: check and complete missing data by 0
+  list_S_variable <- c("F_L","F_K","F_MAT","F_E","C_L","C_K","C_MAT","C_E","I","Y","PY","EMS_CI","VA") %>%
+    map(~paste0(.x,"_",toupper(names_sectors[,"code"]))) %>%
+    reduce(c)
+  list_C_variable <- c("MGS","CI","CH","G","I","X","M","F_E","EMS_CI","EMS_CH","GDP") %>%
+    map(~paste0(.x,"_",toupper(names_commodities[,"code"]))) %>%
+    reduce(c)
+  
+  missing_data <- c(list_S_variable,list_C_variable) %>%
+    setdiff(.,intersect(., data_ratio$variable)) %>%
+    purrr::set_names() %>%
+    imap(~data.frame(rep(0,length(unique(data_full$year))))%>%set_names(.y)) %>%
+    reduce(cbind)
+  
+  data_ratio <- data_ratio %>%
+              wide_data(variables = data_ratio$variable, out_format = "list") %>% 
+    map(~cbind(.x,missing_data)) %>%
+    long_data()
+  
+calcul_indic <- function(database){
+  
+  ### step 2: write de the function for the calculation 
+calcul_sector_functions <- function(sector, data){
+
+ res <- mutate(data,
+               !!paste0("PHI_I_Y_",sector) := get(paste0("I_",sector))/get(paste0("Y_",sector)),
+               !!paste0("PHI_FL_Y_",sector) := get(paste0("F_L_",sector))/get(paste0("Y_",sector)),
+               !!paste0("PHI_FMAT_Y_",sector) := get(paste0("F_MAT_",sector))/get(paste0("Y_",sector)),
+               !!paste0("PHI_FE_Y_",sector) := get(paste0("F_E_",sector))/get(paste0("Y_",sector)),
+               !!paste0("PHI_FK_Y_",sector) := get(paste0("F_K_",sector))/get(paste0("Y_",sector)),
+               !!paste0("PHI_FE_S_GDP_",sector) := get(paste0("F_E_",sector))/GDP,
+               !!paste0("PHI_VAL_FK_Y_",sector) := get(paste0("F_K_",sector))*get(paste0("C_K_",sector))/
+                                                  get(paste0("Y_",sector))*get(paste0("PY_",sector)),
+               !!paste0("PHI_VAL_FL_Y_",sector) := get(paste0("F_L_",sector))*get(paste0("C_L_",sector))/
+                                                  get(paste0("Y_",sector))*get(paste0("PY_",sector)),
+               !!paste0("PHI_VAL_FE_Y_",sector) := get(paste0("F_E_",sector))*get(paste0("C_E_",sector))/
+                                                  get(paste0("Y_",sector))*get(paste0("PY_",sector)),
+               !!paste0("PHI_VAL_FMAT_Y_",sector) := get(paste0("F_MAT_",sector))*get(paste0("C_MAT_",sector))/
+                                                    get(paste0("Y_",sector))*get(paste0("PY_",sector)),
+               !!paste0("PHI_VAL_VA_Y_",sector) := get(paste0("VA_VAL_",sector))/
+                                                    get(paste0("Y_",sector))*get(paste0("PY_",sector)),
+               !!paste0("PHI_VAL_L_VA_",sector) := get(paste0("F_L_",sector))*get(paste0("C_L_",sector))/
+                                                    get(paste0("VA_VAL_",sector)),
+               !!paste0("PHI_VAL_PI_VA_",sector) := 1 - get(paste0("F_L_",sector))*get(paste0("C_L_",sector))/
+                                                    get(paste0("VA_VAL_",sector)),
+               !!paste0("PHI_EMS_CI_S_",sector) := get(paste0("EMS_CI_",sector))/EMS_CI,
+               !!paste0("PHI_VA_",sector) := get(paste0("VA_",sector))/VA,
+               !!paste0("PHI_Y_",sector) := get(paste0("Y_",sector))/Y
+               ) %>%
+      select(year,
+             all_of(paste0("PHI_I_Y_",sector)),
+             all_of(paste0("PHI_FL_Y_",sector)),
+             all_of(paste0("PHI_FMAT_Y_",sector)),
+             all_of(paste0("PHI_FE_Y_",sector)),
+             all_of(paste0("PHI_FK_Y_",sector)),
+             all_of(paste0("PHI_FE_S_GDP_",sector)),
+             all_of(paste0("PHI_VAL_FK_Y_",sector)),
+             all_of(paste0("PHI_VAL_FL_Y_",sector)),
+             all_of(paste0("PHI_VAL_FE_Y_",sector)),
+             all_of(paste0("PHI_VAL_FMAT_Y_",sector)),
+             all_of(paste0("PHI_VAL_VA_Y_",sector)),
+             all_of(paste0("PHI_VAL_L_VA_",sector)),
+             all_of(paste0("PHI_VAL_PI_VA_",sector)),
+             all_of(paste0("PHI_EMS_CI_S_",sector)),
+             all_of(paste0("PHI_VA_",sector)),
+             all_of(paste0("PHI_Y_",sector))
+             )
+
+  return(res)
+}
+
+calcul_commodity_functions <- function(commodity, data){
+
+ res <- mutate(data,
+               !!paste0("PHI_MGS_GDP_",commodity) := get(paste0("MGS_",commodity))/GDP,
+               !!paste0("PHI_CI_GDP_",commodity) := get(paste0("CI_",commodity))/GDP,
+               !!paste0("PHI_FE_C_GDP_",commodity) := get(paste0("F_E_",commodity))/GDP,
+               !!paste0("PHI_CH_GDP_",commodity) := get(paste0("CH_",commodity))/GDP,
+               !!paste0("PHI_G_GDP_",commodity) := get(paste0("G_",commodity))/GDP,
+               !!paste0("PHI_I_GDP_",commodity) := get(paste0("I_",commodity))/GDP,
+               !!paste0("PHI_X_GDP_",commodity) := get(paste0("X_",commodity))/GDP,
+               !!paste0("PHI_M_GDP_",commodity) := get(paste0("M_",commodity))/GDP,
+               !!paste0("BLC_TRADE_",commodity) := (get(paste0("X_",commodity))-get(paste0("M_",commodity)))/GDP,
+               !!paste0("OPN_TRADE_",commodity) := (get(paste0("X_",commodity))+get(paste0("M_",commodity)))/GDP,
+               !!paste0("PHI_EMS_CI_C_",commodity) := get(paste0("EMS_CI_",commodity))/EMS_CI,
+               !!paste0("PHI_EMS_CH_",commodity) := get(paste0("EMS_CH_",commodity))/EMS_CH,
+               !!paste0("PHI_GDP_",commodity) := get(paste0("GDP_",commodity))/GDP
+               ) %>%
+      select(year,
+             all_of(paste0("PHI_MGS_GDP_",commodity)),
+             all_of(paste0("PHI_CI_GDP_",commodity)),
+             all_of(paste0("PHI_FE_C_GDP_",commodity)),
+             all_of(paste0("PHI_CH_GDP_",commodity)),
+             all_of(paste0("PHI_G_GDP_",commodity)),
+             all_of(paste0("PHI_I_GDP_",commodity)),
+             all_of(paste0("PHI_X_GDP_",commodity)),
+             all_of(paste0("PHI_M_GDP_",commodity)),
+             all_of(paste0("BLC_TRADE_",commodity)),
+             all_of(paste0("OPN_TRADE_",commodity)),
+             all_of(paste0("PHI_EMS_CI_C_",commodity)),
+             all_of(paste0("PHI_EMS_CH_",commodity)),
+             all_of(paste0("PHI_GDP_",commodity))
+             )
+
+  return(res)
+}
+
+### step 3: Line for one wide data base
+data_res_sector <- toupper(names_sectors[,"code"]) %>%
+  map(~calcul_sector_functions(sector = .x, data = database)) %>%
+  reduce(full_join,by = "year")
+
+data_res_commodity <- toupper(names_commodities[,"code"]) %>%
+  map(~calcul_commodity_functions(commodity = .x, data = database) ) %>%
+  reduce(full_join,by = "year")
+
+data_res_agg <- database %>%
+  mutate( #by sectors
+PHI_FL_Y = F_L/Y,
+PHI_FK_Y = F_K/Y,
+PHI_I_Y = I/Y,
+PHI_FMAT_Y = F_MAT/Y,
+PHI_FE_Y = F_E/Y,
+PHI_VAL_FK_Y = C_K*F_K/(PY*Y),
+PHI_VAL_FL_Y = C_L*F_L/(PY*Y),
+PHI_VAL_FE_Y = C_E*F_E/(PY*Y),
+PHI_VAL_FMAT_Y = C_MAT*F_MAT/(PY*Y),
+
+#PVA[s] non existing
+PHI_VAL_VA_Y = PVA*VA/(PY*Y),
+PHI_VAL_L_VA = C_L*F_L/(PVA*VA),
+PHI_VAL_PI_VA = 1 - C_L*F_L/(PVA*VA),
+
+#by commodities
+PHI_MGS_GDP = MGS/GDP,
+PHI_CI_GDP = CI/GDP,
+PHI_FE_S_GDP = F_E/GDP,
+PHI_FE_C_GDP = F_E/GDP,
+PHI_CH_GDP = CH/GDP,
+PHI_G_GDP = G/GDP,
+PHI_I_GDP = I/GDP,
+PHI_X_GDP = X/GDP,
+PHI_M_GDP = M/GDP,
+BLC_TRADE = (X-M)/GDP,
+OPN_TRADE = (X+M)/GDP,
+
+#aggregated level
+PHI_VAL_SPEND_G_GDP = SPEND_G_VAL/(PGDP*GDP),
+PHI_VAL_INC_G_GDP = INC_G_VAL/(PGDP*GDP),
+NTAXC_VAL = PNTAXC*NTAXC,
+PHI_EMS_GDP = EMS / GDP,
+PHI_EMS_CI_GDP = EMS_CI / GDP,
+PHI_EMS_CH_GDP = EMS_CH / GDP)
+
+data_final <- cbind(data_res_commodity,data_res_sector,data_res_agg)
+
+return(data_final)
+}
+
+data_ratio <- data_ratio %>% 
+  wide_data(variables = data_ratio$variable , out_format = "list") %>%  
+  map(~calcul_indic(.x)) %>% 
+  long_data()
+
+```
+
+```{r Function to visualise indicators with detail and aggregated sector/commodity}
+
+plot_ratio <- function(data, 
+                       indicator = NULL, 
+                       years = NULL, 
+                       title = "", 
+                       scenario = NULL)
+{
+
+### Inputs check
+  if(length(indicator) > 1 ){
+    stop("Please choose only one indicator each time. \n")
+  }else if(is.null(indicator)){
+    stop("Please choose one indicator. \n")
+  }else if(!TRUE %in% grepl(paste0("^",indicator,"_"), data$variable)){
+    stop("Indicator does not exist, please choose another one. \n")
+  }
+  
+  if(length(years) > 2 ){
+    stop("Please choose at most two years each time. \n")
+  }else if(is.null(years)){
+    years <- 2019
+  }
+
+  if(length(scenario) > 1 ){
+    stop("Please choose only one scenario each time. \n")
+  }else if(is.null(scenario)){
+    scenario <- "baseline"
+  }else if(!TRUE %in% grepl(scenario, names(data))){
+    stop("Scenario does not exist, please choose another one. \n")
+  }
+  
+### Code list for regroup the detailed sector/commodity
+
+code_list <- bridge_sectors %>%
+  imap(~data_frame(code = .x, agg_code = .y) %>% as.data.frame()) %>%
+  reduce(rbind) %>%
+  rbind(c("S001","S001"),c("S002","S002"),c("S003","S003"),c("S004","S004"),
+        c("S005","S005"),c("S006","S006"),c("S007","S007"),c("S008","S008"),
+        c("C001","C001"),c("C002","C002"),c("C003","C003"),c("C004","C004"),
+        c("C005","C005"),c("C006","C006"),c("C007","C007"),c("C008","C008")) %>%
+  rbind(
+    bridge_commodities %>%
+    imap(~data_frame(code = .x, agg_code = .y) %>% as.data.frame()) %>%
+    reduce(rbind)) %>%
+  left_join(rbind(tail(names_commodities,8)[,1:2],tail(names_sectors,8)[,1:2]) %>% 
+              set_names(c("facet_by","agg_code")), by = "agg_code") %>%
+  left_join(rbind(names_commodities[,c("code","short_name")],names_sectors[,c("code","short_name")]), by = "code") %>%
+  mutate(code = toupper(code))
+
+### Preparation of data base
+data_fig <- data %>% 
+            filter(grepl(paste0("^",indicator,"_[A-Z0-9]{4}"),variable), year == years)
+
+### Matching detailed sector with aggregated sector
+data_fig <- data_fig %>% mutate(code = case_when(
+            str_extract(data_fig$variable,"C[A-Z0-9]{3}$|S[A-Z0-9]{3}$") %in% code_list$code 
+                       ~str_extract(data_fig$variable,"C[A-Z0-9]{3}$|S[A-Z0-9]{3}$"))) %>% 
+            left_join(code_list, by = "code") %>% 
+  rbind(filter(data, variable == indicator, year == years) %>% mutate(facet_by = "AGGREGATE", short_name = "AGGREGATE",agg_code = NA, code = NA)) %>%
+  as.data.frame()
+
+### Reordering factor levels
+data_fig$facet_by <- factor(data_fig$facet_by,      
+                         levels = c("AGGREGATE",tail(names_sectors,8)[,1]))
+data_fig$short_name <- factor(data_fig$short_name, levels = unique(data_fig$short_name))
+
+### Plot drawing
+fig <- ggplot(data_fig, aes(x = short_name, y = get(scenario), fill = facet_by, alpha = factor(year), group = facet_by)) + 
+       geom_bar(stat = "identity",position = "dodge2") +
+       scale_alpha_manual("year", values = c(1,0.6)) +
+       scale_fill_manual("Sector/Commodity",values = custom.palette(9)) +
+       ylab("") +
+       xlab("") +
+       ggtitle(title) +
+       facet_grid(~facet_by, scales = "free_x", space = "free_x") +
+       theme(axis.text.x = element_text(angle = 90,hjust = 0.95))
+       #theme(axis.text.x = element_text(angle = 90,hjust = 0.95),legend.position = "none")
+
+return(fig)
+}
+
+```
+
+---
+
+# Labor intensity of production by sectors
+
+```{r Labor intesnsity of production, fig.width=15, fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_FL_Y", years = c(2019,2050), title = "F_L[s] / Y[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Capital intesnsity of production by sectors
+
+```{r Capital intesnsity of production, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_FK_Y", years = c(2019,2050), title = "F_K[s] / Y[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Energy intesnsity of production by sectors
+
+```{r Energy intesnsity of production, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_FE_Y", years = c(2019,2050), title = "F_E[s] / Y[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Material intesnsity of production by sectors
+
+```{r Material intesnsity of production, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_FMAT_Y", years = c(2019,2050), title = "F_MAT[s] / Y[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Investment over production by sectors
+
+```{r Investment over production, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_I_Y", years = c(2019,2050), title = "I[s] / Y[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Cost share of labor by sectors
+
+```{r Cost share of labor, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_FL_Y", years = c(2019,2050), title = "(C_L[s] * F_L[s]) / (PY[s] * Y[s])", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Cost share of capital by sectors
+
+```{r Cost share of capital, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_FK_Y", years = c(2019,2050), title = "(C_K[s] * F_K[s]) / (PY[s] * Y[s])", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Cost share of energy by sectors
+
+```{r Cost share of energy, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_FE_Y", years = c(2019,2050), title = "(C_E[s] * F_E[s]) / (PY[s] * Y[s])", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Cost share of material by sectors
+
+```{r Cost share of material, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_FMAT_Y", years = c(2019,2050), title = "(C_MAT[s] * F_MAT[s]) / (PY[s] * Y[s])", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Share of value added into the production by sectors
+
+```{r Share of value added into the production, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_VA_Y", years = c(2019,2050), title = "VA_VAL[s] / (PY[s]*Y[s])", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Labor share into the value added by sectors
+
+```{r Labor share into the value added, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_L_VA", years = c(2019,2050), title = "(C_L[s] * F_L[s]) / VA_VAL[s]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Profits share into the value added by sectors
+
+```{r Profits share into the value added, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VAL_PI_VA", years = c(2019,2050), title = "1 - [ (C_L[s] * F_L[s]) / VA_VAL[s] ]", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Margins share into GDP by commodities
+
+```{r Margins share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_MGS_GDP", years = c(2019,2050), title = "MGS[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Intermediary consumption share into GDP by commodities
+
+```{r Intermediay consumption share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_CI_GDP", years = c(2019,2050), title = "CI[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Energy share into GDP by sectors
+
+```{r Energy share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_FE_S_GDP", years = c(2019,2050), title = "F_E[s] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Household's consumption share into GDP by commodities
+
+```{r Household\'s consumption share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_CH_GDP", years = c(2019,2050), title = "CH[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Gouvernement expenditure share into GDP by commodities
+
+```{r Gouvernement expenditure share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_G_GDP", years = c(2019,2050), title = "G[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Investment share into GDP by commodities
+
+```{r Investment share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_I_GDP", years = c(2019,2050), title = "I[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Export share into GDP by commodities
+
+```{r Export share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_X_GDP", years = c(2019,2050), title = "X[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Import share into GDP by commodities
+
+```{r Import share into GDP, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_M_GDP", years = c(2019,2050), title = "M[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Trade balance by commodities
+
+```{r Trade balance, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "BLC_TRADE", years = c(2019,2050), title = "( X[c] - M[c] ) / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Trade openness by commodities
+
+```{r Trade openness, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "OPN_TRADE", years = c(2019,2050), title = "( X[c] + M[c] ) / GDP", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Household consumption emissions share by commodities
+
+```{r Household consumption emissions share by commodities, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_EMS_CH", years = c(2019,2050), title = "EMS_CO2_CH[c] / EMS_CO2_CH", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Intermediary consumption emissions share by commodities
+
+```{r Intermediary consumption emissions share by commodities, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_EMS_CI_C", years = c(2019,2050), title = "EMS_CO2_CI[c] / EMS_CO2_CI", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Intermediary consumption emissions share by sectors
+
+```{r Intermediary consumption emissions share by sectors, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_EMS_CI_S", years = c(2019,2050), title = "EMS_CO2_CI[s] / EMS_CO2_CI", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Value added share by sectors
+
+```{r Value added share by sectors, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_VA", years = c(2019,2050), title = "VA[s] / VA", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# Production share by sectors
+
+```{r Production share by sectors, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_Y", years = c(2019,2050), title = "Y[s] / Y", scenario = "carbontax300_lux")
+
+fig
+```
+
+---
+
+# GDP share by commodities
+
+```{r GDP share by commodities, fig.width=15,fig.height=6}
+
+fig <- plot_ratio(data = data_ratio, indicator = "PHI_GDP", years = c(2019,2050), title = "GDP[c] / GDP", scenario = "carbontax300_lux")
+
+fig
+```

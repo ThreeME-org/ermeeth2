@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<script src="ermeeth_how_to_files/libs/clipboard/clipboard.min.js"></script>
+<script src="ermeeth_how_to_files/libs/quarto-html/tabby.min.js"></script>
+<script src="ermeeth_how_to_files/libs/quarto-html/popper.min.js"></script>
+<script src="ermeeth_how_to_files/libs/quarto-html/tippy.umd.min.js"></script>
+<link href="ermeeth_how_to_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="ermeeth_how_to_files/libs/quarto-html/light-border.css" rel="stylesheet">
+<link href="ermeeth_how_to_files/libs/quarto-html/quarto-html.min.css" rel="stylesheet" data-mode="light">
+<link href="ermeeth_how_to_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles"><meta charset="utf-8">
+  <meta name="generator" content="quarto-1.3.296">
+
+  <meta name="author" content="Anissa Saumtally">
+  <title>How to update ermeeth</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+  <link rel="stylesheet" href="ermeeth_how_to_files/libs/revealjs/dist/reset.css">
+  <link rel="stylesheet" href="ermeeth_how_to_files/libs/revealjs/dist/reveal.css">
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+      vertical-align: middle;
+    }
+    /* CSS for syntax highlighting */
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+      }
+    pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+    div.sourceCode
+      { color: #657b83; background-color: #fdf6e3; }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span { color: #657b83; } /* Normal */
+    code span.al { color: #d33682; font-weight: bold; } /* Alert */
+    code span.an { color: #268bd2; } /* Annotation */
+    code span.at { color: #268bd2; } /* Attribute */
+    code span.bn { color: #2aa198; } /* BaseN */
+    code span.bu { color: #cb4b16; } /* BuiltIn */
+    code span.cf { color: #859900; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #2aa198; } /* Char */
+    code span.cn { color: #2aa198; font-weight: bold; } /* Constant */
+    code span.co { color: #93a1a1; font-style: italic; } /* Comment */
+    code span.cv { color: #2aa198; } /* CommentVar */
+    code span.do { color: #dc322f; } /* Documentation */
+    code span.dt { color: #b58900; font-weight: bold; } /* DataType */
+    code span.dv { color: #2aa198; } /* DecVal */
+    code span.er { color: #dc322f; text-decoration: underline; } /* Error */
+    code span.ex { color: #268bd2; font-weight: bold; } /* Extension */
+    code span.fl { color: #2aa198; } /* Float */
+    code span.fu { color: #268bd2; } /* Function */
+    code span.im { color: #2aa198; } /* Import */
+    code span.in { color: #b58900; } /* Information */
+    code span.kw { color: #859900; font-weight: bold; } /* Keyword */
+    code span.op { color: #859900; } /* Operator */
+    code span.ot { color: #859900; } /* Other */
+    code span.pp { color: #cb4b16; } /* Preprocessor */
+    code span.re { color: #268bd2; background-color: #eee8d5; } /* RegionMarker */
+    code span.sc { color: #dc322f; } /* SpecialChar */
+    code span.ss { color: #dc322f; } /* SpecialString */
+    code span.st { color: #2aa198; } /* String */
+    code span.va { color: #268bd2; } /* Variable */
+    code span.vs { color: #2aa198; } /* VerbatimString */
+    code span.wa { color: #cb4b16; } /* Warning */
+  </style>
+  <link rel="stylesheet" href="ermeeth_how_to_files/libs/revealjs/dist/theme/quarto.css" id="theme">
+  <link href="ermeeth_how_to_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css" rel="stylesheet">
+  <link href="ermeeth_how_to_files/libs/revealjs/plugin/reveal-menu/menu.css" rel="stylesheet">
+  <link href="ermeeth_how_to_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css" rel="stylesheet">
+  <link href="ermeeth_how_to_files/libs/revealjs/plugin/quarto-support/footer.css" rel="stylesheet">
+  <style type="text/css">
+
+  .callout {
+    margin-top: 1em;
+    margin-bottom: 1em;  
+    border-radius: .25rem;
+  }
+
+  .callout.callout-style-simple { 
+    padding: 0em 0.5em;
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+    display: flex;
+  }
+
+  .callout.callout-style-default {
+    border-left: solid #acacac .3rem;
+    border-right: solid 1px silver;
+    border-top: solid 1px silver;
+    border-bottom: solid 1px silver;
+  }
+
+  .callout .callout-body-container {
+    flex-grow: 1;
+  }
+
+  .callout.callout-style-simple .callout-body {
+    font-size: 1rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-style-default .callout-body {
+    font-size: 0.9rem;
+    font-weight: 400;
+  }
+
+  .callout.callout-titled.callout-style-simple .callout-body {
+    margin-top: 0.2em;
+  }
+
+  .callout:not(.callout-titled) .callout-body {
+      display: flex;
+  }
+
+  .callout:not(.no-icon).callout-titled.callout-style-simple .callout-content {
+    padding-left: 1.6em;
+  }
+
+  .callout.callout-titled .callout-header {
+    padding-top: 0.2em;
+    margin-bottom: -0.2em;
+  }
+
+  .callout.callout-titled .callout-title  p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+    
+  .callout.callout-titled.callout-style-simple .callout-content  p {
+    margin-top: 0;
+  }
+
+  .callout.callout-titled.callout-style-default .callout-content  p {
+    margin-top: 0.7em;
+  }
+
+  .callout.callout-style-simple div.callout-title {
+    border-bottom: none;
+    font-size: .9rem;
+    font-weight: 600;
+    opacity: 75%;
+  }
+
+  .callout.callout-style-default  div.callout-title {
+    border-bottom: none;
+    font-weight: 600;
+    opacity: 85%;
+    font-size: 0.9rem;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-default div.callout-content {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  .callout.callout-style-simple .callout-icon::before {
+    height: 1rem;
+    width: 1rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 1rem 1rem;
+  }
+
+  .callout.callout-style-default .callout-icon::before {
+    height: 0.9rem;
+    width: 0.9rem;
+    display: inline-block;
+    content: "";
+    background-repeat: no-repeat;
+    background-size: 0.9rem 0.9rem;
+  }
+
+  .callout-title {
+    display: flex
+  }
+    
+  .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  .callout.no-icon::before {
+    display: none !important;
+  }
+
+  .callout.callout-titled .callout-body > .callout-content > :last-child {
+    margin-bottom: 0.5rem;
+  }
+
+  .callout.callout-titled .callout-icon::before {
+    margin-top: .5rem;
+    padding-right: .5rem;
+  }
+
+  .callout:not(.callout-titled) .callout-icon::before {
+    margin-top: 1rem;
+    padding-right: .5rem;
+  }
+
+  /* Callout Types */
+
+  div.callout-note {
+    border-left-color: #4582ec !important;
+  }
+
+  div.callout-note .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEU0lEQVRYCcVXTWhcVRQ+586kSUMMxkyaElstCto2SIhitS5Ek8xUKV2poatCcVHtUlFQk8mbaaziwpWgglJwVaquitBOfhQXFlqlzSJpFSpIYyXNjBNiTCck7x2/8/LeNDOZxDuEkgOXe++553zfefee+/OYLOXFk3+1LLrRdiO81yNqZ6K9cG0P3MeFaMIQjXssE8Z1JzLO9ls20MBZX7oG8w9GxB0goaPrW5aNMp1yOZIa7Wv6o2ykpLtmAPs/vrG14Z+6d4jpbSKuhdcSyq9wGMPXjonwmESXrriLzFGOdDBLB8Y6MNYBu0dRokSygMA/mrun8MGFN3behm6VVAwg4WR3i6FvYK1T7MHo9BK7ydH+1uurECoouk5MPRyVSBrBHMYwVobG2aOXM07sWrn5qgB60rc6mcwIDJtQrnrEr44kmy+UO9r0u9O5/YbkS9juQckLed3DyW2XV/qWBBB3ptvI8EUY3I9p/67OW+g967TNr3Sotn3IuVlfMLVnsBwH4fsnebJvyGm5GeIUA3jljERmrv49SizPYuq+z7c2H/jlGC+Ghhupn/hcapqmcudB9jwJ/3jvnvu6vu5lVzF1fXyZuZZ7U8nRmVzytvT+H3kilYvH09mLWrQdwFSsFEsxFVs5fK7A0g8gMZjbif4ACpKbjv7gNGaD8bUrlk8x+KRflttr22JEMRUbTUwwDQScyzPgedQHZT0xnx7ujw2jfVfExwYHwOsDTjLdJ2ebmeQIlJ7neo41s/DrsL3kl+W2lWvAga0tR3zueGr6GL78M3ifH0rGXrBC2aAR8uYcIA5gwV8zIE8onoh8u0Fca/ciF7j1uOzEnqcIm59sEXoGc0+z6+H45V1CvAvHcD7THztu669cnp+L0okAeIc6zjbM/24LgGM1gZk7jnRu1aQWoU9sfUOuhrmtaPIO3YY1KLLWZaEO5TKUbMY5zx8W9UJ6elpLwKXbsaZ4EFl7B4bMtDv0iRipKoDQT2sNQI9b1utXFdYisi+wzZ/ri/1m7QfDgEuvgUUEIJPq3DhX/5DWNqIXDOweC2wvIR90Oq3lDpdMIgD2r0dXvGdsEW5H6x6HLRJYU7C69VefO1x8Gde1ZFSJLfWS1jbCnhtOPxmpfv2LXOA2Xk2tvnwKKPFuZ/oRmwBwqRQDcKNeVQkYcOjtWVBuM/JuYw5b6isojIkYxyYAFn5K7ZBF10fea52y8QltAg6jnMqNHFBmGkQ1j+U43HMi2xMar1Nv0zGsf1s8nUsmUtPOOrbFIR8bHFDMB5zL13Gmr/kGlCkUzedTzzmzsaJXhYawnA3UmARpiYj5ooJZiUoxFRtK3X6pgNPv+IZVPcnwbOl6f+aBaO1CNvPW9n9LmCp01nuSaTRF2YxHqZ8DYQT6WsXT+RD6eUztwYLZ8rM+rcPxamv1VQzFUkzFXvkiVrySGQgJNvXHJAxiU3/NwiC03rSf05VBaPtu/Z7/B8Yn/w7eguloAAAAAElFTkSuQmCC');
+  }
+
+  div.callout-note.callout-style-default .callout-title {
+    background-color: #dae6fb
+  }
+
+  div.callout-important {
+    border-left-color: #d9534f !important;
+  }
+
+  div.callout-important .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAEKklEQVRYCcVXTWhcVRS+575MJym48A+hSRFr00ySRQhURRfd2HYjk2SSTokuBCkU2o0LoSKKraKIBTcuFCoidGFD08nkBzdREbpQ1EDNIv8qSGMFUboImMSZd4/f9zJv8ibJMC8xJQfO3HPPPef7zrvvvnvviIkpC9nsw0UttFunbUhpFzFtarSd6WJkStVMw5xyVqYTvkwfzuf/5FgtkVoB0729j1rjXwThS7Vio+Mo6DNnvLfahoZ+i/o32lULuJ3NNiz7q6+pyAUkJaFF6JwaM2lUJlV0MlnQn5aTRbEu0SEqHUa0A4AdiGuB1kFXRfVyg5d87+Dg4DL6m2TLAub60ilj7A1Ec4odSAc8X95sHh7+ZRPCFo6Fnp7HfU/fBng/hi10CjCnWnJjsxvDNxWw0NfV6Rv5GgP3I3jGWXumdTD/3cbEOP2ZbOZp69yniG3FQ9z1jD7bnBu9Fc2tKGC2q+uAJOQHBDRiZX1x36o7fWBs7J9ownbtO+n0/qWkvW7UPIfc37WgT6ZGR++EOJyeQDSb9UB+DZ1G6DdLDzyS+b/kBCYGsYgJbSQHuThGKRcw5xdeQf8YdNHsc6ePXrlSYMBuSIAFTGAtQo+VuALo4BX83N190NWZWbynBjhOHsmNfFWLeL6v+ynsA58zDvvAC8j5PkbOcXCMg2PZFk3q8MjI7WAG/Dp9AwP7jdGBOOQkAvlFUB+irtm16I1Zw9YBcpGTGXYmk3kQIC/Cds55l+iMI3jqhjAuaoe+am2Jw5GT3Nbz3CkE12NavmzN5+erJW7046n/CH1RO/RVa8lBLozXk9uqykkGAyRXLWlLv5jyp4RFsG5vGVzpDLnIjTWgnRy2Rr+tDKvRc7Y8AyZq10jj8DqXdnIRNtFZb+t/ZRtXcDiVnzpqx8mPcDWxgARUqx0W1QB9MeUZiNrV4qP+Ehc+BpNgATsTX8ozYKL2NtFYAHc84fG7ndxUPr+AR/iQSns7uSUufAymwDOb2+NjK27lEFocm/EE2WpyIy/Hi66MWuMKJn8RvxIcj87IM5Vh9663ziW36kR0HNenXuxmfaD8JC7tfKbrhFr7LiZCrMjrzTeGx+PmkosrkNzW94ObzwocJ7A1HokLolY+AvkTiD/q1H0cN48c5EL8Crkttsa/AXQVDmutfyku0E7jShx49XqV3MFK8IryDhYVbj7Sj2P2eBxwcXoe8T8idsKKPRcnZw1b+slFTubwUwhktrfnAt7J++jwQtLZcm3sr9LQrjRzz6cfMv9aLvgmnAGvpoaGLxM4mAEaLV7iAzQ3oU0IvD5x9ix3yF2RAAuYAOO2f7PEFWCXZ4C9Pb2UsgDeVnFSpbFK7/IWu7TPTvBqzbGdCHOJQSxiEjt6IyZmxQyEJHv6xyQsYk//moVFsN2zP6fRImjfq7/n/wFDguUQFNEwugAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-important.callout-style-default .callout-title {
+    background-color: #f7dddc
+  }
+
+  div.callout-warning {
+    border-left-color: #f0ad4e !important;
+  }
+
+  div.callout-warning .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAAETklEQVRYCeVWW2gcVRg+58yaTUnizqbipZeX4uWhBEniBaoUX1Ioze52t7sRq6APio9V9MEaoWlVsFasRq0gltaAPuxms8lu0gcviE/FFOstVbSIxgcv6SU7EZqmdc7v9+9mJtNks51NTUH84ed889/PP+cmxP+d5FIbMJmNbpREu4WUkiTtCicKny0l1pIKmBzovF2S+hIJHX8iEu3hZJ5lNZGqyRrGSIQpq15AzF28jgpeY6yk6GVdrfFqdrD6Iw+QlB8g0YS2g7dyQmXM/IDhBhT0UCiRf59lfqmmDvzRt6kByV/m4JjtzuaujMUM2c5Z2d6JdKrRb3K2q6mA+oYVz8JnDdKPmmNthzkAk/lN63sYPgevrguc72aZX/L9C6x09GYyxBgCX4NlvyGUHOKELlm5rXeR1kchuChJt4SSwyddZRXgvwMGvYo4QSlk3/zkHD8UHxwVJA6zjZZqP8v8kK8OWLnIZtLyCAJagYC4rTGW/9Pqj92N/c+LUaAj27movwbi19tk/whRCIE7Q9vyI6yvRpftAKVTdUjOW40X3h5OXsKCdmFcx0xlLJoSuQngnrJe7Kcjm4OMq9FlC7CMmScQANuNvjfP3PjGXDBaUQmbp296S5L4DrpbrHN1T87ZVEZVCzg1FF0Ft+dKrlLukI+/c9ENo+TvlTDbYFvuKPtQ9+l052rXrgKoWkDAFnvh0wTOmYn8R5f4k/jN/fZiCM1tQx9jQQ4ANhqG4hiL0qIFTGViG9DKB7GYzgubnpofgYRwO+DFjh0Zin2m4b/97EDkXkc+f6xYAPX0KK2I/7fUQuwzuwo/L3AkcjugPNixC8cHf0FyPjWlItmLxWw4Ou9YsQCr5fijMGoD/zpdRy95HRysyXA74MWOnscpO4j2y3HAVisw85hX5+AFBRSHt4ShfLFkIMXTqyKFc46xdzQM6XbAi702a7sy04J0+feReMFKp5q9esYLCqAZYw/k14E/xcLLsFElaornTuJB0svMuJINy8xkIYuL+xPAlWRceH6+HX7THJ0djLUom46zREu7tTkxwmf/FdOZ/sh6Q8qvEAiHpm4PJ4a/doJe0gH1t+aHRgCzOvBvJedEK5OFE5jpm4AGP2a8Dxe3gGJ/pAutug9Gp6he92CsSsWBaEcxGx0FHytmIpuqGkOpldqNYQK8cSoXvd+xLxXADw0kf6UkJNFtdo5MOgaLjiQOQHcn+A6h5NuL2s0qsC2LOM75PcF3yr5STuBSAcGG+meA14K/CI21HcS4LBT6tv0QAh8Dr5l93AhZzG5ZJ4VxAqdZUEl9z7WJ4aN+svMvwHHL21UKTd1mqvChH7/Za5xzXBBKrUcB0TQ+Ulgkfbi/H/YT5EptrGzsEK7tR1B7ln9BBwckYfMiuSqklSznIuoIIOM42MQO+QnduCoFCI0bpkzjCjddHPN/F+2Yu+sd9bKNpVwHhbS3LluK/0zgfwD0xYI5dXuzlQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-warning.callout-style-default .callout-title {
+    background-color: #fcefdc
+  }
+
+  div.callout-tip {
+    border-left-color: #02b875 !important;
+  }
+
+  div.callout-tip .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAADr0lEQVRYCe1XTWgTQRj9ZjZV8a9SPIkKgj8I1bMHsUWrqYLVg4Ue6v9BwZOxSYsIerFao7UiUryIqJcqgtpimhbBXoSCVxUFe9CTiogUrUp2Pt+3aUI2u5vdNh4dmMzOzHvvezuz8xNFM0mjnbXaNu1MvFWRXkXEyE6aYOYJpdW4IXuA4r0fo8qqSMDBU0v1HJUgVieAXxzCsdE/YJTdFcVIZQNMyhruOMJKXYFoLfIfIvVIMWdsrd+Rpd86ZmyzzjJmLStqRn0v8lzkb4rVIXvnpScOJuAn2ACC65FkPzEdEy4TPWRLJ2h7z4cArXzzaOdKlbOvKKX25Wl00jSnrwVxAg3o4dRxhO13RBSdNvH0xSARv3adTXbBdTf64IWO2vH0LT+cv4GR1DJt+DUItaQogeBX/chhbTBxEiZ6gftlDNXTrvT7co4ub5A6gp9HIcHvzTa46OS5fBeP87Qm0fQkr4FsYgVQ7Qg+ZayaDg9jhg1GkWj8RG6lkeSacrrHgDaxdoBiZPg+NXV/KifMuB6//JmYH4CntVEHy/keA6x4h4CU5oFy8GzrBS18cLJMXcljAKB6INjWsRcuZBWVaS3GDrqB7rdapVIeA+isQ57Eev9eCqzqOa81CY05VLd6SamW2wA2H3SiTbnbSxmzfp7WtKZkqy4mdyAlGx7ennghYf8voqp9cLSgKdqNfa6RdRsAAkPwRuJZNbpByn+RrJi1RXTwdi8RQF6ymDwGMAtZ6TVE+4uoKh+MYkcLsT0Hk8eAienbiGdjJHZTpmNjlbFJNKDVAp2fJlYju6IreQxQ08UJDNYdoLSl6AadO+fFuCQqVMB1NJwPm69T04Wv5WhfcWyfXQB+wXRs1pt+nCknRa0LVzSA/2B+a9+zQJadb7IyyV24YAxKp2Jqs3emZTuNnKxsah+uabKbMk7CbTgJx/zIgQYErIeTKRQ9yD9wxVof5YolPHqaWo7TD6tJlh7jQnK5z2n3+fGdggIOx2kaa2YI9QWarc5Ce1ipNWMKeSG4DysFF52KBmTNMmn5HqCFkwy34rDg05gDwgH3bBi+sgFhN/e8QvRn8kbamCOhgrZ9GJhFDgfcMHzFb6BAtjKpFhzTjwv1KCVuxHvCbsSiEz4CANnj84cwHdFXAbAOJ4LTSAawGWFn5tDhLMYz6nWeU2wJfIhmIJBefcd/A5FWQWGgrWzyORZ3Q6HuV+Jf0Bj+BTX69fm1zWgK7By1YTXchFDORywnfQ7GpzOo6S+qECrsx2ifVQAAAABJRU5ErkJggg==');
+  }
+
+  div.callout-tip.callout-style-default .callout-title {
+    background-color: #ccf1e3
+  }
+
+  div.callout-caution {
+    border-left-color: #fd7e14 !important;
+  }
+
+  div.callout-caution .callout-icon::before {
+    background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAIKADAAQAAAABAAAAIAAAAACshmLzAAACV0lEQVRYCdVWzWoUQRCuqp2ICBLJXgITZL1EfQDBW/bkzUMUD7klD+ATSHBEfAIfQO+iXsWDxJsHL96EHAwhgzlkg8nBg25XWb0zIb0zs9muYYWkoKeru+vn664fBqElyZNuyh167NXJ8Ut8McjbmEraKHkd7uAnAFku+VWdb3reSmRV8PKSLfZ0Gjn3a6Xlcq9YGb6tADjn+lUfTXtVmaZ1KwBIvFI11rRXlWlatwIAAv2asaa9mlB9wwygiDX26qaw1yYPzFXg2N1GgG0FMF8Oj+VIx7E/03lHx8UhvYyNZLN7BwSPgekXXLribw7w5/c8EF+DBK5idvDVYtEEwMeYefjjLAdEyQ3M9nfOkgnPTEkYU+sxMq0BxNR6jExrAI31H1rzvLEfRIdgcv1XEdj6QTQAS2wtstEALLG1yEZ3QhH6oDX7ExBSFEkFINXH98NTrme5IOaaA7kIfiu2L8A3qhH9zRbukdCqdsA98TdElyeMe5BI8Rs2xHRIsoTSSVFfCFCWGPn9XHb4cdobRIWABNf0add9jakDjQJpJ1bTXOJXnnRXHRf+dNL1ZV1MBRCXhMbaHqGI1JkKIL7+i8uffuP6wVQAzO7+qVEbF6NbS0LJureYcWXUUhH66nLR5rYmva+2tjRFtojkM2aD76HEGAD3tPtKM309FJg5j/K682ywcWJ3PASCcycH/22u+Bh7Aa0ehM2Fu4z0SAE81HF9RkB21c5bEn4Dzw+/qNOyXr3DCTQDMBOdhi4nAgiFDGCinIa2owCEChUwD8qzd03PG+qdW/4fDzjUMcE1ZpIAAAAASUVORK5CYII=');
+  }
+
+  div.callout-caution.callout-style-default .callout-title {
+    background-color: #ffe5d0
+  }
+
+  </style>
+  <style type="text/css">
+    .reveal div.sourceCode {
+      margin: 0;
+      overflow: auto;
+    }
+    .reveal div.hanging-indent {
+      margin-left: 1em;
+      text-indent: -1em;
+    }
+    .reveal .slide:not(.center) {
+      height: 100%;
+    }
+    .reveal .slide.scrollable {
+      overflow-y: auto;
+    }
+    .reveal .footnotes {
+      height: 100%;
+      overflow-y: auto;
+    }
+    .reveal .slide .absolute {
+      position: absolute;
+      display: block;
+    }
+    .reveal .footnotes ol {
+      counter-reset: ol;
+      list-style-type: none; 
+      margin-left: 0;
+    }
+    .reveal .footnotes ol li:before {
+      counter-increment: ol;
+      content: counter(ol) ". "; 
+    }
+    .reveal .footnotes ol li > p:first-child {
+      display: inline-block;
+    }
+    .reveal .slide ul,
+    .reveal .slide ol {
+      margin-bottom: 0.5em;
+    }
+    .reveal .slide ul li,
+    .reveal .slide ol li {
+      margin-top: 0.4em;
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide ul[role="tablist"] li {
+      margin-bottom: 0;
+    }
+    .reveal .slide ul li > *:first-child,
+    .reveal .slide ol li > *:first-child {
+      margin-block-start: 0;
+    }
+    .reveal .slide ul li > *:last-child,
+    .reveal .slide ol li > *:last-child {
+      margin-block-end: 0;
+    }
+    .reveal .slide .columns:nth-child(3) {
+      margin-block-start: 0.8em;
+    }
+    .reveal blockquote {
+      box-shadow: none;
+    }
+    .reveal .tippy-content>* {
+      margin-top: 0.2em;
+      margin-bottom: 0.7em;
+    }
+    .reveal .tippy-content>*:last-child {
+      margin-bottom: 0.2em;
+    }
+    .reveal .slide > img.stretch.quarto-figure-center,
+    .reveal .slide > img.r-stretch.quarto-figure-center {
+      display: block;
+      margin-left: auto;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-left,
+    .reveal .slide > img.r-stretch.quarto-figure-left  {
+      display: block;
+      margin-left: 0;
+      margin-right: auto; 
+    }
+    .reveal .slide > img.stretch.quarto-figure-right,
+    .reveal .slide > img.r-stretch.quarto-figure-right  {
+      display: block;
+      margin-left: auto;
+      margin-right: 0; 
+    }
+  </style>
+</head>
+<body class="quarto-light">
+  <div class="reveal">
+    <div class="slides">
+
+<section id="title-slide" class="quarto-title-block center">
+  <h1 class="title">How to update ermeeth</h1>
+
+<div class="quarto-title-authors">
+<div class="quarto-title-author">
+<div class="quarto-title-author-name">
+Anissa Saumtally 
+</div>
+</div>
+</div>
+
+</section>
+<section>
+<section id="introduction" class="title-slide slide level1 center" data-number="1">
+<h1><span class="header-section-number">1</span> Introduction</h1>
+
+</section>
+<section id="the-ermeeth-package" class="slide level2" data-number="1.1">
+<h2><span class="header-section-number">1.1</span> The <code>ermeeth</code> package</h2>
+<ul>
+<li><p><code>ermeeth</code> is an R package created by the ThreeME team for the ThreeME team</p></li>
+<li><p>It is meant to contain all side functions and tools used to run and analyze ThreeME.</p></li>
+<li><p>It is not meant to be published freely on the CRAN (it would not really work anyways).</p></li>
+<li><p>Anyone in the team can modify it, provided they know what they are doing (i.e.&nbsp;don’t break anything please)</p></li>
+<li><p>Luckily this little guide will give you the asics to modify and add functions</p></li>
+</ul>
+</section>
+<section id="a-few-steps" class="slide level2" data-number="1.2">
+<h2><span class="header-section-number">1.2</span> A few steps</h2>
+<ol type="1">
+<li><p>Get <code>ermeeth</code> from GitHub (<a href="#/sec-setup">Section&nbsp;2.1</a>)</p></li>
+<li><p>Modify (<a href="#/sec-mod">Section&nbsp;3.1</a>) or add your function (<a href="#/sec-add">Section&nbsp;3.2</a>)</p></li>
+<li><p>Document your function (<a href="#/sec-fundoc">Section&nbsp;3.3</a>)</p></li>
+<li><p>Check that all is clean (checklist at <a href="#/sec-checklist">Section&nbsp;3.4</a> )</p></li>
+<li><p>Package building preparation (<a href="#/sec-build">Section&nbsp;4</a>)</p></li>
+<li><p>Commit to git and deploy (<a href="#/sec-deployment">Section&nbsp;5</a>)</p></li>
+</ol>
+</section></section>
+<section>
+<section id="the-basics" class="title-slide slide level1 center" data-number="2">
+<h1><span class="header-section-number">2</span> The Basics</h1>
+
+</section>
+<section id="sec-setup" class="slide level2" data-number="2.1">
+<h2><span class="header-section-number">2.1</span> Getting things ready</h2>
+<p>You will need to have the following:</p>
+<ul>
+<li><p>Get the Repository from GitHub at this address: <a href="https://github.com/ThreeME-org/ermeeth" class="uri">https://github.com/ThreeME-org/ermeeth</a></p></li>
+<li><p>While you may do tests in a different branch, any updates you want to bring for the team must be done in the master branch.</p></li>
+<li><p>The latest R version: <a href="https://cran.r-project.org" class="uri">https://cran.r-project.org</a></p>
+<ul>
+<li>This is quite important as we want to avoind compatibility issues as R advances in versions</li>
+</ul></li>
+<li><p>The corresponding Rtools installation if you are on Windows: <a href="https://cran.r-project.org/bin/windows/Rtools/" class="uri">https://cran.r-project.org/bin/windows/Rtools/</a></p>
+<ul>
+<li>This means if the latest version of R is 4.2.3, you must have Rtools 4.2.x</li>
+</ul></li>
+<li><p>The following R packages installed: <code>devtools</code>, <code>roxygen2</code></p></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"devtools"</span>,<span class="st">"roxygen2"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="understanding-the-ermeeth-folderreporproject-p.1" class="slide level2" data-number="2.2">
+<h2><span class="header-section-number">2.2</span> Understanding the <code>ermeeth</code> folder/repo/Rproject p.1</h2>
+<p><code>ermeeth</code> is not a simple Rproject, it is a package Rproject. This means that some folders have specific usages, and its general architecture should not really be modified unless truly necessary.</p>
+<div class="columns">
+<div class="column" style="width:62%;">
+<ul>
+<li><p><code>NAMESPACE</code>: contains some package info, is modified automatically by the use of a command. <strong>Do not touch this</strong></p></li>
+<li><p><code>DESCRIPTION</code>: the only field to manually change for now is <code>Version:</code> as the package is modified</p></li>
+<li><p><code>dev_history.R</code>: Contains useful commands for package building, good to keep track of programming steps regarding the package. <em>It is not a script used for testing stuff</em></p></li>
+<li><p><code>.Rbuildignore</code>: files and folders to be ignored when building the package, not really to be modified unless you brought consequential changes to the file system. (but why would you?)</p></li>
+<li><p><code>todolist</code>: a text file to keep track of things to do.</p></li>
+<li><p><code>LICENSE.md</code>: the user license markdown, generated automatically but modifiable if needed</p></li>
+</ul>
+</div><div class="column" style="width:3%;">
+<!-- empty column to create gap -->
+</div><div class="column" style="width:35%;">
+<p><img data-src="pictures/filestructure.png" class="quarto-discovered-preview-image"></p>
+</div>
+</div>
+</section>
+<section id="understanding-the-ermeeth-folderreporproject-p.2" class="slide level2" data-number="2.3">
+<h2><span class="header-section-number">2.3</span> Understanding the <code>ermeeth</code> folder/repo/Rproject p.2</h2>
+<div class="columns">
+<div class="column" style="width:62%;">
+<ul>
+<li><code>data-raw</code>: folder to keep scripts where datasets attached to the package are created <strong>Advanced users only</strong></li>
+<li><code>inst</code>: folder that contains all files you want to attach to the package (csv, rds, xlsx, zip). <em>Parsimony is key though</em></li>
+<li><code>man</code>: where the function documentation is compiled. It is generated automatically in markdown format, <strong>no need to modify here</strong>.</li>
+<li><code>tests</code>: where you can do anything you want to test functions before bringing them to the package. <em>What happens in tests stays in tests</em>. Feel free to add folders and such.</li>
+<li><code>R</code>: <strong>Where the magic happens</strong> .the packaged functions are stored there. The rule is <code>one function, one script.</code> (some exceptions apply). Those R scripts are written with some rules that we will see later.</li>
+<li><code>vignettes</code>: someday the vignette will return and will be stored there. For now the vignette is in <code>tests</code> and should still be updated.</li>
+</ul>
+</div><div class="column" style="width:3%;">
+<!-- empty column to create gap -->
+</div><div class="column" style="width:35%;">
+<p><img data-src="pictures/filestructure.png"></p>
+</div>
+</div>
+</section></section>
+<section>
+<section id="updating-ermeeth-functions" class="title-slide slide level1 center" data-number="3">
+<h1><span class="header-section-number">3</span> Updating <code>ermeeth</code> functions</h1>
+
+</section>
+<section id="sec-mod" class="slide level2" data-number="3.1">
+<h2><span class="header-section-number">3.1</span> Modifying an existing function</h2>
+<ul>
+<li><p>Once you did the necessary tests in the <code>tests</code> folder, open the R script of the function you want to modify in the <code>R</code> folder.</p></li>
+<li><p>Modify the body of the function, and if needed functions arguments definitions.</p>
+<ul>
+<li>As you write the function, if you call on functions from external packages, write them with the <code>package::function</code> syntax. ie :</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1"></a>what_time_is_it <span class="ot">&lt;-</span> <span class="cf">function</span>(){</span>
+<span id="cb2-2"><a href="#cb2-2"></a>  <span class="fu">cat</span>(stringr<span class="sc">::</span><span class="fu">str_c</span>(<span class="st">"Today is "</span>, <span class="fu">Sys.Date</span>() ) )</span>
+<span id="cb2-3"><a href="#cb2-3"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<ul>
+<li><p>Do not leave active script lines except that of the function</p>
+<ul>
+<li>here we commented the usual <code>library</code> call as well as a test example we might have written while building the function.</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1"></a><span class="co"># library(stringr) </span></span>
+<span id="cb3-2"><a href="#cb3-2"></a></span>
+<span id="cb3-3"><a href="#cb3-3"></a>what_time_is_it <span class="ot">&lt;-</span> <span class="cf">function</span>(name){</span>
+<span id="cb3-4"><a href="#cb3-4"></a>  <span class="fu">cat</span>(stringr<span class="sc">::</span><span class="fu">str_c</span>(<span class="st">"Today is "</span>, <span class="fu">Sys.Date</span>(), <span class="st">", "</span>,name ) )</span>
+<span id="cb3-5"><a href="#cb3-5"></a>}</span>
+<span id="cb3-6"><a href="#cb3-6"></a></span>
+<span id="cb3-7"><a href="#cb3-7"></a><span class="co"># testing the function:</span></span>
+<span id="cb3-8"><a href="#cb3-8"></a><span class="co"># name &lt;- "Meriem"</span></span>
+<span id="cb3-9"><a href="#cb3-9"></a><span class="co"># what_time_is_it()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Then you are ready to proceed to the function documentation <a href="#/sec-fundoc">Section&nbsp;3.3</a></strong></p>
+</section>
+<section id="sec-add" class="slide level2" data-number="3.2">
+<h2><span class="header-section-number">3.2</span> Adding a function</h2>
+<p>If you are creating a new function, first build it in the <code>tests</code> folder, test it, and once it works :</p>
+<ul>
+<li><p>create a new R script in the <code>R</code> folder with the name of the function in the file name to find it easily later on.</p></li>
+<li><p>make sure your function is built cleanly, with best practices in mind (ie no call to external objects and other rules we may have mentioned at some point)</p></li>
+<li><p>As you write the function, if you call on functions from external packages, write them with the <code>package::function</code> syntax.</p></li>
+<li><p>copy only the function lines in that script and save.</p>
+<ul>
+<li><p>If you want to keep testing lines, comment them.</p></li>
+<li><p>i.e.&nbsp;your script should have only those lines active</p></li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1"></a><span class="co"># library(stringr) </span></span>
+<span id="cb4-2"><a href="#cb4-2"></a></span>
+<span id="cb4-3"><a href="#cb4-3"></a>what_time_is_it <span class="ot">&lt;-</span> <span class="cf">function</span>(name){</span>
+<span id="cb4-4"><a href="#cb4-4"></a>  <span class="fu">cat</span>(stringr<span class="sc">::</span><span class="fu">str_c</span>(<span class="st">"Today is "</span>, <span class="fu">Sys.Date</span>(), <span class="st">", "</span>,name ) )</span>
+<span id="cb4-5"><a href="#cb4-5"></a>}</span>
+<span id="cb4-6"><a href="#cb4-6"></a></span>
+<span id="cb4-7"><a href="#cb4-7"></a><span class="co"># testing the function:</span></span>
+<span id="cb4-8"><a href="#cb4-8"></a><span class="co"># name &lt;- "Meriem"</span></span>
+<span id="cb4-9"><a href="#cb4-9"></a><span class="co"># what_time_is_it()</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p><strong>Then you are ready to proceed to the function documentation <a href="#/sec-fundoc">Section&nbsp;3.3</a></strong></p>
+</section>
+<section id="sec-fundoc" class="slide level2" data-number="3.3">
+<h2><span class="header-section-number">3.3</span> Function documentation</h2>
+<p><strong>Do not skip this step</strong> : Once the function is written and stored in the <code>R</code> folder, it must be properly documented.</p>
+<div class="columns">
+<div class="column" style="width:65%;">
+<p>What does <code>documented</code> mean?</p>
+<ul>
+<li><p>The documentation precedes the function in the form of <code>roxygen</code> comments. The lines start with <code>#'</code> (as opposed to normal comments that only start <code>#</code>), then different fields start with <code>@</code>.</p></li>
+<li><p>Fortunately, this is semi-automatically generated</p>
+<ul>
+<li>start by placing the text cursor anywhere in the function lines (has to be between the function’s curly brackets)</li>
+<li>use the shortcut : <code>ctrl</code> + <code>alt</code> + <code>shift</code> + <code>R</code> (or click in the bar menu <code>code/insert Roxygen Skeleton</code>)</li>
+<li>Part of the documentation should be generated on top of the function</li>
+<li>If the documentation existed already, this procedure will updates <code>@param</code> fields if the function arguments were changed</li>
+</ul></li>
+</ul>
+</div><div class="column" style="width:3%;">
+
+</div><div class="column" style="width:32%;">
+<p><img data-src="pictures/roxygen%20comments.png"> <em>once generated, fields must be completed manually, and some must be added manually</em></p>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 data-number="3.3.1" id="filling-in-the-documentation"><span class="header-section-number">3.3.1</span> Filling in the documentation</h3>
+<p>While some documentation parameters can be generated automatically, they must be explicited by the function writer. Some fields must be added manually.</p>
+<div class="columns">
+<div class="column" style="width:78%;">
+<p><strong>Existing fields</strong></p>
+<ul>
+<li><p>Replace <code>Title</code> with a title for the function</p></li>
+<li><p>in the empty line, a longer function description, you can add <code>@description</code>, at the beginning (optional but appreciated)</p></li>
+<li><p><code>@params {argument}</code> : function arguments. The good practice is to state the class of the argument (ie data.frame, boolean, vector etc), the what it does, and finally what is the default option as written in the function</p></li>
+<li><p><code>@return</code> Write what the function returns upon execution (class, content)</p></li>
+<li><p><code>@export</code> leave empty</p></li>
+<li><p><code>@example</code> Write a quick example that can be copied, pasted and executed on a empty environment. Wrap your example with <code>\dontrun{}</code> if the function does complicated things that take time and cannot be visualised in the console. See picture on the right for examples.</p></li>
+</ul>
+</div><div class="column" style="width:2%;">
+
+</div><div class="column" style="width:20%;">
+<p><img data-src="pictures/Emptyfields.png"></p>
+<p><img data-src="pictures/examples.png"></p>
+</div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 data-number="3.3.2" id="fields-to-add-import-and-importfrom"><span class="header-section-number">3.3.2</span> Fields to add : <code>@import</code> and <code>@importFrom</code></h3>
+<p>Many fields can be added to the roxygen documentation. They are not described here. However two important ones must be added if used in the function.</p>
+<p>If your function calls for function from non-base packages (packages not loaded automatically in R), you must use the syntax <code>package::function</code> in your code, and declare them in the skeleton via <code>@import</code> or <code>@importFrom</code></p>
+<ul>
+<li><code>@import</code> : used to declare an entire package
+<ul>
+<li>Used if many functionalities of the package are used, but in practice, unless maybe for <code>dplyr</code> or <code>ggplot2</code>, it is not worth using because importing an entire packages loads all the functions, which can create conflicts</li>
+</ul></li>
+</ul>
+<p>-<code>@importFrom</code> : used to declare select functions from a package. See usage below :</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1"></a><span class="co">#' @import dplyr</span></span>
+<span id="cb5-2"><a href="#cb5-2"></a><span class="co">#' @import ggplot2</span></span>
+<span id="cb5-3"><a href="#cb5-3"></a><span class="co">#' @importFrom purrr imap set_names map_dbl</span></span>
+<span id="cb5-4"><a href="#cb5-4"></a></span>
+<span id="cb5-5"><a href="#cb5-5"></a><span class="do">## in this case dplyr and ggplot2 are loaded entirely, no need to declare selected functions. </span></span>
+<span id="cb5-6"><a href="#cb5-6"></a><span class="co"># For the purrr package only the three stated functions will be loaded</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section class="slide level2">
+
+<h3 data-number="3.3.3" id="a-well-documented-function-example"><span class="header-section-number">3.3.3</span> A well documented function example</h3>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1"></a><span class="co">#' Quadratic splines for interpolation</span></span>
+<span id="cb6-2"><a href="#cb6-2"></a><span class="co">#'</span></span>
+<span id="cb6-3"><a href="#cb6-3"></a><span class="co">#' @description Given 3 points A, B and C computes the interpolated values for A-B or B-C using quadratic splines</span></span>
+<span id="cb6-4"><a href="#cb6-4"></a><span class="co">#' @param x_vector Numerical vector of length 3 of the x-axis values (ie dates) to interpolate</span></span>
+<span id="cb6-5"><a href="#cb6-5"></a><span class="co">#' @param y_vector Numerical vector of length 3 of the y-axis values to interpolate</span></span>
+<span id="cb6-6"><a href="#cb6-6"></a><span class="co">#' @param side Either "left" to compute A-B interpolation or "right" to compute B-C interpolation. Default: "left"</span></span>
+<span id="cb6-7"><a href="#cb6-7"></a><span class="co">#' @param steps numeric (1). Interval between each x values for which to compute the interpolated values. Default: 1.</span></span>
+<span id="cb6-8"><a href="#cb6-8"></a><span class="co">#'</span></span>
+<span id="cb6-9"><a href="#cb6-9"></a><span class="co">#' @return named vector of values going from B to C with increments steps. x values are the names of y values of the vector.</span></span>
+<span id="cb6-10"><a href="#cb6-10"></a><span class="co">#' @export</span></span>
+<span id="cb6-11"><a href="#cb6-11"></a><span class="co">#'</span></span>
+<span id="cb6-12"><a href="#cb6-12"></a><span class="co">#' @import dplyr</span></span>
+<span id="cb6-13"><a href="#cb6-13"></a><span class="co">#' @importFrom purrr imap set_names map_dbl</span></span>
+<span id="cb6-14"><a href="#cb6-14"></a><span class="co">#' @importFrom stringr  str_c</span></span>
+<span id="cb6-15"><a href="#cb6-15"></a><span class="co">#' @import ggplot2</span></span>
+<span id="cb6-16"><a href="#cb6-16"></a><span class="co">#'</span></span>
+<span id="cb6-17"><a href="#cb6-17"></a><span class="co">#' @examples</span></span>
+<span id="cb6-18"><a href="#cb6-18"></a><span class="co">#' quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.5, side= "left")</span></span>
+<span id="cb6-19"><a href="#cb6-19"></a><span class="co">#' quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.5, side= "right")</span></span>
+<span id="cb6-20"><a href="#cb6-20"></a><span class="co">#' \dontrun{</span></span>
+<span id="cb6-21"><a href="#cb6-21"></a><span class="co">#' ggplot(mapping = aes(x= c(9,10,14), y= c(91,19,70))) +</span></span>
+<span id="cb6-22"><a href="#cb6-22"></a><span class="co">#' geom_point(color = "red", size = 3)+</span></span>
+<span id="cb6-23"><a href="#cb6-23"></a><span class="co">#' geom_point(aes(x = quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.1, side= "left")$x,</span></span>
+<span id="cb6-24"><a href="#cb6-24"></a><span class="co">#'                 y = quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.1, side= "left")$y),</span></span>
+<span id="cb6-25"><a href="#cb6-25"></a><span class="co">#'                  color = "blue" , size= 1  )+</span></span>
+<span id="cb6-26"><a href="#cb6-26"></a><span class="co">#'</span></span>
+<span id="cb6-27"><a href="#cb6-27"></a><span class="co">#'  geom_point(aes(x = quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.1, side= "right")$x,</span></span>
+<span id="cb6-28"><a href="#cb6-28"></a><span class="co">#'                 y = quadratric_splines(c(9,10,14),c(91,19,70),steps = 0.1, side= "right")$y),</span></span>
+<span id="cb6-29"><a href="#cb6-29"></a><span class="co">#'                 color = "purple" , size= 1  ) +</span></span>
+<span id="cb6-30"><a href="#cb6-30"></a><span class="co">#'  xlab("X")+</span></span>
+<span id="cb6-31"><a href="#cb6-31"></a><span class="co">#'  ylab("Y")</span></span>
+<span id="cb6-32"><a href="#cb6-32"></a><span class="co">#'  }</span></span>
+<span id="cb6-33"><a href="#cb6-33"></a>quadratric_splines <span class="ot">&lt;-</span> <span class="cf">function</span>(x_vector, y_vector,</span>
+<span id="cb6-34"><a href="#cb6-34"></a>                               <span class="at">side =</span> <span class="st">"left"</span>,</span>
+<span id="cb6-35"><a href="#cb6-35"></a>                               <span class="at">steps =</span> <span class="dv">1</span>){</span>
+<span id="cb6-36"><a href="#cb6-36"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="sec-checklist" class="slide level2" data-number="3.4">
+<h2><span class="header-section-number">3.4</span> Checklist</h2>
+<p>While modifying or adding a function, did you do the following:</p>
+<ul>
+<li>Made sure the roxygen documentation is up-to-date with any new function arguments you may have added or removed</li>
+<li>Declared the packages for every non-basic function used ? ie used the <code>package::function</code> syntax.</li>
+<li>Declared the imports in the roxygen documentation</li>
+<li>Created a reproducible example in the roxygen field (and used <code>\dontrun{}</code> where appropriate.)</li>
+<li>Did not leave any active line of code in the function script file besides the function and its documentation.</li>
+<li>Your function is clean and devoid of any calls to external objects.</li>
+</ul>
+</section>
+<section id="optional-but-greatly-appreciated-the-vignette" class="slide level2" data-number="3.5">
+<h2><span class="header-section-number">3.5</span> Optional (but greatly appreciated): The vignette</h2>
+<p>While examples in the functions documentation should be succinct, it is nice to have a more complete documentation in the vignette. The goal is to demonstrate more elaborate usages of your function, with more significant examples.</p>
+<ul>
+<li><p>To do this, open the <code>Functions_presentation.Rmd</code> file in the <code>tests</code> folder (temporary, this will change later)</p></li>
+<li><p>Add a section with your function. Include text explanation as well as sample code.</p></li>
+<li><p>Don’t use external data, use either sample databases like <code>iris</code> or an <code>ermeeth</code> database like <code>oilprice_fra_c28_s32.rds</code>.</p>
+<ul>
+<li>the latter is already loaded in the .Rmd with the name <code>data</code></li>
+</ul></li>
+<li><p>Make sure the markdown compiles after adding your section via a knit : <code>ctrl</code> + <code>shift</code> + <code>k</code></p></li>
+</ul>
+</section></section>
+<section>
+<section id="sec-build" class="title-slide slide level1 center" data-number="4">
+<h1><span class="header-section-number">4</span> Package buidling steps</h1>
+
+</section>
+<section id="prepare-to-compile" class="slide level2" data-number="4.1">
+<h2><span class="header-section-number">4.1</span> Prepare to compile</h2>
+<ul>
+<li>Open the <code>DESCRIPTION</code> file and change the version : x.y.zz.a
+<ul>
+<li>if you’re adding a function increment the <code>zz</code> number and set z to 0</li>
+<li>if you’re modifying a function increment the <code>a</code>. If <code>a &gt;= 9</code>, then increment <code>zz</code> and set <code>a</code> to 0.</li>
+<li>The idea is that when sorted alphabetically, the new version is seen as superior alphabetically speaking.</li>
+</ul></li>
+<li>If you added calls in the <code>@import</code> or <code>@importfrom</code> fields to packages that were previously not called upon, you have to declare them:
+<ul>
+<li>open the <code>dev_history.R</code> script</li>
+<li>add a line below similar lines with the following command and <strong>execute it</strong> (<code>ctrl</code> + <code>enter</code>, save the modified file)</li>
+</ul></li>
+</ul>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1"></a>usethis<span class="sc">::</span><span class="fu">use_package</span>(<span class="st">"Name of package used"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="generate-automated-files" class="slide level2" data-number="4.2">
+<h2><span class="header-section-number">4.2</span> Generate automated files</h2>
+<ul>
+<li>Clear your environment</li>
+<li>Generate function documentation via <code>roxygen2::roxygenise()</code> and <code>devtools::document()</code> (I don’t know if the latter is necessary, as it is a wrapper for `roxygenise``).</li>
+</ul>
+<p>or for the lazy, copy and execute this piece :</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode numberSource r number-lines code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1"></a><span class="fu">rm</span>(<span class="at">list=</span> <span class="fu">ls</span>())</span>
+<span id="cb8-2"><a href="#cb8-2"></a>roxygen2<span class="sc">::</span><span class="fu">roxygenise</span>()</span>
+<span id="cb8-3"><a href="#cb8-3"></a>devtools<span class="sc">::</span><span class="fu">document</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</section>
+<section id="final-and-crucial-step-the-check-button" class="slide level2" data-number="4.3">
+<h2><span class="header-section-number">4.3</span> Final and crucial step: The check button</h2>
+<p>Your ultimate test: Did you break everything? Let’s see:</p>
+<ul>
+<li>Find the <code>Build</code> tab :</li>
+</ul>
+<p><img data-src="pictures/build.png"></p>
+<ul>
+<li><p>Click the Check button <img data-src="pictures/check.png"></p></li>
+<li><p>Wait a bit… have a sip of coffee or water</p></li>
+</ul>
+</section>
+<section id="check-success-or-failure" class="slide level2" data-number="4.4">
+<h2><span class="header-section-number">4.4</span> Check Success or Failure?</h2>
+<p>Look at the check summary. Warnings, or worse, errors, are not good for packages. You want to have <strong>0 errors and 0 warnings</strong>. Unfortunately 0 notes will be difficult to reach for <code>ermeeth</code> but that is ok, we can live with it.</p>
+<div class="columns">
+<div class="column" style="width:49%;">
+<p>Success means: <img data-src="pictures/success.png" style="width:40.0%" alt="Success"></p>
+<p><strong>Congratulations! You didn’t break anything</strong> - Commit your changes</p>
+<ul>
+<li>You may proceed to the deployment step (<a href="#/sec-deployment">Section&nbsp;5</a>).</li>
+</ul>
+</div><div class="column" style="width:2%;">
+
+</div><div class="column" style="width:49%;">
+<p>The face of failure: <img data-src="pictures/failure.png" style="width:40.0%" alt="Failure"></p>
+<ul>
+<li><p>Investigate the source of warning/errors and fix it, then re-run the check. Do so until you fix them.</p></li>
+<li><p>Fortunately, R tells you where it detected an issue.</p>
+<ul>
+<li>Scroll up on the check tab: find some colored line that ends with <code>WARNING</code> or <code>ERROR</code> <img data-src="pictures/warning.png" style="width:60.0%"></li>
+</ul></li>
+<li><p>read through it and solve it.</p></li>
+</ul>
+</div>
+</div>
+</section></section>
+<section>
+<section id="sec-deployment" class="title-slide slide level1 center" data-number="5">
+<h1><span class="header-section-number">5</span> Deploying the new version</h1>
+
+</section>
+<section id="install-the-package" class="slide level2" data-number="5.1">
+<h2><span class="header-section-number">5.1</span> Install the package</h2>
+<ul>
+<li><p>You should have now a sound package.</p></li>
+<li><p><strong>First step</strong>: install the package</p>
+<ul>
+<li>In the <code>Build</code> tab, click on the <code>install</code> button and choose <code>Clean and Install</code>.</li>
+<li>This will install on your computer the new version of <code>ermeeth</code> that you’ve just created.</li>
+<li>For it to be effective on your other RStudio opened instances, restart them (<code>Session/Restart R</code>). <img data-src="pictures/cleaninstall.png"></li>
+</ul></li>
+</ul>
+</section>
+<section id="build-the-package" class="slide level2" data-number="5.2">
+<h2><span class="header-section-number">5.2</span> Build the package</h2>
+<ul>
+<li><strong>Second step</strong>: Build the source package (tar.gz file)
+<ul>
+<li>In the <code>Build</code> tab, click on the <code>More</code> button and choose <code>Build source package</code>.</li>
+<li>This will create an ermeeth_x.y.zz.a.tar.gz file in the <strong>parent folder of the ermeeth Rproject</strong></li>
+<li><em>This part of the deployment step as well as the next one will be changed soon for something more practical</em></li>
+</ul></li>
+</ul>
+
+<img data-src="pictures/buildsource.png" class="r-stretch"></section>
+<section id="deploy-via-github" class="slide level2" data-number="5.3">
+<h2><span class="header-section-number">5.3</span> Deploy via GitHub</h2>
+<p>Technically, we should be able to install via github, but due to some limitations at the OFCE (and maybe at other institutions too), we use a less practical way.</p>
+<ul>
+<li><p>Copy and paste the newly created tar.gz file in the <code>src</code> folder in any ThreeME branch of the ThreeME V3 repository.</p></li>
+<li><p>Commit and push this change. Make sure the only change in this commit is the addition of the new ermeeth version.</p></li>
+<li><p>Cherry-pick the commit in the active ThreeME branches, so that people currently working on other branches can access your changes.</p></li>
+</ul>
+<div class="footer footer-default">
+
+</div>
+</section></section>
+    </div>
+  </div>
+
+  <script>window.backupDefine = window.define; window.define = undefined;</script>
+  <script src="ermeeth_how_to_files/libs/revealjs/dist/reveal.js"></script>
+  <!-- reveal.js plugins -->
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/pdf-export/pdfexport.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/reveal-menu/menu.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/quarto-support/support.js"></script>
+  
+
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/notes/notes.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/search/search.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/zoom/zoom.js"></script>
+  <script src="ermeeth_how_to_files/libs/revealjs/plugin/math/math.js"></script>
+  <script>window.define = window.backupDefine; window.backupDefine = undefined;</script>
+
+  <script>
+
+      // Full list of configuration options available at:
+      // https://revealjs.com/config/
+      Reveal.initialize({
+'controlsAuto': true,
+'previewLinksAuto': false,
+'smaller': false,
+'pdfSeparateFragments': false,
+'autoAnimateEasing': "ease",
+'autoAnimateDuration': 1,
+'autoAnimateUnmatched': true,
+'menu': {"side":"left","useTextContentForMissingTitles":true,"markers":false,"loadIcons":false,"custom":[{"title":"Tools","icon":"<i class=\"fas fa-gear\"></i>","content":"<ul class=\"slide-menu-items\">\n<li class=\"slide-tool-item active\" data-item=\"0\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.fullscreen(event)\"><kbd>f</kbd> Fullscreen</a></li>\n<li class=\"slide-tool-item\" data-item=\"1\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.speakerMode(event)\"><kbd>s</kbd> Speaker View</a></li>\n<li class=\"slide-tool-item\" data-item=\"2\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.overview(event)\"><kbd>o</kbd> Slide Overview</a></li>\n<li class=\"slide-tool-item\" data-item=\"3\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.togglePdfExport(event)\"><kbd>e</kbd> PDF Export Mode</a></li>\n<li class=\"slide-tool-item\" data-item=\"4\"><a href=\"#\" onclick=\"RevealMenuToolHandlers.keyboardHelp(event)\"><kbd>?</kbd> Keyboard Help</a></li>\n</ul>"}],"openButton":true},
+'smaller': false,
+ 
+        // Display controls in the bottom right corner
+        controls: false,
+
+        // Help the user learn the controls by providing hints, for example by
+        // bouncing the down arrow when they first encounter a vertical slide
+        controlsTutorial: false,
+
+        // Determines where controls appear, "edges" or "bottom-right"
+        controlsLayout: 'edges',
+
+        // Visibility rule for backwards navigation arrows; "faded", "hidden"
+        // or "visible"
+        controlsBackArrows: 'faded',
+
+        // Display a presentation progress bar
+        progress: true,
+
+        // Display the page number of the current slide
+        slideNumber: false,
+
+        // 'all', 'print', or 'speaker'
+        showSlideNumber: 'all',
+
+        // Add the current slide number to the URL hash so that reloading the
+        // page/copying the URL will return you to the same slide
+        hash: true,
+
+        // Start with 1 for the hash rather than 0
+        hashOneBasedIndex: false,
+
+        // Flags if we should monitor the hash and change slides accordingly
+        respondToHashChanges: true,
+
+        // Push each slide change to the browser history
+        history: true,
+
+        // Enable keyboard shortcuts for navigation
+        keyboard: true,
+
+        // Enable the slide overview mode
+        overview: true,
+
+        // Disables the default reveal.js slide layout (scaling and centering)
+        // so that you can use custom CSS layout
+        disableLayout: false,
+
+        // Vertical centering of slides
+        center: false,
+
+        // Enables touch navigation on devices with touch input
+        touch: true,
+
+        // Loop the presentation
+        loop: false,
+
+        // Change the presentation direction to be RTL
+        rtl: false,
+
+        // see https://revealjs.com/vertical-slides/#navigation-mode
+        navigationMode: 'linear',
+
+        // Randomizes the order of slides each time the presentation loads
+        shuffle: false,
+
+        // Turns fragments on and off globally
+        fragments: true,
+
+        // Flags whether to include the current fragment in the URL,
+        // so that reloading brings you to the same fragment position
+        fragmentInURL: false,
+
+        // Flags if the presentation is running in an embedded mode,
+        // i.e. contained within a limited portion of the screen
+        embedded: false,
+
+        // Flags if we should show a help overlay when the questionmark
+        // key is pressed
+        help: true,
+
+        // Flags if it should be possible to pause the presentation (blackout)
+        pause: true,
+
+        // Flags if speaker notes should be visible to all viewers
+        showNotes: false,
+
+        // Global override for autoplaying embedded media (null/true/false)
+        autoPlayMedia: null,
+
+        // Global override for preloading lazy-loaded iframes (null/true/false)
+        preloadIframes: null,
+
+        // Number of milliseconds between automatically proceeding to the
+        // next slide, disabled when set to 0, this value can be overwritten
+        // by using a data-autoslide attribute on your slides
+        autoSlide: 0,
+
+        // Stop auto-sliding after user input
+        autoSlideStoppable: true,
+
+        // Use this method for navigation when auto-sliding
+        autoSlideMethod: null,
+
+        // Specify the average time in seconds that you think you will spend
+        // presenting each slide. This is used to show a pacing timer in the
+        // speaker view
+        defaultTiming: null,
+
+        // Enable slide navigation via mouse wheel
+        mouseWheel: false,
+
+        // The display mode that will be used to show slides
+        display: 'block',
+
+        // Hide cursor if inactive
+        hideInactiveCursor: true,
+
+        // Time before the cursor is hidden (in ms)
+        hideCursorTime: 5000,
+
+        // Opens links in an iframe preview overlay
+        previewLinks: false,
+
+        // Transition style (none/fade/slide/convex/concave/zoom)
+        transition: 'none',
+
+        // Transition speed (default/fast/slow)
+        transitionSpeed: 'default',
+
+        // Transition style for full page slide backgrounds
+        // (none/fade/slide/convex/concave/zoom)
+        backgroundTransition: 'none',
+
+        // Number of slides away from the current that are visible
+        viewDistance: 3,
+
+        // Number of slides away from the current that are visible on mobile
+        // devices. It is advisable to set this to a lower number than
+        // viewDistance in order to save resources.
+        mobileViewDistance: 2,
+
+        // The "normal" size of the presentation, aspect ratio will be preserved
+        // when the presentation is scaled to fit different resolutions. Can be
+        // specified using percentage units.
+        width: 960,
+
+        height: 530,
+
+        // Factor of the display size that should remain empty around the content
+        margin: 0.1,
+
+        math: {
+          mathjax: 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js',
+          config: 'TeX-AMS_HTML-full',
+          tex2jax: {
+            inlineMath: [['\\(','\\)']],
+            displayMath: [['\\[','\\]']],
+            balanceBraces: true,
+            processEscapes: false,
+            processRefs: true,
+            processEnvironments: true,
+            preview: 'TeX',
+            skipTags: ['script','noscript','style','textarea','pre','code'],
+            ignoreClass: 'tex2jax_ignore',
+            processClass: 'tex2jax_process'
+          },
+        },
+
+        // reveal.js plugins
+        plugins: [QuartoLineHighlight, PdfExport, RevealMenu, QuartoSupport,
+
+          RevealMath,
+          RevealNotes,
+          RevealSearch,
+          RevealZoom
+        ]
+      });
+    </script>
+    
+    <script>
+      // htmlwidgets need to know to resize themselves when slides are shown/hidden.
+      // Fire the "slideenter" event (handled by htmlwidgets.js) when the current
+      // slide changes (different for each slide format).
+      (function () {
+        // dispatch for htmlwidgets
+        function fireSlideEnter() {
+          const event = window.document.createEvent("Event");
+          event.initEvent("slideenter", true, true);
+          window.document.dispatchEvent(event);
+        }
+
+        function fireSlideChanged(previousSlide, currentSlide) {
+          fireSlideEnter();
+
+          // dispatch for shiny
+          if (window.jQuery) {
+            if (previousSlide) {
+              window.jQuery(previousSlide).trigger("hidden");
+            }
+            if (currentSlide) {
+              window.jQuery(currentSlide).trigger("shown");
+            }
+          }
+        }
+
+        // hookup for slidy
+        if (window.w3c_slidy) {
+          window.w3c_slidy.add_observer(function (slide_num) {
+            // slide_num starts at position 1
+            fireSlideChanged(null, w3c_slidy.slides[slide_num - 1]);
+          });
+        }
+
+      })();
+    </script>
+
+    <script id="quarto-html-after-body" type="application/javascript">
+    window.document.addEventListener("DOMContentLoaded", function (event) {
+      const toggleBodyColorMode = (bsSheetEl) => {
+        const mode = bsSheetEl.getAttribute("data-mode");
+        const bodyEl = window.document.querySelector("body");
+        if (mode === "dark") {
+          bodyEl.classList.add("quarto-dark");
+          bodyEl.classList.remove("quarto-light");
+        } else {
+          bodyEl.classList.add("quarto-light");
+          bodyEl.classList.remove("quarto-dark");
+        }
+      }
+      const toggleBodyColorPrimary = () => {
+        const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+        if (bsSheetEl) {
+          toggleBodyColorMode(bsSheetEl);
+        }
+      }
+      toggleBodyColorPrimary();  
+      const tabsets =  window.document.querySelectorAll(".panel-tabset-tabby")
+      tabsets.forEach(function(tabset) {
+        const tabby = new Tabby('#' + tabset.id);
+      });
+      const isCodeAnnotation = (el) => {
+        for (const clz of el.classList) {
+          if (clz.startsWith('code-annotation-')) {                     
+            return true;
+          }
+        }
+        return false;
+      }
+      const clipboard = new window.ClipboardJS('.code-copy-button', {
+        text: function(trigger) {
+          const codeEl = trigger.previousElementSibling.cloneNode(true);
+          for (const childEl of codeEl.children) {
+            if (isCodeAnnotation(childEl)) {
+              childEl.remove();
+            }
+          }
+          return codeEl.innerText;
+        }
+      });
+      clipboard.on('success', function(e) {
+        // button target
+        const button = e.trigger;
+        // don't keep focus
+        button.blur();
+        // flash "checked"
+        button.classList.add('code-copy-button-checked');
+        var currentTitle = button.getAttribute("title");
+        button.setAttribute("title", "Copied!");
+        let tooltip;
+        if (window.bootstrap) {
+          button.setAttribute("data-bs-toggle", "tooltip");
+          button.setAttribute("data-bs-placement", "left");
+          button.setAttribute("data-bs-title", "Copied!");
+          tooltip = new bootstrap.Tooltip(button, 
+            { trigger: "manual", 
+              customClass: "code-copy-button-tooltip",
+              offset: [0, -8]});
+          tooltip.show();    
+        }
+        setTimeout(function() {
+          if (tooltip) {
+            tooltip.hide();
+            button.removeAttribute("data-bs-title");
+            button.removeAttribute("data-bs-toggle");
+            button.removeAttribute("data-bs-placement");
+          }
+          button.setAttribute("title", currentTitle);
+          button.classList.remove('code-copy-button-checked');
+        }, 1000);
+        // clear code selection
+        e.clearSelection();
+      });
+      function tippyHover(el, contentFn) {
+        const config = {
+          allowHTML: true,
+          content: contentFn,
+          maxWidth: 500,
+          delay: 100,
+          arrow: false,
+          appendTo: function(el) {
+              return el.closest('section.slide') || el.parentElement;
+          },
+          interactive: true,
+          interactiveBorder: 10,
+          theme: 'light-border',
+          placement: 'bottom-start'
+        };
+          config['offset'] = [0,0];
+          config['maxWidth'] = 700;
+        window.tippy(el, config); 
+      }
+      const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+      for (var i=0; i<noterefs.length; i++) {
+        const ref = noterefs[i];
+        tippyHover(ref, function() {
+          // use id or data attribute instead here
+          let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+          try { href = new URL(href).hash; } catch {}
+          const id = href.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          return note.innerHTML;
+        });
+      }
+      const findCites = (el) => {
+        const parentEl = el.parentElement;
+        if (parentEl) {
+          const cites = parentEl.dataset.cites;
+          if (cites) {
+            return {
+              el,
+              cites: cites.split(' ')
+            };
+          } else {
+            return findCites(el.parentElement)
+          }
+        } else {
+          return undefined;
+        }
+      };
+      var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+      for (var i=0; i<bibliorefs.length; i++) {
+        const ref = bibliorefs[i];
+        const citeInfo = findCites(ref);
+        if (citeInfo) {
+          tippyHover(citeInfo.el, function() {
+            var popup = window.document.createElement('div');
+            citeInfo.cites.forEach(function(cite) {
+              var citeDiv = window.document.createElement('div');
+              citeDiv.classList.add('hanging-indent');
+              citeDiv.classList.add('csl-entry');
+              var biblioDiv = window.document.getElementById('ref-' + cite);
+              if (biblioDiv) {
+                citeDiv.innerHTML = biblioDiv.innerHTML;
+              }
+              popup.appendChild(citeDiv);
+            });
+            return popup.innerHTML;
+          });
+        }
+      }
+    });
+    </script>
+    
+
+</body></html>

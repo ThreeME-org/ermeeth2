@@ -1,0 +1,52 @@
+---
+title: "Getting started with ermeeth2"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with ermeeth2}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ermeeth2)
+```
+
+`ermeeth2` gathers the functions used by the ThreeME team to run, post-process
+and document ThreeME v4 simulations. It is the successor to `ermeeth`.
+
+## The long-format data shape
+
+Most of the plotting and table functions work on a long-format dataframe with
+the columns:
+
+| column | content |
+|---|---|
+| `year` | simulation year |
+| `variable` | ThreeME variable code |
+| `scenario` | scenario name |
+| `values` | value of the variable in that scenario |
+| `values_ref` | value of the variable in the baseline |
+| `index_scen` | 1 for the baseline scenario, 0 otherwise |
+
+`sector` and `commodity` are added when the variable code carries a sector or
+commodity suffix.
+
+## Where to start
+
+- `long_data()` / `wide_data()` to reshape simulation output
+- `threeme_transform()` for the ways a variable can be looked at: level,
+  relative difference, absolute difference, percentage points, growth rate,
+  index
+- `simple_plot()` to draw a set of variables, over one or several scenarios
+- `table_3me()` to build a result table, optionally comparing two versions of
+  the model
+- `run_simulations()` to run a set of scenarios
+
+<!-- TODO: expand with a worked example on the sample data. -->

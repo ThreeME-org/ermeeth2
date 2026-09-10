@@ -1,0 +1,333 @@
+---
+title: "Functions presentation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Functions_presentation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(ermeeth)
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(ofce)
+library(purrr)
+library(stringr)
+library(flextable)
+library(officer)
+library(colorspace)
+```
+
+```{r dataload}
+data <- readRDS("../inst/oilprice_fra_c28_s32.rds")
+data_agg <- readRDS("../inst/oilprice_fra_c28_s32_commodities_sectors.rds")
+scenario_name <- "oilprice_fra"
+template_default <-  "ofce"
+start_year = 2020
+end_year = 2050
+source("../inst/bridge_c28_s32.R")
+source("../inst/codenames_c28_s32.R")
+```
+
+# Plot functions
+
+## Simple plots 
+```{r Simple Plot, fig.height = 4, fig.width=7}
+label_macro <- c("Gross domestic Production", "Households consumption", "Investment", "Public spendings")
+simpleplot(data,c("GDP", "CH", "I", "G"), label_macro, startyear =  start_year,endyear =  end_year, titleplot = "GDP and its components  (in difference from baseline)")
+
+simpleplot(data,c("RDEBT_G_VAL"),label_series = "Public Debt", startyear = start_year, endyear = 2030, "diff", titleplot = "Public Account (in GDP points, difference from baseline)" , percent_label  = FALSE)
+
+simpleplot(data,c("RDEBT_G_VAL"),label_series = "Public Debt", startyear = start_year, endyear = 2050, "diff", titleplot = "Public Account (in GDP points, difference from baseline)" , percent_label  = FALSE)
+simpleplot(data,c("RDEBT_G_VAL"),label_series = "Public Debt", startyear = start_year, endyear = 2050, "diff", titleplot = "Public Account (in GDP points, difference from baseline)" , percent_label  = FALSE,custom_x_breaks = 3)
+simpleplot(data,c("RDEBT_G_VAL"),label_series = "Public Debt", startyear = start_year, endyear = 2050, "diff", titleplot = "Public Account (in GDP points, difference from baseline)" , percent_label  = FALSE,custom_x_breaks = "R")
+```
+
+
+## Contrib plot
+
+### General contrib plot
+
+```{r contrib plot, fig.height = 4, fig.width=7}
+GDP_comp <- c( "CH","X","M", "I", "G")
+GDP_comp_label <- c( "Households consumption","Exports","Imports", "Investment", "Public spending")
+
+
+# Between two selected scenarios, contributions to yearly growth rate difference (in pp)
+data_plot <-  contrib(data,"GDP", GDP_comp, scenar = c("baseline",scenario_name))
+contrib.plot(data_plot, series = GDP_comp, 
+             label_series = GDP_comp_label,
+             startyear = 2020,
+             titleplot = "Contributions to GDP growth (in relative deviation from baseline)")
+
+# For a selected scenario, contributions to yearly growth rate (in pp)
+data_plot <-  contrib(data,"GDP", GDP_comp, scenar = c(scenario_name, "baseline"), indicator = "gr.diff")
+
+contrib.plot(data_plot, series = GDP_comp, 
+             label_series = GDP_comp_label,
+             line_tot = TRUE,
+             startyear = 2020,
+             titleplot = "Contributions to GDP growth deviation (in difference in pp from baseline)")
+
+# For a selected scenario, contributions to yearly growth rate (in pp)
+data_plot <-  contrib(data,"GDP", GDP_comp, scenar = c( "oilprice_fra"), indicator = "gr.diff")
+
+contrib.plot(data_plot, series = GDP_comp, 
+             label_series = GDP_comp_label,
+             line_tot = TRUE,
+             startyear = 2020,
+             titleplot = "Contributions to GDP growth rate (in pp)")
+
+```
+
+### Sector contrib plots
+```{r sector contrib, fig.height = 4, fig.width=7}
+data_plot <- contrib.sub(data_agg, var1 =  "Y",
+                         group_type = "sector", scenar = c("baseline", "oilprice_fra"))
+
+contrib.sub.plot(data_plot, template = "ofce", startyear = 2020, endyear = 2050, line_tot =  TRUE,
+                 titleplot = "Total production and sectorial decomposition (in difference from baseline)")
+```
+
+## Colour test
+```{r colour test, fig.height = 4, fig.width=7}
+
+all_subsectors <- bridge_sectors %>% unlist()
+all_sectors <- names(bridge_sectors)
+all_years <- c(min(data$year):max(data$year))
+
+data_test_subsectors <- all_subsectors %>%
+  purrr::map(~(data.frame(year = all_years, VAR_= 100 ) %>% rename(!!paste0("VAR_",toupper(.x)) := VAR_ ))) %>%
+  reduce(left_join,by="year") %>%
+  tidyr::pivot_longer(cols = !year) %>% rename(baseline = value , variable = name) %>%
+  mutate( !!scenario_name := 2*baseline , commodity = NA, 
+          sector = str_replace_all(tolower(str_extract(variable,"S\\w{3}$")),
+                                   set_names(names_sectors$name,names_sectors$code) ) 
+          ) 
+  
+
+stacked_sc_plot(data_test_subsectors,"VAR",interval = 5, diff = TRUE, title = "Testing the colours",bridge4palette_sectors = bridge_sectors)
+
+
+
+data_test_sectors <- all_sectors %>%
+  purrr::map(~(data.frame(year = all_years, VAR_= 100 ) %>% rename(!!paste0("VAR_",toupper(.x)) := VAR_ ))) %>%
+  reduce(left_join,by="year") %>%
+  tidyr::pivot_longer(cols = !year) %>% rename(baseline = value , variable = name) %>%
+  mutate( !!scenario_name := 2*baseline , commodity = NA, 
+          sector = str_replace_all((str_extract(variable,"S\\w{3}$")),
+                                   set_names(names_sectors$name,names_sectors$code) ) 
+          ) 
+  
+
+stacked_sc_plot(data_test_sectors,"VAR",interval = 5, diff = TRUE, title = "Testing the colours",bridge4palette_sectors = bridge_sectors)
+
+```
+
+## Sector plots
+
+### sector bar plots
+
+```{r sector bar plots, fig.height = 4, fig.width=7}
+data_CO2 <- data %>% filter(year %in% (start_year:end_year)) %>% filter(grepl("^EMS_.+_CO2_S.*$",variable)) %>% 
+  mutate(variable = str_remove(variable,"_(CI|MAT|Y)")) %>% 
+  group_by(year,sector,variable) %>% 
+  summarise_at(all_of(c("baseline",scenario_name)), sum) %>% ungroup()
+
+
+stacked_sc_plot(data_CO2,"EMS_CO2",interval = 5, diff = TRUE, title = "CO2 emissions by sector (in difference from baseline)")
+
+stacked_sc_plot(data,"Y",interval = 5, diff = TRUE, title = "CO2 emissions by sector (in difference from baseline)",bridge4palette_sectors = bridge_sectors)
+
+```
+
+### Sector curve plots
+
+```{r curve sector plots, fig.height = 4, fig.width=7}
+curve_sc_plot(data,"Y", growth.rate = FALSE,diff = TRUE,abs.diff = FALSE,startyear = start_year,endyear = 2030, title = "Production by sector (in difference from baseline)")
+
+```
+
+### interpolation functions
+ 
+#### Quadratic splines
+
+```{r quadra}
+x_v <- c(9,10,14)
+y_v <- c(91,19,70)
+
+ggplot(mapping = aes(x= x_v , y= y_v)) +
+  geom_point(color = "red", size = 3)+ 
+  geom_point(aes(x = quadratric_splines(x_v , y_v ,steps = 0.1, side= "left")$x,
+                 y = quadratric_splines(x_v , y_v ,steps = 0.1, side= "left")$y),
+                  color = "blue" , size= 1  )+
+
+  geom_point(aes(x = quadratric_splines(x_v , y_v ,steps = 0.1, side= "right")$x,
+                 y = quadratric_splines(x_v , y_v ,steps = 0.1, side= "right")$y),
+                 color = "purple" , size= 1  ) +
+  xlab("X")+
+  ylab("Y")
+
+
+```
+
+
+#### Catmull-rom cubic splines
+
+```{r Catmullrom}
+x_v <- c(7,10,17,20)
+y_v <- c(32,65,12,90)
+ggplot() +
+geom_point(aes(x = x_v, 
+               y= y_v),
+           color = "red", size = 3 )+
+  geom_point(aes(x = catmullrom_splines(x_v,y_v,steps = 0.1)$x,
+                 y = catmullrom_splines(x_v,y_v,steps = 0.1)$y  ),
+            color = "blue" , size= 1  ) +
+  xlab("X")+
+  ylab("Y")
+
+
+```
+
+#### Interpolation function using all of the above
+
+```{r interpol}
+
+dates <- c(1990 , 1995 , 2000 , 2015 )
+values <- c(107  , 120  , 84   , 42 )
+
+interpolation_series(date_vector = dates,
+                     value_vector = values,
+                     first.date = 1990 , last.date = 2020, smoothed = FALSE)
+
+## Pour voir graphiquement ce que donne l'interpolation
+interpolation_series( date_vector =  dates,
+                     value_vector = values,
+                     first.date = 1990 , last.date = 2050, full_results = TRUE)
+
+```
+
+Pour utiliser interpolation_series dans un data.frame :
+
+```{r data frame example}
+first_date_x <- 2000
+last_date_x <- 2050
+# 
+my_data <- data.frame(year = c(first_date_x:last_date_x), gdp = 100) %>%
+  mutate(gdp = 100 * 1.013 ^( year - first_date_x ),
+         target_0 = 300* 1.013 ^( year - first_date_x ),
+         target = interpolation_series(date_vector = c(first_date_x:2005,
+                                                       2015,2025,2035,2045,2050),
+                                       value_vector = c(target_0[which(year %in% c(first_date_x:2005))],
+                                                        550, 400, 420, 400, 300),
+                                       first.date = first_date_x, 
+                                       last.date = last_date_x),
+         gdp_bis = interpolation_series(date_vector = c(first_date_x:2019,
+                                                       2020,
+                                                       2030:last_date_x),
+                                       value_vector = c(gdp[which(year %in% c(first_date_x:2019))],
+                                                        gdp[which(year == 2020)] *0.8,
+                                                        gdp[which(year %in% c(2030:last_date_x))]),
+                                       first.date = first_date_x, 
+                                       last.date = last_date_x))
+ggplot(my_data, aes(x= year))+
+  geom_line(aes(y = gdp), color = "darkblue") +
+  geom_line(aes(y = gdp_bis), color = "seagreen2") 
+
+ggplot(my_data, aes(x= year))+
+  geom_line(aes(y = target_0), color = "darkblue") +
+  geom_line(aes(y = target), color = "seagreen2") 
+
+
+```
+
+
+### Tables for main results
+```{r table.output, fig.height = 10 , fig.width = 7}
+# For a short format with main aggregate values
+table.output(data = data, scenario = "oilprice_fra",full.table = TRUE,
+             langue = "en", export.doc = FALSE)
+
+# Or a longer format and with the option to choose the language
+table.output(data = data, scenario = "oilprice_fra",full.table = FALSE,
+             langue = "fr", export.doc = FALSE)
+
+```
+
+
+### long to wide and wide to long
+
+La fonction variables_like() permet de selectionner un groupe de variables dans une base de donnees threeme format long en utilisant un regex
+
+```{r variables_like} 
+variables_like(data = data , ##la base de donnee format long
+               test = "^ADJUST", # le regex à tester
+               view = FALSE ) # pour produire un vecteur de variables et ne pas afficher les résultats
+```
+                
+La fonction wide_data permet de passer du format long ThreeMe au format wide pour permettre d'effectuer des calculs sur les variables. Il est très vivement recommandé de specifier un sous-ensemble de variables d'intérêt plutôt que de transformer la totalité de la base.
+
+```{r long and wide data}
+ex <- wide_data(data_agg, ## La base ThreeMe format long
+          scenarios = c("baseline","oilprice_fra") ,## les scenarios (par défaut prend baseline et scenario_name)
+          variables = c("GDP","WAGES"),
+          out_format = "list" # list pour ressortir une liste de databases, dataframe pour sortir un dataframe
+          )
+
+
+threeme_wide_df <- data_agg %>% wide_data(variables = c(variables_like(.,"^Y_",FALSE),
+                                                        "GDP") , 
+                                            out_format = "dataframe") 
+
+threeme_wide_list <- data_agg %>% wide_data(variables = c(variables_like(.,"^Y_",FALSE),"GDP") , 
+                                            out_format = "list") 
+
+threeme_wide_list2 <- data_agg %>% 
+  wide_data(variables = c("WAGES","GDP","Y_S001","Y_S002","Y_C001","Y_C002","Y_C001_S002","Y_C002_S002") ,
+            out_format = "list") %>% 
+  map(~.x %>% mutate(
+    ratio = WAGES/GDP,
+    part_S001 = Y_S001 / GDP
+  ))
+
+new_threeme1 <- threeme_wide_list2 %>% long_data()
+
+#When no name table is available
+new_threeme2 <- threeme_wide_list2 %>% long_data(sector_names_table = NULL, 
+                                                 commodity_names_table = NULL)
+
+threeme_wide_list <- data_agg %>% wide_data(out_format = "list") # (avec toutes les variables)
+# threeme_wide_listbis <- data %>% wide_data(out_format = "list") # (avec toutes les variables)
+
+
+```
+
+exemple pour ajouter quelques variables à la base complete
+
+```{r long_wide_mutate_long}
+
+data_mod <- data_agg %>% 
+
+  wide_data(variables = c("M","GDP") , out_format = "list") %>%  ## 1. passe en wide (faut avoir tous les scénarios sinon on  ne pourra pas recoller)
+
+  map(~.x %>%  ## 2. calcul des indicateurs
+        mutate(
+          part_M = M/GDP) ) %>% 
+  long_data() %>% ## 3. repasse en wide
+  rbind(data_agg) %>% ## 4. on recolle à la base
+  unique() ## 5. on enleve les doublons
+
+
+
+```
+

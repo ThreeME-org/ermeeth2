@@ -1,0 +1,181 @@
+---
+title: "Paths Trees"
+format: html
+echo: false
+---
+
+
+```{r}
+#| message: false
+library(tidyverse)
+
+```
+
+```{r}
+#| label: sample data
+
+
+sample_data <- data.frame(model = sample(c("A","B","C"), 20, replace = TRUE),subtype = sample(c("X","Y","Z"),20, replace = TRUE),object = sample(LETTERS,20), replace = FALSE) |> 
+  arrange(model, subtype,object) |> select(-replace) |> 
+  mutate(model.dupe = duplicated(model),
+         subtype.dupe = duplicated(str_c(model,":",subtype)))
+
+map_data <- sample_data |> 
+  mutate(
+    modenode = ifelse(model.dupe,NA,model) ,
+    subtypenode = ifelse(subtype.dupe,NA,subtype),
+    objectnode = object
+    ) |> 
+  group_by(model,subtype) |> 
+  mutate(finaltree = cur_group_id())
+
+```
+
+
+```{r}
+#| label: functions
+
+
+
+basic_tree <- function(id =  sample(month.name,1), elements = sample(LETTERS,sample(1:4,1))){
+  
+  
+  spaces = str_replace_all(id,"."," ")
+  separator = str_c("  \n",spaces,"   |\n",spaces,"   +-------* ")
+  
+  last_bit = paste(elements, collapse = separator)
+  
+  first_bit = paste0(" ",id, " -+-------* ")
+  
+  tree = str_c(first_bit,last_bit)
+  
+  cat(tree)
+  
+  return<- tree
+  
+}
+
+```
+
+
+```{r}
+#| label: side functions
+
+
+get_tree_id<- function(tree){
+  str_extract(tree,"^\\s*([A-Za-z0-9\\s_]+)", group = 1) |> str_remove("\\s*$")
+}
+
+get_tree_end_nodes <- function(tree){
+  str_count(tree,"\\*")
+  
+}
+
+```
+
+```{r}
+#| label: tests ok functions
+#| echo: true
+
+
+basic_tree()
+
+tree_1 <- basic_tree()
+tree_2 <- basic_tree()
+tree_3 <- basic_tree()
+tree_4 <- basic_tree()
+tree_5 <- basic_tree()
+tree_6 <- basic_tree()
+tree_7 <- basic_tree()
+tree_8 <- basic_tree()
+
+
+get_tree_id(tree_1)
+get_tree_end_nodes(tree_1)
+
+```
+
+
+# Combining trees
+
+```{r}
+#| label: combining trees
+
+
+combine_basic_trees <- function(subtrees= c(tree_1,tree_2,tree_3), 
+                          id_tree = sample(LETTERS,sample(1:8,1)) |> str_c(collapse = "")
+ ){
+  
+  tree_ids <- get_tree_id(subtrees)
+  subtrees_nodes <- get_tree_end_nodes(subtrees)
+
+
+
+  
+  first_bit = paste0(" ",id_tree, " -+----·")
+  bar_position <- str_locate(first_bit,"\\+") |> max()
+  
+  new_space <- str_replace_all(first_bit,"."," ")
+  new_space2 <-str_replace_all(first_bit,"."," ") 
+
+  substr(new_space2,bar_position,bar_position) <- "|"
+    
+
+  spaces = str_replace_all(id_tree,"."," ")
+
+  separator = str_c(" \n",spaces,"   |\n",spaces,"   +----·")
+
+    ## modifying subtrees
+    ### non first nodes should be shifted right 
+  new_subtrees <- subtrees |> str_replace_all(
+    pattern = "\\n(\\s+[\\+\\|])",
+    replacement = str_c("\n",new_space2,"\\1") 
+  )
+  
+  new_subtrees[length(subtrees)]<- subtrees[length(subtrees)] |> str_replace_all(
+    pattern = "\\n(\\s+[\\+\\|])",
+    replacement = str_c("\n",new_space,"\\1")  
+  )
+  
+  
+
+
+  last_bit = paste(new_subtrees, collapse = separator)
+  
+ 
+  tree = str_c(first_bit,last_bit)
+  
+  cat(tree)
+  
+  return<-tree
+  
+}
+
+```
+
+```{r}
+#| label: combined trees
+#| echo: true
+
+
+
+big_tree1 <- combine_basic_trees(subtrees = c(tree_1,tree_2))
+big_tree2 <- combine_basic_trees(subtrees = c(tree_3,tree_4,tree_5))
+big_tree3 <- combine_basic_trees(subtrees = c(tree_6,tree_7))
+big_tree4 <- combine_basic_trees(subtrees = c(tree_8))
+
+get_tree_id(big_tree1)
+get_tree_id(big_tree2)
+
+```
+
+```{r}
+#| label: bigger trees
+#| echo: true
+
+
+combine_basic_trees(subtrees = c(big_tree1,big_tree2,big_tree3,big_tree4),id_tree = "data")
+
+```
+
+
