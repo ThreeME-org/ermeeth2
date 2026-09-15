@@ -100,7 +100,7 @@ eviews_model_solver<- function(config_file = configuration,
 
         range.col <- (1+(i-1)*floor(ncol.in.splitcalib)):(i*(ifelse(i!=nb_calib_files,floor(ncol.in.splitcalib),ncol.in.splitcalib)))
 
-        assign(paste0("calib",i), calib |> select(.,all_of(range.col)))
+        assign(paste0("calib",i), calib |> select(all_of(range.col)))
 
         (paste0("Saving calib",i,".csv")) |> message_save()
 
