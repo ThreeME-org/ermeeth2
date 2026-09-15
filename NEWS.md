@@ -1,4 +1,4 @@
-# ermeeth2 0.0.0.9000
+# ermeeth2 1.0.0
 
 First version of `ermeeth2`, seeded from `ermeeth` 0.4.00.0 (branch `anissa-dev`).
 

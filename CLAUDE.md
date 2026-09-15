@@ -28,3 +28,11 @@ this one.
 What `longer_data()` produces, and what the plot/table functions expect:
 columns `year`, `variable`, `scenario`, `values`, `values_ref`, `index_scen`,
 optionally `sector` / `commodity`. `index_scen` is 1 for the baseline, 0 otherwise.
+
+## Versioning
+
+- Version lives in `DESCRIPTION` and as the top heading of `NEWS.md`; keep them in sync.
+- Format is `MAJOR.MINOR.PATCH`, e.g. `1.0.0`.
+- **Bump the patch component on every minor change / correction**: `1.0.0` → `1.0.1`
+  → `1.0.2`. Do this as part of the change itself, not as a separate step.
+- Bump the minor component for new features, the major one for breaking API changes.
