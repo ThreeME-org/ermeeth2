@@ -1,0 +1,88 @@
+##### PLlop
+
+#### Government
+
+##! Employers' social security contribution paid by sector $s$
+RSC[s] * PRSC[s] = W[s] * F[L, s] * RRSC[s] - T2VAL_SEC * F[L,s]/F[L] * REDIS_CT_RRSC
+
+##! Aggregate incomes of the Government expressed in value
+INC_G_VAL 			  = PNTAXC * NTAXC + NTAXS_VAL + INC_SOC_TAX_VAL + PRSC * RSC + PROP_INC_G_VAL
+
+##!  Government final consumption of commodity $c$
+d(log(G[c])) = d(log(EXPG)) if G[c] <> 0
+
+
+#### Consumer
+
+##! Income and social taxes expressed in value
+INC_SOC_TAX_VAL  = RINC_SOC_TAX * DISPINC_BT_VAL - T2VAL_CH * REDIS_CT_H
+
+##! Disposable income after tax expressed in value
+DISPINC_AT_VAL   = DISPINC_BT_VAL - INC_SOC_TAX_VAL
+
+
+#### Producer
+
+##! Demand for production factor $f$ by sector $s$
+d(log(F_n[f, s]))  = d(log(Y[s])) - d(log(PROG[f, s])) + d(SUBST_F[f, s])       if F_n[f, s] <> 0
+
+##! Notional substitution between input $f$ and the other inputs $ff$
+d(SUBST_F_n[f, s]) = sum(- ES[f, ff, s] * phi[ff, s]{-1} * d(log(C[f, s]/PROG[f, s]) - log(C[ff, s]/PROG[ff, s])) on ff)      if F_n[f, s] <> 0
+
+
+#### Prices
+
+##! Labor cost in sector $s$
+C[L, s]   * F[L,s]      =  W[s] * F[L, s] + RSC[s] * PRSC[s]
+
+##! Unit cost of production in sector $s$
+CU[s]   * Y[s]  = sum(C[f, s] * F[f, s]   on f) + NTAXS_VAL[s]
+
+##! Notional production price of sector $s$
+PY_n[s] = CU_n[s] * (1 + MARKUP[s])
+
+##! Price of imported commodity $c$, expressed at basic price
+PM[c]        = EXR * PWD[c]
+
+##! Market price of domestically produced households final consumption $c$
+PCHD[c]      = PYQS[c]
+
+##! Market price of imported households final consumption $c$
+PCHM[c]      = PMS[c]
+
+##! Market price of domestically produced intermediate consumption $c$ purchased by sector $s$
+PCID[c, s]   = PYQS[c]
+
+##! Market price of imported intermediate consumption $c$ purchased by sector $s$ --> DIFFERE
+PCIM[c, s]   = PMS[c]
+
+##! Production capacity of the sector $s$
+d(log(YCAP[s])) = sum(phi[f, s]{-1} * d(log(F[f, s]*PROG[f, s])) if F[f, s] <> 0 on f) + ADJUST_YCAP_Y[s] * (log(Y[s]{-1}) - log(YCAP[s]{-1} * @elem(CUR[s], %baseyear)))
+
+##! Capacity utilization ratio of the sector $s$
+CUR[s]          = Y[s] / YCAP[s]
+
+##! Notional mark-up of the sector $s$ (specification 1)
+d(log(1+MARKUP_n[s]))  = RHO_MARKUP_Y *  d(log(CUR[s]))
+
+##! Notional production price of sector $s$
+PY_n[s] = CU_n[s] * (1 + MARKUP[s])
+
+##! Market price of households final consumption $c$
+PCH[c]    * CH[c]     = PCHD[c]    * CHD[c]    + PCHM[c]    * CHM[c]        if CH[c]      <> 0
+
+
+#### Trade inter
+
+##! Foreign demand for exports of commodity $c$
+d(log(X[c])) = d(log(WD[c])) + d(SUBST_X[c])                                      if X[c]               <> 0
+
+##! Notional substitution effect induced by a change in the relative price between export prices and (converted in domestic currency) international prices for the commodity $c$
+d(SUBST_X_n[c]) = -ES_X[c] * d(log(PX[c]) - log(EXR * PWD[c]))                     if X[c]               <> 0
+
+
+
+
+
+
+

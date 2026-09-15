@@ -1,0 +1,19 @@
+Name: ThreeME viewer
+Description: Explore a ThreeME simulation result: pick variables, draw the plot, build the table, and copy out the code.
+Binding: threeme_viewer
+Interactive: true
+
+Name: New ThreeME calibration
+Description: Create a baseline or shock calibration script, named so that readconfig() finds it.
+Binding: calib_addin
+Interactive: true
+
+Name: ThreeME configuration
+Description: Fill in a ThreeME configuration, one tab per section, editing only the assignments you change.
+Binding: config_addin
+Interactive: true
+
+Name: Run ThreeME simulations
+Description: Launch a run: set the project name, pick the configurations, and adjust the scenarios for this run only.
+Binding: run_addin
+Interactive: true

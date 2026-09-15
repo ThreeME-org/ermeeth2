@@ -1,0 +1,61 @@
+Package: ermeeth2
+Type: Package
+Title: Functions Used by the ThreeME Team
+Version: 0.0.0.9000
+Authors@R: c(
+    person("ThreeME", "Team", role = "aut"),
+    person("Anissa", "Saumtally", , "anissa.saumtally@sciencespo.fr", role = "cre")
+  )
+Description: Helper functions used by the ThreeME team to run, post-process and
+    document ThreeME v4 simulations: data loading and reshaping, scenario
+    running, contribution computations, plots, tables and documentation
+    rendering. This is the successor to the 'ermeeth' package.
+URL: https://github.com/ThreeME-org/ermeeth2
+BugReports: https://github.com/ThreeME-org/ermeeth2/issues
+Encoding: UTF-8
+LazyData: true
+Imports: 
+    bslib,
+    colorspace,
+    data.table,
+    dplyr,
+    flextable,
+    ggh4x,
+    ggiraph,
+    ofce,
+    officer,
+    purrr,
+    rlang,
+    rstudioapi,
+    scales,
+    shiny,
+    stringr,
+    sys,
+    tibble,
+    tidyr,
+    tools,
+    utils, 
+    methods,
+    readxl,
+    crayon,
+    glue,
+    readr,
+    lubridate,
+    openxlsx,
+    gt,
+    dtplyr,
+    tresthor,
+    quarto
+Suggests: 
+    arrow,
+    withr,
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0
+VignetteBuilder: knitr
+Depends: 
+    R (>= 4.1.0),
+    ggplot2
+License: GPL (>= 3)

@@ -1,0 +1,25 @@
+## Glossary of variables
+ 
+| | | |
+|:---:|:----------- |---------: |
+NA
+NA
+NA
+| $DISPINC^{AT,VAL}$ | Disposable income after tax expressed in value | [-@eq-Equations_MESANGE_mdlDISPINC_AT_VAL]
+NA
+NA
+| $INC^{G,VAL}$ | Aggregate incomes of the Government expressed in value | [-@eq-Equations_MESANGE_mdlINC_G_VAL]
+| $INC^{SOC,TAX,VAL}$ | Income and social taxes expressed in value | [-@eq-Equations_MESANGE_mdlINC_SOC_TAX_VAL]
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA
+NA

@@ -1,0 +1,379 @@
+---
+title: "Graphs and tables with ermeeth2"
+subtitle: "A tour of `simple_plot()` and `table_3me()`"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    fig-width: 8
+    fig-height: 4.5
+    df-print: kable
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(ermeeth2)
+library(dplyr)
+```
+
+## The data
+
+Everything below runs on the small ThreeME v4 model shipped with the package, so
+this document is reproducible without a simulation run. It is a genuine
+`data_full` output: a baseline, one shock scenario `g`, five variables, 2016 to
+2050.
+
+```{r}
+#| label: data
+data_full <- readRDS(system.file("extdata", "minimodel.rds", package = "ermeeth2"))
+
+glimpse(data_full)
+```
+
+The long format is what both functions expect: one row per
+`year` × `variable` × `scenario`, with `values` for the scenario and
+`values_ref` for the reference it is compared against. `sector` and `commodity`
+are filled in when the variable code carries a suffix; here they are empty.
+
+## Transformations
+
+A ThreeME variable is rarely read raw. The ways of looking at one are declared
+once, in `threeme_transformations()`, and both the plots and the tables draw
+from that list.
+
+```{r}
+#| label: transformations
+#| df-print: kable
+purrr::map_dfr(threeme_transformations(), ~ tibble::as_tibble(.x))
+```
+
+`needs_ref` marks the transformations that compare against a reference
+scenario; those also have `drop_baseline`, since the baseline compared to
+itself is a row of zeroes. `percent` marks the ones held as a share and
+displayed multiplied by 100.
+
+You can apply them directly, but most of the time you will just pass the name
+to `simple_plot()` or `table_3me()`.
+
+```{r}
+#| label: transform-direct
+threeme_transform(data_full, "reldiff") |>
+  filter(variable == "Y", year %in% 2021:2024) |>
+  select(year, scenario, values, values_ref, value, unit)
+```
+
+## Graphs
+
+### The default: relative difference to the baseline
+
+One line per variable. The baseline is dropped automatically — it would be flat
+at zero.
+
+```{r}
+#| label: fig-default
+#| fig-cap: "GDP and its components, relative difference to the baseline"
+simple_plot(data_full, c("Y", "CH", "I"))
+```
+
+### Naming the series
+
+`labels` maps variable codes to something readable. Codes it does not mention
+keep their code, so you can rename only what needs it. When the variable
+dictionary exists, it will plug in here and this argument becomes the override
+rather than the norm.
+
+```{r}
+#| label: fig-labels
+#| fig-cap: "The same plot, with the series named"
+simple_plot(
+  data_full,
+  variables = c("Y", "CH", "I"),
+  labels = c(Y = "GDP", CH = "Household consumption", I = "Investment"),
+  title = "Effect of the shock on activity"
+)
+```
+
+### Other transformations
+
+Growth rates, levels, an index based on a chosen year. Note that `level` keeps
+the baseline, since there it is a series in its own right.
+
+::: {.panel-tabset}
+
+#### Growth rate
+
+```{r}
+#| label: fig-gr
+simple_plot(data_full, "Y", transformation = "gr", labels = c(Y = "GDP"))
+```
+
+#### Level
+
+```{r}
+#| label: fig-level
+simple_plot(data_full, "Y", transformation = "level", labels = c(Y = "GDP"))
+```
+
+#### Index, 2021 = 100
+
+```{r}
+#| label: fig-index
+simple_plot(
+  data_full, "Y",
+  transformation = "index100", base_year = 2021,
+  labels = c(Y = "GDP")
+)
+```
+
+:::
+
+With a single variable the colour goes to the scenario; with several it goes to
+the variable and the scenario gets the linetype. `colour_by` overrides that if
+you want the other way round.
+
+### Several scenarios at once
+
+The minimodel carries one shock, so here is a second one invented for the
+demonstration — a milder version of the same shock.
+
+```{r}
+#| label: fake-scenario
+milder <- data_full |>
+  filter(scenario == "g") |>
+  mutate(
+    scenario = "g_mild",
+    values = values_ref + (values - values_ref) / 2
+  )
+
+data_two <- bind_rows(data_full, milder)
+```
+
+```{r}
+#| label: fig-scenarios
+#| fig-cap: "One variable, two shocks"
+simple_plot(
+  data_two, "Y",
+  labels = c(Y = "GDP"),
+  title = "GDP under both shocks"
+)
+```
+
+```{r}
+#| label: fig-scenarios-multi
+#| fig-cap: "Several variables and several scenarios: colour for the variable, linetype for the scenario"
+simple_plot(
+  data_two,
+  variables = c("Y", "CH", "I"),
+  labels = c(Y = "GDP", CH = "Consumption", I = "Investment")
+)
+```
+
+### Colours
+
+`palette` accepts a plain vector of colours, or a named one to pin particular
+series. Names it does not cover fall back to the built-in palette.
+
+```{r}
+#| label: fig-palette
+simple_plot(
+  data_full,
+  variables = c("Y", "CH", "I"),
+  palette = c(Y = "#B61615", CH = "#017FC2", I = "#2E7437")
+)
+```
+
+### Narrowing the window
+
+```{r}
+#| label: fig-window
+simple_plot(data_full, c("Y", "CH"), startyear = 2021, endyear = 2035)
+```
+
+### Interactive
+
+`interactive = TRUE` adds small hover points, each carrying the scenario, the
+level under the shock, the level under the baseline, the growth rate and the
+relative difference. The plot comes back through `ofce::girafy()`.
+
+```{r}
+#| label: fig-interactive
+#| fig-cap: "Hover a point to read the underlying numbers"
+simple_plot(
+  data_full,
+  variables = c("Y", "CH", "I"),
+  labels = c(Y = "GDP", CH = "Consumption", I = "Investment"),
+  interactive = TRUE
+)
+```
+
+## Tables
+
+### The default
+
+Variables in rows, horizons in columns. `t` is the shock year, and the last
+column is always the final year available.
+
+```{r}
+#| label: tbl-default
+table_3me(data_full, c("Y", "CH", "I"))
+```
+
+The shock year is not passed: `table_3me()` finds it as the first year a
+scenario departs from its reference.
+
+```{r}
+#| label: detect
+detect_shock_year(data_full)
+```
+
+### Grouping the rows
+
+Pass `variables` as a named list and the names become row groups, in the order
+given.
+
+```{r}
+#| label: tbl-groups
+table_3me(
+  data_full,
+  variables = list(
+    Activity = c("Y", "CH", "I"),
+    Policy = c("G", "MU")
+  ),
+  labels = c(Y = "GDP", CH = "Household consumption", I = "Investment",
+             G = "Public spending", MU = "Mark-up")
+)
+```
+
+### Mixing transformations in one table
+
+The point of the unit column. Here activity is read in relative difference and
+the mark-up in percentage points, in the same table.
+
+```{r}
+#| label: tbl-mixed
+table_3me(
+  data_full,
+  variables = list(
+    Activity = c("Y", "CH", "I"),
+    Prices = c("MU")
+  ),
+  transformation = c(MU = "ppdiff", "reldiff"),
+  labels = c(Y = "GDP", CH = "Household consumption", I = "Investment",
+             MU = "Mark-up"),
+  title = "Minimodel",
+  subtitle = "Shock g, against the baseline"
+)
+```
+
+The unnamed `"reldiff"` is the default for every variable the vector does not
+name. The footnote is built from the transformations actually used.
+
+### Choosing the horizons
+
+```{r}
+#| label: tbl-horizons
+table_3me(
+  data_full, c("Y", "CH", "I"),
+  horizons = c(0, 5, 15, 25),
+  labels = c(Y = "GDP", CH = "Consumption", I = "Investment")
+)
+```
+
+Horizons past the end of the simulation are dropped rather than shown empty,
+and the final year is appended as the long-term column.
+
+### Several scenarios
+
+Scenarios become column spanners.
+
+```{r}
+#| label: tbl-scenarios
+table_3me(
+  data_two, c("Y", "CH", "I"),
+  labels = c(Y = "GDP", CH = "Consumption", I = "Investment"),
+  horizons = c(0, 5, 10)
+)
+```
+
+### Comparing two versions of the model
+
+`data_secondary` takes a second `data_full`, typically the same scenarios run
+after the equations changed. The two are laid out under a second spanner level.
+Here the second database is again invented, as a model whose shock bites
+slightly harder.
+
+```{r}
+#| label: fake-model
+data_v2 <- data_full |>
+  mutate(values = if_else(scenario == "baseline", values, values * 1.01))
+```
+
+```{r}
+#| label: tbl-two-models
+table_3me(
+  data_full, c("Y", "CH", "I"),
+  data_secondary = data_v2,
+  model_names = c("v4.4", "v4.5"),
+  labels = c(Y = "GDP", CH = "Consumption", I = "Investment"),
+  horizons = c(0, 5, 10),
+  caption = "The same shock under two versions of the model"
+)
+```
+
+### Without the OFCE theme
+
+`theme = "none"` returns a plain `gt` table, ready for your own styling.
+
+```{r}
+#| label: tbl-plain
+table_3me(data_full, c("Y", "CH", "I"), theme = "none") |>
+  gt::opt_stylize(style = 3, color = "gray")
+```
+
+## Clicking instead of typing
+
+`threeme_viewer()` is an RStudio addin wrapping both functions. Point it at a
+result file or at a `data_full` sitting in your session, tick the variables,
+and it draws the plot and builds the table while exposing the arguments above
+as controls — labels, per-variable transformations, groups, horizons, palette,
+theme, and the second database for a two-model comparison.
+
+```r
+threeme_viewer()                                    # opens on its data panel
+threeme_viewer(data_full)                           # starts from an object
+threeme_viewer("data/output/minimodel.rds")         # starts from a file
+```
+
+It is also in the **Addins** menu, as *ThreeME viewer*.
+
+The Code tab shows the two calls it has just run, so a session of clicking ends
+with something to paste back into a quarto; inside RStudio the *Insert code*
+button drops them at the cursor. The generated code is plain
+`simple_plot()` / `table_3me()` — there is nothing in the viewer you cannot
+write by hand.
+
+## In short
+
+```r
+# a plot
+simple_plot(data_full, c("Y", "CH", "I"))
+
+# a table
+table_3me(data_full, c("Y", "CH", "I"))
+```
+
+Everything else is optional. The arguments that matter most day to day:
+
+| | `simple_plot()` | `table_3me()` |
+|---|---|---|
+| what to show | `variables`, `scenarios` | `variables` (list for groups), `scenarios` |
+| how to read it | `transformation` (one) | `transformation` (one, or named by variable) |
+| naming | `labels` | `labels` |
+| period | `startyear`, `endyear` | `horizons`, `shock_year`, `end_year` |
+| looks | `palette`, `colour_by`, `interactive` | `theme`, `digits`, `title`, `caption` |
+| comparing models | — | `data_secondary`, `model_names` |

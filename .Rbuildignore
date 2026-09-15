@@ -1,0 +1,12 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.Rhistory$
+^\.RData$
+^\.DS_Store$
+^\.git$
+^\.github$
+^data-raw$
+^dev$
+^documentation$
+^plop$
+^ermeeth2_handoff\.md$
