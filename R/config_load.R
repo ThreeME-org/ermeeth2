@@ -89,7 +89,11 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 
   scenario_name <- paste(scenario, iso3, sep = "_") |> tolower()
   shocks_nb <- length(scenario)
-  max_tresthor_capability <- 300 # Max size in kb for a model that tresthor can handle
+  ## Max size in kb of a model.prg the R solver will take on. The old 300 was
+  ## set by tresthor's dense solver, which could not cope past roughly that;
+  ## thortwo's sparse backend has no such wall (a 440 kb model builds and solves
+  ## fine), so this is now a guard against surprise rather than a hard limit.
+  max_tresthor_capability <- 500
   path_main <- NULL
   save_files_res <-TRUE
 

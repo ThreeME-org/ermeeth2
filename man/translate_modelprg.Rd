@@ -2,13 +2,13 @@
 % Please edit documentation in R/translate_model_to_tresthor.R
 \name{translate_modelprg}
 \alias{translate_modelprg}
-\title{Translate a compiled model into a tresthor model}
+\title{Translate a compiled model into a solver model}
 \usage{
 translate_modelprg(
   modfile = file.path("src", "compiler", "model.prg"),
   calibfile = file.path("src", "compiler", "calib.csv"),
-  base.year = baseyear,
-  last.year = lastyear
+  base.year = NULL,
+  last.year = NULL
 )
 }
 \arguments{
@@ -16,15 +16,18 @@ translate_modelprg(
 
 \item{calibfile}{character. Path to the calibration csv.}
 
-\item{base.year}{numeric. First year of the model.}
+\item{base.year}{numeric. First year of the model. `NULL` falls back to a
+`baseyear` in the calling scope, which is how this was always called.}
 
-\item{last.year}{numeric. Last year of the model.}
+\item{last.year}{numeric. Last year of the model. `NULL` falls back to a
+`lastyear` in the calling scope.}
 }
 \value{
-A list with elements `coef`, `equations`, `data` and `errors`.
+A list with elements `endo`, `exo`, `coef`, `equations`, `data` and
+  `errors`.
 }
 \description{
-Reads the compiled `model.prg` and its calibration csv and
-  turns them into the pieces tresthor needs: the equation list, the
-  coefficients, and the data.
+Superseded by [prg_to_thor()], which this calls. Kept so that
+  existing scripts keep working; new code should call [prg_to_thor()], whose
+  `base.year` is a required argument rather than one defaulting to a global.
 }

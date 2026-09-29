@@ -1,3 +1,37 @@
+# ermeeth2 1.1.0
+
+## Model translation
+
+* `prg_to_thor()` replaces `translate_modelprg()` as the way to turn a compiled
+  `model.prg` and its calibration csv into a solver-ready model.
+  `translate_modelprg()` is kept as a thin wrapper, so existing scripts are
+  unaffected, but it now runs the new engine.
+* `translate_report()` prints what a translation did, and what it could not do.
+* Five fixes over the previous implementation, each a failure mode on real
+  compiler output:
+  - `@elem()` is located by scanning balanced parentheses rather than by three
+    shape-specific regexes, so nested forms such as `@elem(pk_sind(-1), 2019)`
+    and anything with more than one operator are no longer left in place and
+    passed to the solver as undefined variables.
+  - its value is obtained by evaluating the inner expression against the
+    calibration row, rather than by a switch over the four arithmetic
+    operators, so any expression the compiler emits is handled.
+  - occurrences are keyed on (expression, year) rather than on the variable
+    name, so two `@elem` of the same variable at different years no longer
+    collide onto one value.
+  - the `rbind(elem_table_1, elem_table_2)` error on a model using lagged
+    `@elem` but no plain ones (or the reverse) is gone.
+  - EViews logical tests all go through one indicator rewrite. Previously three
+    ThreeME-specific tests were pinned to a literal 1 or 0 and the generic
+    rewrite only matched `<word><op><word><cmp><number>`, which misses shapes
+    such as `(log(pe_senc)-log(p)>0.0)`.
+* `prg_to_thor()` takes `base.year` as a required argument instead of defaulting
+  to a global, takes an optional `first.year`, and can write the model straight
+  out as a `.txt` via `out_file`. `translate_modelprg()` keeps the old defaults.
+* Verified end to end on a compiled 3973-equation model: it builds, solves 30
+  periods, and reproduces the calibration baseline to a median relative
+  difference of 1.8e-13.
+
 # ermeeth2 1.0.0
 
 First version of `ermeeth2`, seeded from `ermeeth` 0.4.00.0 (branch `anissa-dev`).

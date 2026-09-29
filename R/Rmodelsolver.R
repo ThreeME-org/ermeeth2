@@ -6,7 +6,9 @@
 #' @param config_file list. The configuration object, as returned by
 #'   [readconfig()].
 #' @param before_solving_data data passed to the solver before solving.
-#' @param overwrite_rcpp logical. Whether to recompile the Rcpp solver.
+#' @param overwrite_rcpp logical. Whether to use the compiled solver. `TRUE`
+#'   picks thortwo's `sparse` backend, `FALSE` its `dense-r` one, which needs
+#'   no compiler.
 #' @param cnb the new-base calibration to solve against.
 #'
 #' @returns A long-format data.frame with columns `year`, `variable`, one
@@ -33,36 +35,54 @@ R_model_solver <- function(config_file = configuration,
   calib_new_base = cnb
   data_for_solver <- before_solving_data
 
+  solver_dir <- file.path("src", "R_solver_files")
+  ## A stable, project-local directory rather than a tempdir: thortwo keys its
+  ## compile cache on the generated source, so an unchanged model costs no
+  ## compilation on the second run.
+  dir.create(solver_dir, recursive = TRUE, showWarnings = FALSE)
+
+  ## The old `rcpp` flag becomes a choice of backend. `sparse` is compiled and
+  ## the only viable option at ThreeME's size; `dense-r` needs no toolchain but
+  ## is one to two orders of magnitude slower.
+  backend <- if (isTRUE(rcpp_option)) "sparse" else "dense-r"
+
   if (recompile_model){
     ####### If model must be recompiled
 
-    ### A.1 Transform model.prg file into tresthor syntax
-    ("Translating model.prg file for tresthor format") %>% message_sub_step()
-    model_to_build <- translate_modelprg(base.year = baseyear,last.year = lastyear)
+    ### A.1 Transform model.prg file into solver syntax
+    ("Translating model.prg file for the solver") %>% message_sub_step()
+    model_to_build <- prg_to_thor(base.year = baseyear, last.year = lastyear)
+    if (length(model_to_build$warnings)) {
+      translate_report(model_to_build)
+      stop("The model translation reported problems; see the report above.",
+           call. = FALSE)
+    }
 
     ### A.2 Build model and save
     ("Creating the model for simulations") %>% message_sub_step()
-    tresthor::create_model(model_name = "themodel" ,
-                           endogenous = model_to_build$endo,
-                           exogenous = model_to_build$exo ,
-                           coefficients = model_to_build$coef,
-                           equations = model_to_build$equations,
-                           rcpp = rcpp_option ,rcpp_path = "src/R_solver_files/" ,
-                           no_var_map = TRUE ,
-                           env = environment())
+    themodel <- thortwo::thor_model(
+      name         = "themodel",
+      endogenous   = model_to_build$endo,
+      exogenous    = model_to_build$exo,
+      coefficients = model_to_build$coef,
+      equations    = model_to_build$equations,
+      backend      = backend,
+      workdir      = solver_dir,
+      verbose      = FALSE)
 
     ("Saving the model and dependencies for future usage") %>% message_sub_step()
-    tresthor::export_model(themodel,filename = file.path("src","R_solver_files","model_thor.txt"))
-    tresthor::save_model(themodel,folder_path  = file.path("src","R_solver_files/") )
+    thortwo::export_model(themodel, filename = file.path(solver_dir, "model_thor.txt"))
+    ## Self-contained: the .rds carries the generated solver source, so it can
+    ## be moved between machines and survives a cleared tempdir.
+    thortwo::thor_save(themodel, file.path(solver_dir, "themodel.rds"))
 
-    data_3me <- model_to_build$data %>%filter( year %in% c(firstyear:lastyear))
-    saveRDS(data_3me,"src/R_solver_files/data_thor.rds")
+    data_3me <- model_to_build$data %>% filter( year %in% c(firstyear:lastyear))
+    saveRDS(data_3me, file.path(solver_dir, "data_thor.rds"))
 
   }else{
     ### A.3 Load model and calib
-    tresthor::load_model(file = file.path("src","R_solver_files","themodel.rds"),
-                         env = environment())
-    data_3me <- readRDS(file.path("src","R_solver_files","data_thor.rds"))
+    themodel <- thortwo::thor_load(file.path(solver_dir, "themodel.rds"))
+    data_3me <- readRDS(file.path(solver_dir, "data_thor.rds"))
   }
 
   ### A.4 Consolidating databases : adding the newly created variables elem variables to calib_new_base
@@ -79,34 +99,19 @@ R_model_solver <- function(config_file = configuration,
 
 
   ### A.5 Check calibration at baseyear for calib.csv
-  parts <- c("prologue", "heart", "epilogue")
-  parts_list <- map(parts,
-                    function(part = .x){
-                      list(
-                        part = part ,
-                        bool = eval(parse(text = paste0("themodel@",part) )),
-                        fun_check = eval(parse(text = paste0("themodel@",part,"_equations_f") )) )
-                    }) %>%
-    purrr::set_names(parts)
-
+  ##
+  ## This used to reach into the model object's `@prologue`,
+  ## `@prologue_equations_f` and `@equation_list` slots and evaluate each
+  ## block's residual function by hand. thortwo's class has no such slots --
+  ## and the R closures do not exist at all on a compiled backend -- so the
+  ## check now goes through `calibration_check()`, which evaluates every
+  ## equation through the same generated code the solver uses and names the
+  ## ones that are off.
   ("Calibration check at the base year with the calibration data") %>% message_sub_step()
 
-  baseyear_index <- which(data_3me$year== baseyear)
-
-  equations <- map(parts,
-                   function(section = .x){
-                     if(parts_list[[section]]$bool == TRUE){
-
-                       equations <- themodel@equation_list %>%
-                         filter(part == section) %>%
-                         select(equation =name, formula = equation) %>%
-                         mutate(calib_test = parts_list[[section]]$fun_check(t = baseyear_index, t_data = data_3me)  )
-
-                     }else{equations<-NULL}
-                   }) %>% purrr::compact() %>% reduce(rbind)
-
-  equations_check <- equations %>% filter(abs(calib_test) >= tolerance_calib_check)
-
+  equations_check <- thortwo::calibration_check(
+    themodel, data_3me, period = baseyear, index_time = "year",
+    tolerance = tolerance_calib_check)
 
   if(nrow(equations_check) == 0 ){
     ("All equations appear to well calibrated at the baseyear with the calib.csv file.") %>% message_ok()
@@ -137,10 +142,14 @@ R_model_solver <- function(config_file = configuration,
     scenar_solved <- scenar_order[item_scen]
     str_c("Solving scenario ",scenar_solved ) %>% message_any(str_c(item_scen," / ", tot_scen))
     # browser()
-    solved_data[[scenar_solved]] <- thor_solver(themodel,
-                                                first_period = baseyear,last_period = lastyear,
-                                                database = data_for_solver[[scenar_solved]],
-                                                index_time = "year", rcpp = rcpp_option,skip_tests = TRUE) %>%
+    ## No `skip_tests`: thortwo's checks are vectorised over the data matrix
+    ## and cost nothing, and they name the missing variable instead of letting
+    ## the solve fail twenty periods later.
+    solved_data[[scenar_solved]] <- thortwo::thor_solve(
+      themodel,
+      from = baseyear, to = lastyear,
+      data = data_for_solver[[scenar_solved]],
+      index_time = "year", verbose = FALSE) %>%
       select(year, any_of(tolower(variables_to_keep)) )
 
   }

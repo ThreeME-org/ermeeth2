@@ -74,7 +74,9 @@ For now, dictionary hasnt been built yet so you can omit this (while planning fo
    - one addin to run the simulations, the user can select the configs and modify on the fly the scenarios in those as well as the project name. the project name modification is mentioned first, as a reminder that other wise results will override existing simulation database.
  
  
-   
+## side project : exploring a model. 
+In config_input one specifies the equation files, then dynamo compiles the equations into a prg
+
 # Claude updates here 
 
 ## Now
@@ -309,6 +311,35 @@ From handoff §4 (open bugs) and §5 (overhaul candidates):
       functions → one shared, overridable spec.
 - [ ] Review the unreviewed src drift listed in handoff §6 (direction was never
       determined — this is a review, not a merge).
+
+## Model translation -> thortwo
+
+- [x] `prg_to_thor()` replaces `translate_modelprg()` (1.1.0). Balanced-paren
+      `@elem` scanning, values by evaluation rather than an operator switch,
+      occurrences keyed on (expression, year), one indicator rewrite for every
+      logical test. `translate_modelprg()` is kept as a wrapper. Verified on a
+      compiled 3973-equation model: builds, solves 30 periods, reproduces the
+      calibration baseline to a median relative difference of 1.8e-13.
+- [x] The translator is dependency-free: `prg_variables()` is local, so nothing
+      in it reaches into tresthor or thortwo. It cannot call
+      `tresthor::get_variables_from_string()` anyway -- that reads
+      `thor_functions_supported`, a `LazyData` object only visible once tresthor
+      is *attached*, so the qualified call errors.
+- [x] `base.year` is a required argument of `prg_to_thor()` rather than a global
+      default (progress on the `if(exists(...))` item below).
+- [ ] Port `R_model_solver()` off tresthor onto thortwo. The four API calls
+      (`create_model`, `export_model`, `save_model`, `load_model`) map onto
+      `thor_model` / `export_model` / `thor_save` / `thor_load`. The blocker is
+      the baseyear calibration check (`Rmodelsolver.R` A.5), which reaches into
+      `themodel@prologue`, `@prologue_equations_f` and `@equation_list` --
+      slots thortwo's class redesign removed. `thortwo::model_residuals()` does
+      the same job on any backend, but returns per-*block* maxima, whereas the
+      check reports *which equations* are off. Needs a per-equation residual
+      from thortwo first.
+- [ ] `max_tresthor_capability` (config_load.R, post_config_check.R) is a model
+      size threshold in kb that exists because the dense solver could not cope
+      past ~300 kb. thortwo's sparse backend removes that limit; revisit the
+      threshold rather than renaming it.
 
 ## Decided / out of scope
 

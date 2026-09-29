@@ -17,7 +17,9 @@ R_model_solver(
 
 \item{before_solving_data}{data passed to the solver before solving.}
 
-\item{overwrite_rcpp}{logical. Whether to recompile the Rcpp solver.}
+\item{overwrite_rcpp}{logical. Whether to use the compiled solver. `TRUE`
+picks thortwo's `sparse` backend, `FALSE` its `dense-r` one, which needs
+no compiler.}
 
 \item{cnb}{the new-base calibration to solve against.}
 }

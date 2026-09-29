@@ -1,254 +1,598 @@
-#' Translate a compiled model into a tresthor model
+## Translating a compiled model into a thoR model.
+##
+## The ThreeME compiler emits two files: `model.prg`, a list of
+## `<model>.append <equation>` lines in EViews syntax, and `calib.csv`, the
+## calibration database whose `year` column is relative to the base year.
+## `prg_to_thor()` turns them into the pieces the solver needs -- the equation
+## list, the endogenous/exogenous/coefficient split, and a database with the
+## `@elem` coefficients already broadcast onto it as constant columns.
+##
+## ---------------------------------------------------------------------------
+## What changed relative to the first implementation
+##
+## The output conventions are unchanged, so a model translated either way lands
+## in the same place: `@elem` becomes a coefficient named
+## `elem_<expression>_<year>`, and an equation's endogenous variable is the
+## first one on its left-hand side. Five things behave differently, each
+## because the original has a failure mode on real compiler output:
+##
+##  1. `@elem` is found by scanning balanced parentheses rather than by three
+##     regexes for the three shapes seen so far. The original matched
+##     `@elem(<word>,<year>)`, `@elem(<word>(-<k>),<year>)` and
+##     `@elem(<word><op><word>,<year>)`; anything else -- two operators, a
+##     function call, a parenthesised sub-expression -- was silently left in
+##     place and reached the solver as an undefined variable.
+##
+##  2. The value comes from *evaluating* the inner expression against the
+##     calibration row, not from a switch over the four arithmetic operators.
+##     Any expression the compiler can emit therefore works, through one code
+##     path instead of three.
+##
+##  3. Occurrences are keyed on (expression, year) and substituted as literal
+##     text, longest first. The original keyed on the variable name alone, so
+##     two `@elem` of the same variable at different years collided and both
+##     took the value of whichever was seen last.
+##
+##  4. `rbind(elem_table_1, elem_table_2)` errored outright on a model that
+##     used lagged `@elem` but no plain ones, or the reverse, because the
+##     missing table was never created. There is one table here.
+##
+##  5. Comparisons. EViews lets an equation contain a logical test that
+##     evaluates to 0 or 1; the solver has no comparison operators. The
+##     original handled this with three hard-coded ThreeME substitutions that
+##     pin a named test to a literal 1 or 0, plus a generic rewrite matching
+##     only `<word><op><word><cmp><number>`. Every test now goes through one
+##     generic rewrite, so none is silently pinned to a constant and no shape
+##     is missed. See [prg_rewrite_comparisons()].
+## ---------------------------------------------------------------------------
+
+
+#' Functions a model equation may contain
+#'
+#' @description The same list the solvers support. Kept here so that
+#'   [prg_variables()] does not have to reach into another package for it.
+#'
+#' @returns A character vector of function names.
+#' @keywords internal
+prg_functions <- function() {
+  c("abs", "acos", "acosh", "asin", "asinh", "atan", "atanh", "cos", "cosh",
+    "exp", "expm1", "log", "log10", "log1p", "log2", "logb", "sign", "sin",
+    "sinh", "sqrt", "tan", "tanh")
+}
+
+
+#' Every variable name occurring in an expression
+#'
+#' @description Deliberately a local implementation rather than a call to
+#'   `tresthor::get_variables_from_string()`, which cannot be called qualified:
+#'   it reads `thor_functions_supported`, a `LazyData` dataset that is only
+#'   visible once `tresthor` is *attached*, so `tresthor::` access fails with
+#'   "object 'thor_functions_supported' not found". Attaching a package from
+#'   inside another one is not an option, and the logic is a dozen lines.
+#'
+#'   It matches `thortwo::get_variables_from_string()`, which does work
+#'   qualified, so a model classified here is classified the same way by the
+#'   solver.
+#'
+#' @param string a single character string.
+#'
+#' @returns A character vector of the names found.
+#' @keywords internal
+prg_variables <- function(string) {
+  string <- gsub("\\s+", "", string)
+  fn <- c(prg_functions(), toupper(prg_functions()),
+          "delta", "newdiff", "lag", "mylg")
+  function_pattern <- paste(paste0(fn, "\\("), collapse = "|")
+  symbol_pattern   <- "(\\+|\\*|,|-|/|\\^|\\(|\\)|=)|\\\\"
+
+  x <- gsub(function_pattern, "@", string)
+  x <- gsub(symbol_pattern, "@", x)
+  x <- gsub("@+", ",", x)
+  x <- gsub(",[0-9]+(\\.[0-9]+)?", ",", x)
+  x <- gsub("^[0-9]+(\\.[0-9]+)?", "", x)
+  x <- gsub("^,|,$", "", x)
+
+  out <- unique(strsplit(x, ",", fixed = TRUE)[[1L]])
+  out[nzchar(out)]
+}
+
+
+#' Rewrite EViews logical tests as smooth indicators
+#'
+#' @description `(A < B)` evaluates to 1 or 0 in EViews. The solver has no
+#'   comparison operators -- and a step function has no useful derivative --
+#'   so each test becomes the algebraic indicator
+#'
+#'   \preformatted{
+#'   A > B   ->   0.5 * (1 + (A-B) / (|A-B| + eps))
+#'   A < B   ->   0.5 * (1 - (A-B) / (|A-B| + eps))
+#'   }
+#'
+#'   which is exactly 1 or 0 away from the crossing, and whose derivative there
+#'   is `eps/(|A-B|+eps)^2`, i.e. numerically zero. `>=` and `<=` are treated as
+#'   `>` and `<`; they differ only on the measure-zero set `A == B`, where this
+#'   form returns 0.5 rather than the 0/0 produced by the difference-quotient
+#'   version used previously.
+#'
+#'   Right at the crossing the indicator is not differentiable, so a model
+#'   sitting exactly on a threshold can stall. Nothing in a translation can fix
+#'   that: it is a property of writing a discontinuity into a model that is then
+#'   solved by Newton.
+#'
+#'   Each test must be parenthesised on its own, which is how the compiler emits
+#'   them; anything else raises an error rather than being guessed at.
+#'
+#' @param eqs character vector of equations.
+#'
+#' @returns A list with `eqs`, the rewritten equations, and `n`, the number of
+#'   tests rewritten.
+#' @keywords internal
+prg_rewrite_comparisons <- function(eqs) {
+
+  eps <- "1e-30"
+  n <- 0L
+
+  for (k in seq_along(eqs)) {
+    repeat {
+      m <- regexpr("(<=|>=|<|>)", eqs[k])
+      if (m == -1L) break
+      op  <- regmatches(eqs[k], m)
+      pos <- as.integer(m)
+      len <- attr(m, "match.length")
+      s   <- eqs[k]
+
+      ## innermost enclosing parentheses
+      left <- 0L; depth <- 0L
+      for (i in seq(pos - 1L, 1L)) {
+        ch <- substr(s, i, i)
+        if (ch == ")") depth <- depth + 1L
+        else if (ch == "(") {
+          if (depth == 0L) { left <- i; break }
+          depth <- depth - 1L
+        }
+      }
+      right <- 0L; depth <- 0L
+      for (i in seq(pos + len, nchar(s))) {
+        ch <- substr(s, i, i)
+        if (ch == "(") depth <- depth + 1L
+        else if (ch == ")") {
+          if (depth == 0L) { right <- i; break }
+          depth <- depth - 1L
+        }
+      }
+      if (left == 0L || right == 0L) {
+        stop("A comparison is not enclosed in its own parentheses, so its ",
+             "operands cannot be identified:\n  ", s, call. = FALSE)
+      }
+
+      A <- substr(s, left + 1L, pos - 1L)
+      B <- substr(s, pos + len, right - 1L)
+      sgn <- if (substr(op, 1L, 1L) == ">") "+" else "-"
+      diff <- paste0("((", A, ")-(", B, "))")
+      new  <- sprintf("(0.5*(1.0%s%s/(abs%s+%s)))", sgn, diff, diff, eps)
+
+      eqs[k] <- paste0(substr(s, 1L, left - 1L), new, substring(s, right + 1L))
+      n <- n + 1L
+    }
+  }
+  list(eqs = eqs, n = n)
+}
+
+
+#' Expand scientific notation into plain decimals
+#'
+#' @description `1e-05` survives R's parser but not the solver's variable
+#'   extractor, which reads the stray `e` as a variable name.
+#'
+#' @param eqs character vector of equations.
+#'
+#' @returns The equations, with every numeric literal written out in full.
+#' @keywords internal
+prg_expand_scientific <- function(eqs) {
+  pattern <- "[0-9]+(\\.[0-9]+)?e[-+]?[0-9]+"
+  out <- eqs
+  for (k in seq_along(out)) {
+    lits <- regmatches(out[k], gregexpr(pattern, out[k], perl = TRUE))[[1]]
+    for (lit in unique(lits)) {
+      out[k] <- gsub(lit, format(as.numeric(lit), scientific = FALSE, digits = 17),
+                     out[k], fixed = TRUE)
+    }
+  }
+  out
+}
+
+
+#' Find every `@elem()` occurrence in a set of equations
+#'
+#' @description A regular expression cannot do this:
+#'   `@elem(pk_scon(-1), 2019)` closes on its second `)`, not its first.
+#'
+#' @param x character vector of equations.
+#'
+#' @returns A character vector of the distinct occurrences, as written.
+#' @keywords internal
+prg_find_elem <- function(x) {
+  out <- character(0)
+  for (line in x) {
+    start <- gregexpr("@elem(", line, fixed = TRUE)[[1]]
+    if (start[1] == -1L) next
+    for (s in start) {
+      depth <- 0L
+      i <- s + 5L                       # position of the opening "("
+      n <- nchar(line)
+      repeat {
+        ch <- substr(line, i, i)
+        if (ch == "(") depth <- depth + 1L
+        if (ch == ")") {
+          depth <- depth - 1L
+          if (depth == 0L) break
+        }
+        i <- i + 1L
+        if (i > n) stop("Unbalanced parentheses in: ", line, call. = FALSE)
+      }
+      out <- c(out, substr(line, s, i))
+    }
+  }
+  unique(out)
+}
+
+
+#' Split an `@elem()` occurrence into its expression and its year
+#'
+#' @param e a single occurrence, as returned by [prg_find_elem()].
+#'
+#' @returns A list with `expr` and `year`.
+#' @keywords internal
+prg_parse_elem <- function(e) {
+  inner <- substr(e, 7L, nchar(e) - 1L)          # strip "@elem(" and ")"
+  at <- max(gregexpr(",", inner, fixed = TRUE)[[1]])
+  if (at == -1L) stop("@elem without a year: ", e, call. = FALSE)
+  list(expr = trimws(substr(inner, 1L, at - 1L)),
+       year = as.integer(trimws(substring(inner, at + 1L))))
+}
+
+
+#' Name the coefficient an `@elem()` becomes
+#'
+#' @description Follows the convention already present in the translated
+#'   models: `@elem(chd_cind/chm_cind, 2015)` becomes
+#'   `elem_chd_cind_chm_cind_2015`, and a lag is folded into the year, so
+#'   `@elem(pk_sind(-1), 2019)` becomes `elem_pk_sind_2018`.
+#'
+#' @param expr the inner expression.
+#' @param year the year.
+#'
+#' @returns A valid lower-case variable name.
+#' @keywords internal
+prg_elem_name <- function(expr, year) {
+  e <- gsub("\\s+", "", expr)
+  lag_only <- regmatches(e, regexec("^([a-z][a-z0-9_]*)\\(-([0-9]+)\\)$", e))[[1]]
+  if (length(lag_only) == 3L) {
+    return(sprintf("elem_%s_%d", lag_only[2], year - as.integer(lag_only[3])))
+  }
+  slug <- gsub("_+", "_", gsub("[^a-z0-9_]", "_", tolower(e)))
+  sprintf("elem_%s_%d", gsub("^_|_$", "", slug), year)
+}
+
+
+#' Evaluate an EViews expression against one row of the calibration
+#'
+#' @description Variable reads become lookups by year, so a lag inside the
+#'   expression is honoured: in `@elem(a/b(-1), 2019)`, `a` is read at 2019 and
+#'   `b` at 2018.
+#'
+#' @param expr the inner expression.
+#' @param year the year to read at.
+#' @param calib the calibration data.frame, with an absolute `year` column.
+#'
+#' @returns A numeric scalar, or `NA` if a variable is absent from `calib`.
+#' @keywords internal
+prg_eval_elem <- function(expr, year, calib) {
+
+  e <- gsub("\\s+", "", expr)
+  ## `x(-k)` -> `.v("x", year - k)`
+  e <- gsub("([a-z][a-z0-9_]*)\\(-([0-9]+)\\)", '.v("\\1",.y-\\2)', e)
+  ## remaining bare names -> `.v("x", year)`, skipping function calls and
+  ## anything already rewritten
+  e <- gsub('(?<![."a-z0-9_])([a-z][a-z0-9_]*)(?!\\s*\\(|["a-z0-9_])',
+            '.v("\\1",.y)', e, perl = TRUE)
+
+  .v <- function(nm, yr) {
+    if (!nm %in% names(calib)) return(NA_real_)
+    row <- which(calib$year == yr)
+    if (length(row) != 1L) return(NA_real_)
+    as.numeric(calib[[nm]][row])
+  }
+  env <- list2env(list(.v = .v, .y = year), parent = baseenv())
+
+  tryCatch(eval(parse(text = e, keep.source = FALSE), envir = env),
+           error = function(err) NA_real_)
+}
+
+
+#' Translate a compiled model into a thoR model
 #'
 #' @description Reads the compiled `model.prg` and its calibration csv and
-#'   turns them into the pieces tresthor needs: the equation list, the
-#'   coefficients, and the data.
+#'   turns them into the pieces the solver needs: the equation list, the
+#'   endogenous / exogenous / coefficient split, and the data with the `@elem`
+#'   coefficients broadcast onto it as constant columns.
+#'
+#'   The result feeds `thortwo::thor_model()` by way of `out_file`, or
+#'   `tresthor::create_model()` directly from `endo` / `exo` / `coef` /
+#'   `equations`. Nothing here depends on either package.
+#'
+#'   Supersedes [translate_modelprg()]; see the file header for what differs.
+#'
+#' @param modfile character. Path to the compiled model program.
+#' @param calibfile character. Path to the calibration csv, whose `year` column
+#'   is relative to `base.year`.
+#' @param base.year numeric. The calendar year that relative year 0 is.
+#'   Required: unlike [translate_modelprg()], it does not default to a global.
+#' @param last.year numeric. Optional upper bound on the database.
+#' @param first.year numeric. Optional lower bound on the database.
+#' @param out_file character. Optional path to also write the model out as a
+#'   `.txt`, in the four-section format the solver's parser reads.
+#' @param model_prefix character. Regular expression matching the EViews model
+#'   object name prefixed to each `.append` line.
+#' @param verbose logical. Report progress.
+#'
+#' @returns A list with `equations`, `endo`, `exo`, `coef`, `data`, `elem` (the
+#'   coefficient table), `warnings` and `file`.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' tr <- prg_to_thor("src/compiler/model.prg", "src/compiler/calib.csv",
+#'                   base.year = 2019)
+#' translate_report(tr)
+#' }
+prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
+                        calibfile = file.path("src", "compiler", "calib.csv"),
+                        base.year,
+                        last.year = NULL,
+                        first.year = NULL,
+                        out_file = NULL,
+                        model_prefix = "^[a-z_0-9]+\\.append",
+                        verbose = TRUE) {
+
+  say <- function(...) if (verbose) cat(..., sep = "")
+  warnings_out <- character(0)
+  warn <- function(msg) {
+    warnings_out <<- c(warnings_out, msg)
+    say("   ! ", msg, "\n")
+  }
+
+  if (missing(base.year)) stop("`base.year` is required.", call. = FALSE)
+  stopifnot(file.exists(modfile), file.exists(calibfile))
+
+  ## ---- 1. equations -------------------------------------------------------
+  say("1. reading ", basename(modfile), "\n")
+  eqs <- tolower(readLines(modfile, warn = FALSE))
+  eqs <- sub(model_prefix, "", eqs)
+  eqs <- gsub("'.*$", "", eqs)                    # EViews end-of-line comments
+  eqs <- gsub("\\s+", "", eqs)
+  eqs <- eqs[nzchar(eqs)]
+  say("   ", length(eqs), " equations\n")
+
+  ## ---- 2. calibration -----------------------------------------------------
+  say("2. reading ", basename(calibfile), "\n")
+  calib <- utils::read.csv(calibfile, check.names = FALSE)
+  names(calib) <- tolower(names(calib))
+  calib <- calib[, names(calib) != "baseyear", drop = FALSE]
+  if (!"year" %in% names(calib)) {
+    stop("The calibration file has no `year` column.", call. = FALSE)
+  }
+  calib$year <- as.integer(round(calib$year)) + base.year
+  if (!is.null(first.year)) calib <- calib[calib$year >= first.year, , drop = FALSE]
+  if (!is.null(last.year))  calib <- calib[calib$year <= last.year,  , drop = FALSE]
+  rownames(calib) <- NULL
+  say("   ", nrow(calib), " periods (", min(calib$year), "-", max(calib$year),
+      "), ", ncol(calib) - 1L, " variables\n")
+
+  ## ---- 3. @elem -> coefficients ------------------------------------------
+  say("3. resolving @elem\n")
+  occ <- prg_find_elem(eqs)
+  elem <- NULL
+
+  if (length(occ)) {
+    parsed <- lapply(occ, prg_parse_elem)
+    elem <- data.frame(
+      original = occ,
+      expr     = vapply(parsed, `[[`, character(1), "expr"),
+      year     = vapply(parsed, `[[`, integer(1),   "year"),
+      stringsAsFactors = FALSE
+    )
+    elem$name  <- mapply(prg_elem_name, elem$expr, elem$year, USE.NAMES = FALSE)
+    elem$value <- mapply(prg_eval_elem, elem$expr, elem$year,
+                         MoreArgs = list(calib = calib), USE.NAMES = FALSE)
+
+    say("   ", nrow(elem), " distinct @elem -> ",
+        length(unique(elem$name)), " coefficients\n")
+
+    bad <- elem[is.na(elem$value), , drop = FALSE]
+    if (nrow(bad)) {
+      warn(sprintf("%d @elem could not be evaluated against the calibration (e.g. %s)",
+                   nrow(bad), paste(utils::head(bad$original, 3), collapse = ", ")))
+    }
+
+    ## Two occurrences reducing to the same name must reduce to the same
+    ## number, or the name is ambiguous.
+    dup <- tapply(elem$value, elem$name, function(v) length(unique(round(v, 12))) > 1L)
+    if (any(dup, na.rm = TRUE)) {
+      warn(sprintf("coefficient name(s) map to more than one value: %s",
+                   paste(names(dup)[which(dup)], collapse = ", ")))
+    }
+
+    ## Substituted as literal text, longest first, so no occurrence can be
+    ## rewritten inside another one.
+    for (k in order(nchar(elem$original), decreasing = TRUE)) {
+      eqs <- gsub(elem$original[k], elem$name[k], eqs, fixed = TRUE)
+    }
+
+    left <- sum(grepl("@elem", eqs, fixed = TRUE))
+    if (left) warn(sprintf("%d @elem left in the equations after substitution", left))
+
+    ## onto the database, as constant columns
+    coeff_tbl <- elem[!duplicated(elem$name), c("name", "value")]
+    calib <- calib[, setdiff(names(calib), coeff_tbl$name), drop = FALSE]
+    calib <- cbind(calib,
+                   as.data.frame(matrix(rep(coeff_tbl$value, each = nrow(calib)),
+                                        nrow = nrow(calib),
+                                        dimnames = list(NULL, coeff_tbl$name))))
+  } else {
+    say("   none\n")
+  }
+
+  ## ---- 4. EViews -> thoR syntax ------------------------------------------
+  say("4. rewriting lags and differences\n")
+  ## `x(-1)` -> `lag(x,1)`, before `d(` so a lag inside a difference is
+  ## already in thoR form
+  eqs <- gsub("([a-z][a-z0-9_]*)\\(-([0-9]+)\\)", "lag(\\1,\\2)", eqs)
+  ## `d(...)` -> `delta(1,...)`, but not the `d` ending an identifier
+  eqs <- gsub("(?<![a-z0-9_])d\\(", "delta(1,", eqs, perl = TRUE)
+  if (any(grepl("delta(1,og(", eqs, fixed = TRUE))) {
+    stop("dlog() is not handled by this translator.", call. = FALSE)
+  }
+  eqs <- gsub("+-", "-", eqs, fixed = TRUE)
+
+  n_cmp <- sum(grepl("[<>]", eqs))
+  if (n_cmp) {
+    rc <- prg_rewrite_comparisons(eqs)
+    eqs <- rc$eqs
+    say("   rewrote ", rc$n, " logical test(s) in ", n_cmp,
+        " equation(s) as indicators\n")
+  }
+  eqs <- prg_expand_scientific(eqs)
+
+  leftover <- grep("@|<|>", eqs)
+  if (length(leftover)) {
+    warn(sprintf("%d equation(s) still contain @, < or > and will not parse (e.g. %s)",
+                 length(leftover), utils::head(eqs[leftover], 1)))
+  }
+
+  ## ---- 5. classify the variables -----------------------------------------
+  say("5. classifying variables\n")
+  ## The endogenous variable of an equation is the first one on its left-hand
+  ## side: the compiler emits equations already normalised that way.
+  lhs <- sub("=.*$", "", eqs)
+  endo <- vapply(lhs, function(s) {
+    v <- prg_variables(s)
+    if (length(v) == 0L) NA_character_ else v[1L]
+  }, character(1), USE.NAMES = FALSE)
+
+  if (anyNA(endo)) {
+    warn(sprintf("%d equation(s) have no variable on the left-hand side",
+                 sum(is.na(endo))))
+    endo <- endo[!is.na(endo)]
+  }
+  if (anyDuplicated(endo)) {
+    twice <- unique(endo[duplicated(endo)])
+    warn(sprintf("%d variable(s) are the left-hand side of more than one equation (e.g. %s)",
+                 length(twice), paste(utils::head(twice, 3), collapse = ", ")))
+  }
+
+  all_vars <- prg_variables(paste(eqs, collapse = "+"))
+  coef <- if (is.null(elem)) character(0) else sort(unique(elem$name))
+  coef <- intersect(coef, all_vars)
+  endo <- sort(unique(endo))
+  exo  <- sort(setdiff(all_vars, c(endo, coef)))
+
+  say("   ", length(endo), " endogenous, ", length(exo), " exogenous, ",
+      length(coef), " coefficients\n")
+  if (length(endo) != length(eqs)) {
+    warn(sprintf("%d equations for %d endogenous variables: the model is not square",
+                 length(eqs), length(endo)))
+  }
+
+  missing_vars <- setdiff(c(endo, exo, coef), names(calib))
+  if (length(missing_vars)) {
+    warn(sprintf("%d model variable(s) are absent from the calibration (e.g. %s)",
+                 length(missing_vars),
+                 paste(utils::head(missing_vars, 5), collapse = ", ")))
+  }
+
+  ## ---- 6. optionally write the model file --------------------------------
+  if (!is.null(out_file)) {
+    say("6. writing ", basename(out_file), "\n")
+    dir.create(dirname(out_file), recursive = TRUE, showWarnings = FALSE)
+    writeLines(c(
+      "endogenous variables :", paste(endo, collapse = ","), "##############",
+      "exogenous variables :",  paste(exo,  collapse = ","), "##############",
+      "coefficients :",         paste(coef, collapse = ","), "##############",
+      "equations :",            eqs), out_file)
+  }
+
+  list(equations = eqs, endo = endo, exo = exo, coef = coef,
+       data = calib, elem = elem, warnings = warnings_out, file = out_file)
+}
+
+
+#' Report what a translation did and what it could not do
+#'
+#' @param tr the value of [prg_to_thor()].
+#'
+#' @returns `tr`, invisibly. Called for the report it prints.
+#' @export
+translate_report <- function(tr) {
+  cat("\n--- translation report ---\n")
+  cat("equations   :", length(tr$equations), "\n")
+  cat("endogenous  :", length(tr$endo), "\n")
+  cat("exogenous   :", length(tr$exo), "\n")
+  cat("coefficients:", length(tr$coef), "\n")
+  cat("database    :", nrow(tr$data), "periods x", ncol(tr$data) - 1L, "variables\n")
+  if (length(tr$warnings) == 0L) {
+    cat("warnings    : none\n")
+  } else {
+    cat("warnings    :\n")
+    cat(paste0("  - ", tr$warnings, collapse = "\n"), "\n")
+  }
+  invisible(tr)
+}
+
+
+#' Translate a compiled model into a solver model
+#'
+#' @description Superseded by [prg_to_thor()], which this calls. Kept so that
+#'   existing scripts keep working; new code should call [prg_to_thor()], whose
+#'   `base.year` is a required argument rather than one defaulting to a global.
 #'
 #' @param modfile character. Path to the compiled model program.
 #' @param calibfile character. Path to the calibration csv.
-#' @param base.year numeric. First year of the model.
-#' @param last.year numeric. Last year of the model.
+#' @param base.year numeric. First year of the model. `NULL` falls back to a
+#'   `baseyear` in the calling scope, which is how this was always called.
+#' @param last.year numeric. Last year of the model. `NULL` falls back to a
+#'   `lastyear` in the calling scope.
 #'
-#' @returns A list with elements `coef`, `equations`, `data` and `errors`.
+#' @returns A list with elements `endo`, `exo`, `coef`, `equations`, `data` and
+#'   `errors`.
 #' @export
 translate_modelprg <- function(
     modfile = file.path("src", "compiler", "model.prg"),
     calibfile = file.path("src", "compiler", "calib.csv"),
-    base.year = baseyear,
-    last.year = lastyear ){
+    base.year = NULL,
+    last.year = NULL) {
 
-  # baseyear <- NULL
-  # lastyear <- NULL
-  original <- NULL
-  var_A <- NULL
-  V1 <- NULL
-  V2 <- NULL
-  var_B <- NULL
-
-# browser()
- error <- c(NA)
-# 1. loading files the model
-
-model_equations <- readr::read_lines(modfile)
-
-data_3me <- data.table::fread(calibfile,data.table = FALSE)  %>% select(-all_of("baseyear"))
-data_3me$year = data_3me$year + base.year
-
-data_3me <- data_3me %>% filter(year <= last.year)
-
-# 2. Transformation to tresthor syntax
-model_file <-model_equations %>%
-  tolower() %>%
-  str_replace_all("^a_3me\\.append",replacement ="") %>%
-  str_replace_all("\\s+",replacement ="") %>%
-  str_replace_all("@year","year")
-
-model_file <- model_file[grepl("^$",model_file)==FALSE]
-
-# 3. Checking and treating elem
-elem <- model_file %>%
-  str_extract_all("@elem\\([^,]+,\\d+\\)") %>%
-  purrr::compact() %>% unlist() %>% unique()
-
-if(!is.null(elem)){
-elem_case_1 <- elem[grep(pattern = "@elem\\(\\w+,\\d+\\)", elem)]
-elem_case_2 <- elem[grep(pattern = "@elem\\(\\w+\\(-\\d+\\),\\d+\\)", elem)]
-
-
-## 3.1. Simple elem with just the year
-if(length(elem_case_1)>0){
-elem_table_1 <- data.frame(original = elem_case_1) %>%
-  mutate(year = as.numeric(str_replace(original,"@elem\\(\\w+,(\\d+)\\)","\\1")) ,
-         var_A  = str_replace(original,"@elem\\((\\w+),\\d+\\)","\\1"),
-         var_B = NA,
-         operation = NA,
-         new_var_name = paste("elem",var_A,year, sep = "_"))
-}
-
-## 3.2. elem with a lag and the year
-if(length(elem_case_2)>0){
-elem_table_2 <- data.frame(original = elem_case_2) %>%
-  mutate(year =
-           as.numeric(str_replace(original,"@elem\\(\\w+\\(-\\d+\\),(\\d+)\\)","\\1") ) -
-           as.numeric(str_replace(original,"@elem\\(\\w+\\(-(\\d+)\\),\\d+\\)","\\1")),
-         var_A  = str_replace(original,"@elem\\((\\w+)\\(-\\d+\\),\\d+\\)","\\1"),
-         var_B = NA,
-         operation = NA,
-         new_var_name = paste("elem",var_A,year, sep = "_"))
-}
-
-elem_table <- rbind(elem_table_1,elem_table_2)
-
-elem_value <- purrr::set_names(elem_table$year,elem_table$var_A) %>%
-  purrr::imap_dfr(~c(.y , data_3me[which(data_3me$year == .x),.y] )  ) %>% t() %>% as.data.frame() %>%
-  rename(var_A = V1, value = V2) %>% mutate(value = as.numeric(value))
-
-elem_table <- elem_table %>% left_join(elem_value, by = "var_A")
-rownames(elem_table) <- elem_table$new_var_name
-
-
-## 3.3. More complex elems with operations on the variables
-elem_case_3 <- elem[grep(pattern = "@elem\\(\\w+[\\+\\-\\*\\/]\\w+,\\d+\\)", elem)]
-
-if(length(elem_case_3)>0){
-elem_table_3 <- data.frame(original = elem_case_3) %>%
-  mutate(year = as.numeric(str_replace(original,"@elem\\(\\w+[\\+\\-\\*\\/]\\w+,(\\d+)\\)","\\1")) ,
-         var_A  = str_replace(original,"@elem\\((\\w+)[\\+\\-\\*\\/]\\w+,\\d+\\)","\\1"),
-         var_B  = str_replace(original,"@elem\\(\\w+[\\+\\-\\*\\/](\\w+),\\d+\\)","\\1"),
-         operation = str_replace(original,"@elem\\(\\w+([\\+\\-\\*\\/])\\w+,\\d+\\)","\\1"),
-         new_var_name = paste("elem",var_A,var_B, year, sep = "_"))
-rownames(elem_table_3) <- elem_table_3$new_var_name
-
-
-## 3.3.1 Function to replace elems with calculated values
-
-get_and_compute_variable <- function(elemtable,varname,year){
-
-  op_to_use = elemtable[varname,"operation"]
-  if (op_to_use == "+"){
-    value <- data_3me[which(data_3me$year == year), elemtable[varname,"var_A"] ] + data_3me[which(data_3me$year == year),elemtable[varname,"var_B"]]
+  ## The original wrote these as `base.year = baseyear`, picking the values out
+  ## of whatever scope the caller happened to have. The fallback is kept, but
+  ## made explicit: it is now visible in the body, it says so when it fires, and
+  ## it no longer leaves two undefined globals in R CMD check.
+  if (is.null(base.year)) {
+    base.year <- get0("baseyear", envir = parent.frame(), ifnotfound = NULL)
+    if (is.null(base.year)) {
+      stop("`base.year` was not given and no `baseyear` was found in the ",
+           "calling scope. Pass it explicitly, as prg_to_thor() requires.",
+           call. = FALSE)
+    }
   }
-  if (op_to_use == "-"){
-    value <- data_3me[which(data_3me$year == year), elemtable[varname,"var_A"] ] - data_3me[which(data_3me$year == year),elemtable[varname,"var_B"]]
-  }
-  if (op_to_use == "*"){
-    value <- data_3me[which(data_3me$year == year), elemtable[varname,"var_A"] ] * data_3me[which(data_3me$year == year),elemtable[varname,"var_B"]]
-  }
-  if (op_to_use == "/"){
-    value <- data_3me[which(data_3me$year == year), elemtable[varname,"var_A"] ] / data_3me[which(data_3me$year == year),elemtable[varname,"var_B"]]
-  }
-  c(varname,value)
-}
-
-elem_value_3 <- purrr::set_names(elem_table_3$year,elem_table_3$new_var_name) %>%
-  purrr::imap_dfr(~get_and_compute_variable(elem_table_3,.y,.x) ) %>%
-  t() %>% as.data.frame() %>%
-  rename(new_var_name = V1, value = V2) %>% mutate(value = as.numeric(value))
-
-elem_table_3 <- elem_table_3 %>% left_join(elem_value_3, by = "new_var_name")
-elem_table <- rbind(elem_table, elem_table_3)
-
-rm(elem_table_3,elem_value_3)}
-
-
-
-elem_table$original_regex <- elem_table$original %>%
-  str_replace_all("\\(","\\\\(") %>%
-  str_replace_all("\\)","\\\\)") %>%
-  str_replace_all("\\+","\\\\+") %>%
-  str_replace_all("\\-","\\\\-") %>%
-  str_replace_all("\\/","\\\\/") %>%
-  str_replace_all("\\*","\\\\*")
-
-rownames(elem_table) <- elem_table$new_var_name
-
-## 3.4 Add the elems in the database
-data_3me <- tresthor::add_coeffs(elem_table, database = data_3me,
-pos.coeff.name = "new_var_name",
-pos.coeff.value = "value")
-
-model_file <-str_replace_all(model_file,
-                             set_names(elem_table$new_var_name,elem_table$original_regex))}
-
-
-##lag/ delta transformation
-
-model_file <-model_file %>%
-  str_replace_all("(\\w+)\\((-\\d+)\\)","lag(\\1,\\2)") %>%
-  str_replace_all("(?<!\\w)d\\(","delta(1,") %>%
-  str_replace_all("\\+-","-")
-
-# 4 Conditionalities
-
-model_file <-model_file %>%
-  str_replace_all("log\\(pe_s\\w+\\)-log\\(p\\)>0","1") %>%
-  str_replace_all("pnos\\*nos<=1e-05","0") %>%
-  str_replace_all("1e(-\\d+)","(10^(\\1))")  %>%
-  # str_replace_all("(\\w+)\\^(\\(1-\\w+\\))","exp(\\2*log(\\1))") %>%  ## THREEME specific
-  # str_replace_all("=(\\(.+\\))\\^(\\(.+\\)$)","=exp(\\2*log(\\1))") %>%  ## THREEME specific
-  str_replace_all("\\((verif_pch_c[a-z]{2})\\^2\\)\\^\\(1/2\\)","abs(\\1)") %>%  ## THREEME specific
-  str_replace_all("delta\\(1,log\\((\\w+)/(\\w+)\\)-log\\((\\w+)/(\\w+)\\)\\)","((log(\\1)-log(\\2)-log(\\3)+log(\\4))-(log(lag(\\1,-1))-log(lag(\\2,-1))-log(lag(\\3,-1))+log(lag(\\4,-1))))")
-  # str_replace_all("(\\(\\w+/lag\\(\\w+,-1\\)\\))\\^(\\(1/\\w+\\))","(exp(\\2*log(\\1)))")
-
-
-
-# 5 Complicated powers
-#model_file <-model_file %>%
-#str_replace_all("(\\w+)\\^(\\([a-z0-9_\\+\\-\\/\\*\\.]+\\))","exp(\\2*log(\\1))") %>%
-#str_replace_all("(\\([a-z0-9_\\+\\-\\/\\*\\.]+\\))\\^(\\([a-z0-9_\\+\\-\\/\\*\\.]+\\))","exp(\\2*log(\\1))")
-
-###If there are conditions left , rewrite them
-model_file <- model_file %>% str_replace_all("=>",">")
-model_file <- model_file %>% str_replace_all("<=","<")
-
-conditionalities_to_rewrite <-model_file %>% str_extract_all("\\w+(/|\\*)\\w+(<|>)\\d+(\\.\\d+)?") %>% reduce(c)
-
-if(length(conditionalities_to_rewrite)>0){
-conditionalities_table<- data.frame(expr = conditionalities_to_rewrite) %>%
-  mutate(
-  A = str_remove(expr,"(<|>)\\d+(\\.\\d+)?"),
-  B = str_remove(expr,"^\\w+[/\\*]\\w+(<|>)"),
-  sign = str_replace(expr, "^.+(<|>).+$","\\1"),
-  expr = str_replace_all(expr,'\\*',"\\\\*"))
-
-rewrite_cond <- function(A="A",B="B",sign=">"){
-  if (sign== ">"){
-    A_B <- paste0(A,"-",B)
-    new_exp <- glue::glue("((({A_B})+abs({A_B}))/(2*({A_B})))")
+  if (is.null(last.year)) {
+    last.year <- get0("lastyear", envir = parent.frame(), ifnotfound = NULL)
   }
 
-  if (sign== "<"){
-    A_B <- paste0(A,"-",B)
-    new_exp <- glue::glue("((abs({A_B})-({A_B}))/(-2*({A_B})))")
-  }
-  return(new_exp)
+  tr <- prg_to_thor(modfile = modfile, calibfile = calibfile,
+                    base.year = base.year, last.year = last.year)
+
+  ## The original seeded `errors` with NA and appended to it; callers test its
+  ## length rather than its contents, so the shape is preserved.
+  tr$errors <- c(NA_character_, tr$warnings)
+  tr
 }
-
-conditionalities_table$new_exp <- c(1:nrow(conditionalities_table)) %>%
-  purrr::map_chr(~rewrite_cond(conditionalities_table$A[.x],
-                        conditionalities_table$B[.x],
-                        conditionalities_table$sign[.x]))
-
-model_file <- model_file %>%
-  str_replace_all(purrr::set_names(conditionalities_table$new_exp ,conditionalities_table$expr ) )
-}
-
-## variables extractions
-all_var <- str_c(model_file,collapse = "+" ) %>% tresthor::get_variables_from_string()
-missing_var <- setdiff(all_var, names(data_3me) )
-
-if(length(missing_var)>0){
-cat("\nThe following variables are present in the model but missing in the database:\n ")
-cat(missing_var, sep = "\n")
-error <- c(error,"missing variable in calib")
-}
-endogenous_var <- model_file %>%
-  str_extract("^.+=") %>% str_remove("=") %>%
-  set_names(c(1:length(model_file))) %>%
-  map(~tresthor::get_variables_from_string(.x)) %>%
-  ## Only keep the first instance from the list
-  map(~.x[[1]]) %>% unlist()
-
-if(is.null(elem)){
-  coefficients_var <- c()
-}else{coefficients_var <- elem_table$new_var_name}
-
-exogenous_var <- setdiff(all_var, c(coefficients_var,endogenous_var))
-
-out <- list(
-    endo = endogenous_var,
-    exo = exogenous_var,
-    coef = coefficients_var,
-    equations = model_file,
-    data = data_3me,
-    errors = error
-)
-}
-
-
-
-
-
-
-
-
