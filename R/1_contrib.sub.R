@@ -22,16 +22,16 @@ contrib.sub <- function(data, var1,  group_type = "sector",
 
   ## further checks on scenarios
   if (length(scenar) > 2){
-    stop(message = "Indicate a maximum of two scenarios.\n")
+    cli::cli_abort("Indicate a maximum of two scenarios.")
   }
 
   if (length(scenar) == 2 & !"baseline" %in% scenar){
-    stop(message = "If two scenarios are given, one must be the ' 'baseline' scenario.\n")
+    cli::cli_abort("If two scenarios are given, one must be the ' 'baseline' scenario.")
   }
 
   if (prod(scenar %in% names(data)) == 0 ) {
     not_found <- setdiff(scenar, names(data))
-    stop(message = paste0("The '",not_found,"' scenario was not found in the database.\n"))
+    cli::cli_abort("The {.val {not_found}} scenario was not found in the database.")
   }
 
   if (is.null(check_digit)){
@@ -46,13 +46,13 @@ contrib.sub <- function(data, var1,  group_type = "sector",
 
   #### Checking group_type
   if(is.character(group_type)== FALSE){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }else{
     group <- toupper(str_replace(group_type,"^(.).*$","\\1" ))
   }
 
   if(!group %in% c("S", "C")){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }
 
   if(group == "S"){division_type = "Sector" }
@@ -70,48 +70,48 @@ contrib.sub <- function(data, var1,  group_type = "sector",
 
   if(length(liste_var) == 0 ){
     liste_var
-    stop(message = "No variables matching the variable and the group_type were found.\n") }
+    cli::cli_abort("No variables matching the variable and the group_type were found.") }
 
-  data.contrib.0 <- data %>% dplyr::filter(variable %in% c(var1, filtered.val)) #%>%
+  data.contrib.0 <- data |> dplyr::filter(variable %in% c(var1, filtered.val)) #|>
   #select(-subsector, -subcommodity, -subcommodity2, -subcommodity3,-commodity, -commodity2, -commodity3, -sector,-variable_root)
   #select(year, variable, scenar)
 
-  data.contrib.lbl <- data %>% dplyr::filter(variable %in% c(var1, filtered.val)) %>%
+  data.contrib.lbl <- data |> dplyr::filter(variable %in% c(var1, filtered.val)) |>
     select(variable,year, commodity, sector)
 
-  if(group == "C"){data.contrib.lbl <- select(data.contrib.lbl, -sector) %>%
+  if(group == "C"){data.contrib.lbl <- select(data.contrib.lbl, -sector) |>
     `colnames<-`(c("variable", "year", "label")) }
-  if(group == "S"){data.contrib.lbl <- select(data.contrib.lbl, -commodity) %>%
+  if(group == "S"){data.contrib.lbl <- select(data.contrib.lbl, -commodity) |>
     `colnames<-`(c("variable", "year", "label"))}
 
 
   # Weigthts in the baseline scenario
-  data.w_baseline <- data.contrib.0 %>%
-    select(variable, year, baseline) %>%
+  data.w_baseline <- data.contrib.0 |>
+    select(variable, year, baseline) |>
     pivot_wider(names_from = variable,
-                values_from = baseline) %>%
-    mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) %>%
+                values_from = baseline) |>
+    mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) |>
     select(year, contains("_w"))
 
 
 
   # Calcul of shares for one scenario
   if (length(scenar) == 1) {
-    data.contrib.1 <- data.contrib.0 %>%  mutate(scenario = .[,scenar]) %>%
-      select(variable, year, scenario) %>%
+    data.contrib.1 <- data.contrib.0 |>  mutate(scenario = .data[[scenar]]) |>
+      select(variable, year, scenario) |>
       pivot_wider(names_from = variable,
                   values_from = c(scenario))
 
 
 
-    data.contrib <- data.contrib.1 %>%
-      mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) %>%
+    data.contrib <- data.contrib.1 |>
+      mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) |>
       select(year, contains("_w"))
 
     weight_check <-  round(rowSums(data.contrib[10,]) - data.contrib[10,1], check_digit)
 
-    data.contrib <- data.contrib %>%
-      as.data.frame() %>% `colnames<-`(c("year", unique(filtered.val))) %>%
+    data.contrib <- data.contrib |>
+      as.data.frame() |> `colnames<-`(c("year", unique(filtered.val))) |>
       pivot_longer(names_to = "variable", values_to = "value", - year)
 
     data.contrib <-  left_join(data.contrib.lbl, data.contrib, by = c("variable","year"))
@@ -122,29 +122,29 @@ contrib.sub <- function(data, var1,  group_type = "sector",
 
 
     ## Diff absolue
-    data.contrib.1 <- data.contrib.0 %>%
-      mutate(scenario = .[,str_c(shock_scenario)] - .[,"baseline"]) %>%
-      select(variable, year, scenario) %>%
+    data.contrib.1 <- data.contrib.0 |>
+      mutate(scenario = .data[[shock_scenario]] - .data[["baseline"]]) |>
+      select(variable, year, scenario) |>
       pivot_wider(names_from = variable,
                   values_from = scenario)
 
     ## Diff relative
-    data.contrib.2 <- data.contrib.0 %>%  mutate(scenario = .[,str_c(shock_scenario)] / .[,"baseline"] -1) %>%
-      select(variable, year, scenario) %>%
+    data.contrib.2 <- data.contrib.0 |>  mutate(scenario = .data[[shock_scenario]] / .data[["baseline"]] -1) |>
+      select(variable, year, scenario) |>
       pivot_wider(names_from = variable,
                   values_from = scenario)
 
     # ## Calcul des contributions
-    data.contrib <- data.contrib.1 %>%
-      mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) %>%
+    data.contrib <- data.contrib.1 |>
+      mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) |>
       select(year, contains("_w"))
 
     weight_check <-  round(rowSums(data.contrib[10,]) - data.contrib[10,1], check_digit)
 
-    data.contrib.3 <- data.contrib.2 %>% select(-var1)
+    data.contrib.3 <- data.contrib.2 |> select(-var1)
 
-    data.contrib.4 <-  (data.contrib.3[-1] * data.w_baseline[-1]) %>%
-      cbind("year" = data.contrib.3[1],select(data.contrib.2, var1), .) %>% as.data.frame() %>%
+    data.contrib.4 <-  cbind("year" = data.contrib.3[1],select(data.contrib.2, var1), data.contrib.3[-1] * data.w_baseline[-1]) |>
+      as.data.frame() |>
       pivot_longer(names_to = "variable", values_to = "value", - year)
 
     data.contrib <- left_join(data.contrib.lbl, data.contrib.4, by = c("variable","year"))
@@ -152,15 +152,15 @@ contrib.sub <- function(data, var1,  group_type = "sector",
 
 
   # A complter pour calcul de contribution en diff de taux de croissance
-  # data.contrib %>% mutate_at(vars(-("year")),lag) %>%
-  #select(year, contains("contrib"))  %>% as.data.frame(col.names = c("year",var2)) %>% `colnames<-`(c("year",var2)) %>%
+  # data.contrib |> mutate_at(vars(-("year")),lag) |>
+  #select(year, contains("contrib"))  |> as.data.frame(col.names = c("year",var2)) |> `colnames<-`(c("year",var2)) |>
   #pivot_longer(names_to = "variable", values_to = value, - year)
 
   ## Warning message
   if(weight_check != 1){
-    cat("Weights are not summing to one: Try again !\n")
+    cli::cli_alert_warning("Weights do not sum to one: try again!")
   } else{
-    cat("Weights sum to one: Good job !\n")
+    cli::cli_alert_success("Weights sum to one: good job!")
   }
 
   data.contrib

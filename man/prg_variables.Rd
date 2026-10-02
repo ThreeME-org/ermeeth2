@@ -14,14 +14,14 @@ A character vector of the names found.
 }
 \description{
 Deliberately a local implementation rather than a call to
-  `tresthor::get_variables_from_string()`, which cannot be called qualified:
-  it reads `thor_functions_supported`, a `LazyData` dataset that is only
-  visible once `tresthor` is *attached*, so `tresthor::` access fails with
-  "object 'thor_functions_supported' not found". Attaching a package from
-  inside another one is not an option, and the logic is a dozen lines.
+\code{tresthor::get_variables_from_string()}, which cannot be called qualified:
+it reads \code{thor_functions_supported}, a \code{LazyData} dataset that is only
+visible once \code{tresthor} is \emph{attached}, so \verb{tresthor::} access fails with
+"object 'thor_functions_supported' not found". Attaching a package from
+inside another one is not an option, and the logic is a dozen lines.
 
-  It matches `thortwo::get_variables_from_string()`, which does work
-  qualified, so a model classified here is classified the same way by the
-  solver.
+It matches \code{thortwo::get_variables_from_string()}, which does work
+qualified, so a model classified here is classified the same way by the
+solver.
 }
 \keyword{internal}

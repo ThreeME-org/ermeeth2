@@ -79,7 +79,7 @@ config_addin_app <- function(path = "configuration") {
 
   for (pkg in c("shiny", "bslib", "rstudioapi")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
-      stop("The configuration addin needs the '", pkg, "' package. Install it first.")
+      cli::cli_abort("The configuration addin needs the {.pkg {pkg}} package. Install it first.")
     }
   }
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_delete}
 \alias{message_delete}
-\title{Preprogrammed ThreeME formatting for Deleting messages}
+\title{Display a deletion message}
 \usage{
 message_delete(txt_message = "TEST")
 }
@@ -10,8 +10,8 @@ message_delete(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for Deleting messages
+Display a deletion message
 }

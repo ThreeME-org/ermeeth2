@@ -85,6 +85,12 @@ aggregate_com_sec <- function(data = data_full,
 
   og_data <- data.table::as.data.table(data)[, c("variable", "year", scenarios), with = FALSE]
 
+  ## Nothing to aggregate: no rules or bridge needed, so a model without a
+  ## bridge file still goes through.
+  if (!by_com && !by_sec) {
+    return(list(og_data, NULL, NULL, NULL))
+  }
+
   # Retrieve right version of aggregation rules
 
   if(agg_s_table == "aggregation_rules" & agg_s_table == "aggregation_rules"){
@@ -100,40 +106,40 @@ aggregate_com_sec <- function(data = data_full,
 
   }else{
     if(file.exists(file.path("src","bridges", paste0(agg_s_table, ".csv")))){
-      agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) %>%
-        dplyr::filter(sec_com == "sectors") %>% dplyr::select(-sec_com)
+      agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) |>
+        dplyr::filter(sec_com == "sectors") |> dplyr::select(-sec_com)
     }else{
       safe_get_remote_file <- purrr::safely(get_remote_file)
       downloader <- safe_get_remote_file(object = paste0(agg_s_table, ".csv"),
                                          destination.folder = file.path("src","bridges"))
       if(!is.null(downloader$error)){ # If the file cannot be downloaded
-        message_warning("Aggregation rule cannot be downloaded, using default rule instead.")
+        cli::cli_alert_warning("Aggregation rule cannot be downloaded, using the default rule instead.")
         agg_s_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "sectors")
       }else if(downloader$result){
-        agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) %>%
-          dplyr::filter(sec_com == "sectors") %>% dplyr::select(-sec_com)
+        agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) |>
+          dplyr::filter(sec_com == "sectors") |> dplyr::select(-sec_com)
       }else{ # If the file does not exist on the remote
-        message_warning("Aggregation rule does not exist, using default rule instead.")
+        cli::cli_alert_warning("Aggregation rule does not exist, using the default rule instead.")
         agg_s_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "sectors")
       }
     }
 
     if(file.exists(file.path("src","bridges", paste0(agg_c_table, ".csv")))){
-      agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) %>%
-        dplyr::filter(sec_com == "commodities") %>% dplyr::select(-sec_com)
+      agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) |>
+        dplyr::filter(sec_com == "commodities") |> dplyr::select(-sec_com)
     }else{
       safe_get_remote_file <- purrr::safely(get_remote_file)
       downloader <- safe_get_remote_file(object = paste0(agg_c_table, ".csv"),
                                          destination.folder = file.path("src","bridges"))
 
       if(!is.null(downloader$error)){ # If the file cannot be downloaded
-        message_warning("Aggregation rule cannot be downloaded, using default rule instead.")
+        cli::cli_alert_warning("Aggregation rule cannot be downloaded, using the default rule instead.")
         agg_c_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "commodities")
       }else if(downloader$result){
-        agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) %>%
-          dplyr::filter(sec_com == "commodities") %>% dplyr::select(-sec_com)
+        agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) |>
+          dplyr::filter(sec_com == "commodities") |> dplyr::select(-sec_com)
       }else{ # If the file does not exist on the remote
-        message_warning("Aggregation rule does not exist, using default rule instead.")
+        cli::cli_alert_warning("Aggregation rule does not exist, using the default rule instead.")
         agg_c_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "commodities")
       }
     }
@@ -154,7 +160,7 @@ aggregate_com_sec <- function(data = data_full,
     smap <- smap[!code %in% toupper(exception_s_c)]
   }
   if (nrow(cmap) == 0 || nrow(smap) == 0) {
-    stop("The bridge contains no usable commodity or sector code.")
+    cli::cli_abort("The bridge contains no usable commodity or sector code.")
   }
 
   Cpat <- paste0("(?:", paste(cmap$code, collapse = "|"), ")")
@@ -205,10 +211,8 @@ aggregate_com_sec <- function(data = data_full,
     ## no rule at all -> simple mean
     miss <- x[is.na(sum) & is.na(mean) & is.na(weighted_mean), unique(root)]
     if (length(miss) > 0) {
-      message_warning(sprintf(
-        "[%s] %d variable roots have no assigned aggregation method, simple mean will be used. To change this, add them to the aggregation rules table.",
-        kind, length(miss)))
-      if (detailed.warnings) { cat(miss, sep = "  "); cat("\n") }
+      cli::cli_alert_warning("[{kind}] {length(miss)} variable root{?s} {?has/have} no assigned aggregation method, simple mean will be used. To change this, add them to the aggregation rules table.")
+      if (detailed.warnings) cli_vector(miss)
       x[is.na(sum) & is.na(mean) & is.na(weighted_mean),
         `:=`(sum = 0, mean = 1, weighted_mean = 0)]
     }
@@ -220,10 +224,8 @@ aggregate_com_sec <- function(data = data_full,
     x[, has_w := !is.na(wname) & toupper(wname) %in% all_vars_up]
     bad <- x[weighted_mean == 1, list(any_w = any(has_w)), by = root][any_w == FALSE, root]
     if (length(bad) > 0) {
-      message_warning(sprintf(
-        "[%s] %d variable roots ask for a weighted mean but none of their weight variables is in the database, simple mean will be used.",
-        kind, length(bad)))
-      if (detailed.warnings) { cat(bad, sep = "  "); cat("\n") }
+      cli::cli_alert_warning("[{kind}] {length(bad)} variable root{?s} ask{?s/} for a weighted mean but none of their weight variables is in the database, simple mean will be used.")
+      if (detailed.warnings) cli_vector(bad)
       x[root %in% bad, `:=`(sum = 0, mean = 1, weighted_mean = 0, wname = NA_character_)]
     }
     x[, wname := ifelse(has_w, wname, NA_character_)]

@@ -1,7 +1,7 @@
 Package: ermeeth2
 Type: Package
 Title: Functions Used by the ThreeME Team
-Version: 1.2.0
+Version: 1.3.0
 Authors@R: c(
     person("ThreeME", "Team", role = "aut"),
     person("Anissa", "Saumtally", , "anissa.saumtally@sciencespo.fr", role = "cre")
@@ -37,13 +37,12 @@ Imports:
     utils, 
     methods,
     readxl,
-    crayon,
+    cli,
     glue,
     readr,
     lubridate,
     openxlsx,
     gt,
-    dtplyr,
     thortwo,
     quarto
 Suggests: 
@@ -54,6 +53,7 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.1.0
+Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 Depends: 
     R (>= 4.1.0),

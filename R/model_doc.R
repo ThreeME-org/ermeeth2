@@ -105,11 +105,10 @@ mdl_document <- function(sources,
                          show_conditions = FALSE,
                          overrides = NULL) {
   files <- c(sources, exo)
-  if (!length(files)) stop("`sources` is empty: nothing to document.")
+  if (!length(files)) cli::cli_abort("`sources` is empty: nothing to document.")
   missing <- files[!file.exists(file.path(base.path, files))]
   if (length(missing)) {
-    stop("file(s) not found under '", base.path, "': ",
-         paste(missing, collapse = ", "))
+    cli::cli_abort("file{?s} not found under {.path {base.path}}: {.file {missing}}")
   }
 
   items <- list()
@@ -327,12 +326,10 @@ model_doc <- function(sources,
 
   failed <- items[!is.na(items$error), , drop = FALSE]
   if (nrow(failed)) {
-    warning(
-      nrow(failed), " statement(s) could not be parsed and are shown verbatim:\n",
-      paste0("  ", failed$file, ":", failed$line, "  ", failed$raw,
-             "\n    -> ", failed$error, collapse = "\n"),
-      call. = FALSE
-    )
+    bullets <- paste0(failed$file, ":", failed$line, "  ", failed$raw, "  -> ", failed$error)
+    cli::cli_warn(c("{nrow(failed)} statement{?s} could not be parsed and {?is/are} shown verbatim:",
+                    stats::setNames(cli_escape(bullets), rep("*", length(bullets)))),
+                  call = NULL)
   }
 
   if (!dir.exists(out.path)) dir.create(out.path, recursive = TRUE)
@@ -366,10 +363,9 @@ model_doc <- function(sources,
   }
 
   if (!quiet) {
-    message(sum(items$kind == "equation"), " equations, ",
-            sum(items$kind == "exovar"), " exogenous variables, ",
-            nrow(failed), " parse failures -> ",
-            paste(basename(written), collapse = ", "))
+    cli::cli_alert_success(paste0(
+      "{sum(items$kind == \"equation\")} equations, {sum(items$kind == \"exovar\")} exogenous variables, ",
+      "{nrow(failed)} parse failure{?s} {cli::symbol$arrow_right} {.file {basename(written)}}"))
   }
   invisible(list(files = written, items = items))
 }

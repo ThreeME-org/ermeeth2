@@ -17,9 +17,9 @@ label(variable_code, data = NULL, lang = "en")
 a character or a character vector.
 }
 \description{
-Superseded by [dict_label()], which resolves a code to a label in one lookup
-against [threeme_dictionary()] instead of going through `label_database` and
-then [trad()], and which takes its dictionary as an argument rather than
+Superseded by \code{\link[=dict_label]{dict_label()}}, which resolves a code to a label in one lookup
+against \code{\link[=threeme_dictionary]{threeme_dictionary()}} instead of going through \code{label_database} and
+then \code{\link[=trad]{trad()}}, and which takes its dictionary as an argument rather than
 reading a global.
 }
 \examples{

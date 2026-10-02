@@ -29,10 +29,10 @@ contrib_longformat <- function (data,
     scenar = "baseline"
   }
   if (length(scenar) > 2) {
-    stop(message = "Indicate a maximum of two scenarios.\n")
+    cli::cli_abort("Indicate a maximum of two scenarios.")
   }
   if (length(scenar) == 2 & !"baseline" %in% scenar) {
-    stop(message = "If two scenarios are given, one must be the ' 'baseline' scenario.\n")
+    cli::cli_abort("If two scenarios are given, one must be the ' 'baseline' scenario.")
   }
 
   if(length(scenar) == 2 & "baseline" %in% scenar){
@@ -53,7 +53,7 @@ contrib_longformat <- function (data,
 
   if (prod(scenar %in% names(data)) == 0) {
     not_found <- setdiff(scenar, names(data))
-    stop(message = paste0("The '", not_found, "' scenario was not found in the database.\n"))
+    cli::cli_abort("The {.val {not_found}} scenario was not found in the database.")
   }
 
 
@@ -63,7 +63,7 @@ contrib_longformat <- function (data,
 
   data.w_baseline <- data.in  |>
     dplyr::select(variable, year, baseline)  |>
-    tidyr::pivot_wider(names_from = variable, values_from = baseline) %>%
+    tidyr::pivot_wider(names_from = variable, values_from = baseline) |>
     dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2)  |>
     dplyr::select(year, tidyr::contains("_weight"))
 
@@ -73,20 +73,20 @@ contrib_longformat <- function (data,
   }
 
   if (length(scenar) == 1) {
-    data.contrib.1 <- data.in %>% dplyr::mutate(scenario = .[, scenar])  |>
+    data.contrib.1 <- data.in |> dplyr::mutate(scenario = .data[[scenar]])  |>
       dplyr::select(variable, year, scenario)  |>
       tidyr::pivot_wider(names_from = variable, values_from = c(scenario))
     data.contrib.2 <- data.contrib.1
   } else {
     shock_scenario <- setdiff(scenar, "baseline")
 
-    data.contrib.1 <- data.in %>%
-      dplyr::mutate(scenario = .[, stringr::str_c(shock_scenario)] - .[, "baseline"])  |>
+    data.contrib.1 <- data.in |>
+      dplyr::mutate(scenario = .data[[shock_scenario]] - .data[["baseline"]])  |>
       dplyr::select(variable, year, scenario)  |>
       tidyr::pivot_wider(names_from = variable, values_from = scenario)
 
-    data.contrib.2 <- data.in %>%
-      dplyr::mutate(scenario = .[, stringr::str_c(shock_scenario)]/.[, "baseline"] - 1)  |>
+    data.contrib.2 <- data.in |>
+      dplyr::mutate(scenario = .data[[shock_scenario]]/.data[["baseline"]] - 1)  |>
       dplyr::select(variable, year, scenario)  |>
       tidyr::pivot_wider(names_from = variable, values_from = scenario)
   }
@@ -98,10 +98,10 @@ contrib_longformat <- function (data,
         dplyr::mutate_at(neg.value, ~((-1) * .x))
     }
 
-    weight_check <- data.contrib.1 %>%
+    weight_check <- data.contrib.1 |>
       dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2)  |>
       dplyr::select(year, tidyr::contains("_weight"))  |>
-      as.data.frame() %>% `colnames<-`(c("year", var2)) %>%
+      as.data.frame() |> `colnames<-`(c("year", var2)) |>
       tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)   |>
       tidyr::pivot_wider(names_from = variable, values_from = value)  |>
       dplyr::filter(year == max(year))   |>
@@ -109,79 +109,78 @@ contrib_longformat <- function (data,
 
     data.contrib.3 <- data.contrib.2  |>  dplyr::select(-tidyr::all_of(var1))
 
-    data.contrib <- (dplyr::select(data.contrib.3, year, tidyr::all_of(var2))[-1] *
-                       dplyr::select(data.w_baseline, year, tidyr::all_of(stringr::str_c(var2, "_weight")))[-1]) %>%
-      cbind(year = data.contrib.2[1], .) %>%
-      as.data.frame() %>%
+    data.contrib <- cbind(year = data.contrib.2[1],
+                          dplyr::select(data.contrib.3, year, tidyr::all_of(var2))[-1] *
+                            dplyr::select(data.w_baseline, year, tidyr::all_of(stringr::str_c(var2, "_weight")))[-1]) |>
+      as.data.frame() |>
       tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
   } else {
     if (indicator == "gr.diff" & indicator != "share") {
       if (length(scenar) == 1) {
-        data.gr_sc <- data.in |> dplyr::group_by(variable) %>%
-          dplyr::mutate(lag.value = get(scenar) - dplyr::lag(get(scenar), n = 1, default = NA), value = ((lag.value/get(scenar)))) %>%
-          dplyr::select(year, variable, value) %>%
+        data.gr_sc <- data.in |> dplyr::group_by(variable) |>
+          dplyr::mutate(lag.value = get(scenar) - dplyr::lag(get(scenar), n = 1, default = NA), value = ((lag.value/get(scenar)))) |>
+          dplyr::select(year, variable, value) |>
           tidyr::pivot_wider(names_from = variable, values_from = value)
 
         df <- (dplyr::select(data.gr_sc, year, tidyr::all_of(var2))[-1] * data.w_baseline[-1])
 
-        data.contrib <- cbind(year = data.gr_sc[1], df) %>%
-          as.data.frame() %>%
+        data.contrib <- cbind(year = data.gr_sc[1], df) |>
+          as.data.frame() |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
 
       } else {
 
         shock_scenario <- setdiff(scenar, "baseline")
 
-        data.gr_baseline <- data.in |> dplyr::group_by(variable) %>%
-          dplyr::mutate(lag.value = baseline - dplyr::lag(baseline, n = 1, default = NA), value = ((lag.value/baseline))) %>%
-          dplyr::select(year, variable, value) %>% tidyr::pivot_wider(names_from = variable, values_from = value)
+        data.gr_baseline <- data.in |> dplyr::group_by(variable) |>
+          dplyr::mutate(lag.value = baseline - dplyr::lag(baseline, n = 1, default = NA), value = ((lag.value/baseline))) |>
+          dplyr::select(year, variable, value) |> tidyr::pivot_wider(names_from = variable, values_from = value)
 
-        data.gr_sc <- data.in %>% dplyr::group_by(variable) %>%
+        data.gr_sc <- data.in |> dplyr::group_by(variable) |>
           dplyr::mutate(lag.value = get(shock_scenario) - dplyr::lag(get(shock_scenario), n = 1, default = NA),
-                        value = ((lag.value/get(shock_scenario)))) %>%
-          dplyr::select(year, variable, value) %>%
+                        value = ((lag.value/get(shock_scenario)))) |>
+          dplyr::select(year, variable, value) |>
           tidyr::pivot_wider(names_from = variable, values_from = value)
 
         df <- (dplyr::select(data.gr_sc, year, tidyr::all_of(var2))[-1] * data.w_baseline[-1]) - #ici ca doit etre weight_shock, il faut essayer
           (dplyr::select(data.gr_baseline, year, tidyr::all_of(var2))[-1] * data.w_baseline[-1])
 
-        data.contrib <- cbind(year = data.gr_baseline[1], df) %>%
-          as.data.frame() %>%
+        data.contrib <- cbind(year = data.gr_baseline[1], df) |>
+          as.data.frame() |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
       }
 
-      weight_check <- data.w_baseline %>%
-            dplyr::filter(year == max(year)) %>%
-        dplyr::select(-year) %>%
+      weight_check <- data.w_baseline |>
+            dplyr::filter(year == max(year)) |>
+        dplyr::select(-year) |>
         rowSums()
 
     } else {
       if (indicator == "share") {
-        data.contrib <- data.in %>% dplyr::select(variable, year, scenar) %>%
-          tidyr::pivot_wider(names_from = variable, values_from = scenar) %>%
-          dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) %>%
-          dplyr::select(year, contains("_weight")) %>%
-          `colnames<-`(c("year", var2)) %>%
+        data.contrib <- data.in |> dplyr::select(variable, year, scenar) |>
+          tidyr::pivot_wider(names_from = variable, values_from = scenar) |>
+          dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) |>
+          dplyr::select(year, contains("_weight")) |>
+          `colnames<-`(c("year", var2)) |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
       } else {
-        data.contrib <- data.contrib.1 %>% as.data.frame() %>%
-          dplyr::select(-var1, year, var2) %>%
-          `colnames<-`(c("year", var2)) %>%
+        data.contrib <- data.contrib.1 |> as.data.frame() |>
+          dplyr::select(-var1, year, var2) |>
+          `colnames<-`(c("year", var2)) |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
 
       }
-      weight_check <- data.w_baseline %>%
-            dplyr::filter(year == max(year)) %>%
-        dplyr::select(-year) %>%
+      weight_check <- data.w_baseline |>
+            dplyr::filter(year == max(year)) |>
+        dplyr::select(-year) |>
         rowSums()
     }
   }
 
   if (round(weight_check, check_digit) != 1) {
-    cat(stringr::str_c("Weights are not summing to one: Try again !\n (difference of: ",
-              100 * (round(weight_check, check_digit) - 1), "%)"))
+    cli::cli_alert_warning("Weights do not sum to one: try again! (difference of {100 * (round(weight_check, check_digit) - 1)}%)")
   } else {
-    cat("Weights sum to one: Good job !\n")
+    cli::cli_alert_success("Weights sum to one: good job!")
   }
 
   data.contrib
@@ -208,18 +207,18 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
     scenar = "baseline"
   }
   if (length(scenar) > 2) {
-    stop(message = "Indicate a maximum of two scenarios.\n")
+    cli::cli_abort("Indicate a maximum of two scenarios.")
   }
   if (length(scenar) == 2 & !"baseline" %in% scenar) {
-    stop(message = "If two scenarios are given, one must be the ' 'baseline' scenario.\n")
+    cli::cli_abort("If two scenarios are given, one must be the ' 'baseline' scenario.")
   }
 
   if(length(scenar) == 2 & "baseline" %in% scenar){
     ## long format output to old version -> need to be changed in the future
-    data.temps <- data %>%     dplyr::filter(scenario == "baseline") %>% dplyr::mutate(baseline = values) %>%
-      dplyr::select(-values_ref,-values,-scenario,-index_scen) %>%
-      dplyr::left_join(data %>%     dplyr::filter(scenario == setdiff(scenar, "baseline")) %>%
-                  dplyr::mutate(!!paste0(setdiff(scenar, "baseline")) := values) %>%
+    data.temps <- data |>     dplyr::filter(scenario == "baseline") |> dplyr::mutate(baseline = values) |>
+      dplyr::select(-values_ref,-values,-scenario,-index_scen) |>
+      dplyr::left_join(data |>     dplyr::filter(scenario == setdiff(scenar, "baseline")) |>
+                  dplyr::mutate(!!paste0(setdiff(scenar, "baseline")) := values) |>
                   dplyr::select(-values_ref,-values,-scenario,-index_scen) ,
                 by = c("year","variable","commodity","sector"))
     data <- data.temps
@@ -227,7 +226,7 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
 
   if (prod(scenar %in% names(data)) == 0) {
     not_found <- setdiff(scenar, names(data))
-    stop(message = paste0("The '", not_found, "' scenario was not found in the database.\n"))
+    cli::cli_abort("The {.val {not_found}} scenario was not found in the database.")
   }
   if (is.null(check_digit)) {
     check_digit = 3
@@ -239,13 +238,13 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
     contrib_ecart = FALSE
   }
   if (is.character(group_type) == FALSE) {
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }else {
     group <- toupper(stringr::str_replace(group_type, "^(.).*$", "\\1"))
   }
 
   if (!group %in% c("S", "C")) {
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }
 
   if (group == "S") {
@@ -264,39 +263,38 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
                                                  0])
   if (length(liste_var) == 0) {
     liste_var
-    stop(message = "No variables matching the variable and the group_type were found.\n")
+    cli::cli_abort("No variables matching the variable and the group_type were found.")
   }
 
-  data.contrib.0 <- data %>%     dplyr::filter(variable %in% c(var1,
+  data.contrib.0 <- data |>     dplyr::filter(variable %in% c(var1,
                                                            filtered.val))
 
-  data.contrib.lbl <- data %>%     dplyr::filter(variable %in%
-                                               c(var1, filtered.val)) %>% dplyr::select(variable, year, commodity,
+  data.contrib.lbl <- data |>     dplyr::filter(variable %in%
+                                               c(var1, filtered.val)) |> dplyr::select(variable, year, commodity,
                                                                                  sector)
   if (group == "C") {
-    data.contrib.lbl <- dplyr::select(data.contrib.lbl, -sector) %>%
+    data.contrib.lbl <- dplyr::select(data.contrib.lbl, -sector) |>
       `colnames<-`(c("variable", "year", "label"))
   }
   if (group == "S") {
-    data.contrib.lbl <- dplyr::select(data.contrib.lbl, -commodity) %>%
+    data.contrib.lbl <- dplyr::select(data.contrib.lbl, -commodity) |>
       `colnames<-`(c("variable", "year", "label"))
   }
 
-  data.w_baseline <- data.contrib.0 %>% dplyr::select(variable, year, baseline) %>%
-    tidyr::pivot_wider(names_from = variable, values_from = baseline) %>%
-    dplyr::mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) %>%
+  data.w_baseline <- data.contrib.0 |> dplyr::select(variable, year, baseline) |>
+    tidyr::pivot_wider(names_from = variable, values_from = baseline) |>
+    dplyr::mutate_at(.funs = list(w = ~./get(var1)), .vars = filtered.val) |>
     dplyr::select(year, tidyr::contains("_w"))
 
   if (length(scenar) == 1) {
-    data.contrib.1 <- data.contrib.0 %>% dplyr::mutate(scenario = .[,
-                                                             scenar]) %>% dplyr::select(variable, year, scenario) %>%
+    data.contrib.1 <- data.contrib.0 |> dplyr::mutate(scenario = .data[[scenar]]) |> dplyr::select(variable, year, scenario) |>
       pivot_wider(names_from = variable, values_from = c(scenario))
-    data.contrib <- data.contrib.1 %>% dplyr::mutate_at(.funs = list(w = ~./get(var1)),
-                                                 .vars = filtered.val) %>% dplyr::select(year, contains("_w"))
+    data.contrib <- data.contrib.1 |> dplyr::mutate_at(.funs = list(w = ~./get(var1)),
+                                                 .vars = filtered.val) |> dplyr::select(year, contains("_w"))
     weight_check <- round(rowSums(data.contrib[10, ]) - data.contrib[10,
                                                                      1], check_digit)
-    data.contrib <- data.contrib %>% as.data.frame() %>%
-      `colnames<-`(c("year", unique(filtered.val))) %>%
+    data.contrib <- data.contrib |> as.data.frame() |>
+      `colnames<-`(c("year", unique(filtered.val))) |>
       pivot_longer(names_to = "variable", values_to = "value",
                    -year)
     data.contrib <- dplyr::left_join(data.contrib.lbl, data.contrib,
@@ -305,14 +303,14 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
   else {
     shock_scenario <- setdiff(scenar, "baseline")
 
-    data.contrib.1 <- data.contrib.0 %>%
-      dplyr::mutate(scenario = .[, stringr::str_c(shock_scenario)] - .[, "baseline"]) %>%
-      dplyr::select(variable, year, scenario) %>%
+    data.contrib.1 <- data.contrib.0 |>
+      dplyr::mutate(scenario = .data[[shock_scenario]] - .data[["baseline"]]) |>
+      dplyr::select(variable, year, scenario) |>
       pivot_wider(names_from = variable, values_from = scenario)
 
 
     data.contrib.2 <- data.contrib.0 |>
-      dplyr::mutate(scenario = .[, stringr::str_c(shock_scenario)]/.[, "baseline"] - 1) |>
+      dplyr::mutate(scenario = .data[[shock_scenario]]/.data[["baseline"]] - 1) |>
       dplyr::select(variable, year, scenario) |>
       tidyr::pivot_wider(names_from = variable, values_from = scenario)
 
@@ -323,8 +321,8 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
     weight_check <- sum(check  |>  dplyr::pull(check)) / nrow(data.contrib.1)
 
     data.contrib.3 <- data.contrib.2 |>  dplyr::select(-var1)
-    data.contrib.4 <- (data.contrib.3[-1] * data.w_baseline[-1]) %>%
-      cbind(year = data.contrib.3[1], dplyr::select(data.contrib.2, var1), .) |>
+    data.contrib.4 <- cbind(year = data.contrib.3[1], dplyr::select(data.contrib.2, var1),
+                            data.contrib.3[-1] * data.w_baseline[-1]) |>
       as.data.frame() |>
       tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)
 
@@ -332,10 +330,10 @@ contrib.sub_longformat <- function (data, var1, group_type = "sector", scenar = 
                               by = c("variable", "year"))
   }
   if (abs(weight_check) >= 10^(-check_digit)) {
-    cat("Weights are not summing to one: Try again !\n")
+    cli::cli_alert_warning("Weights do not sum to one: try again!")
   }
   else {
-    cat("Weights sum to one: Good job !\n")
+    cli::cli_alert_success("Weights sum to one: good job!")
   }
   data.contrib
 }

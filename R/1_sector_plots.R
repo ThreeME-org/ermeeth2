@@ -55,13 +55,13 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
   # browser()
   #### Checking group_type
   if(is.character(group_type)== FALSE){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }else{
     group <- toupper(str_replace(group_type,"^(.).*$","\\1" ))
   }
 
   if(!group %in% c("S", "C")){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }
 
   if(group == "S"){division_type = "Sector" }
@@ -74,17 +74,17 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
   }
 
   if (length(scenario) == 1 & prod(scenario %in% colnames(data)) == 0 ){
-    cat(paste0("Scenario '",scenario,"' was not found in the database. Will plot baseline instead. \n"   ))
+    cli::cli_alert_warning("Scenario {.val {scenario}} was not found in the database. Will plot baseline instead.")
     scenario <- "baseline"
   }
 
   if (length(scenario) == 1 & prod(scenario %in% colnames(data)) == 0){
-    stop(message = paste0("Scenario '",scenario,"' was not found in the database. \n"   ))
+    cli::cli_abort("Scenario {.val {scenario}} was not found in the database.")
   }
 
   if(length(scenario) > 1 & prod(scenario %in% colnames(data)) == 0){
     scenario <- intersect(scenario , colnames(data))
-    if(purrr::is_empty(scenario)){ stop(message = paste0("The specified scenario_to_analyse were not found in the database. \n"   )) }
+    if(purrr::is_empty(scenario)){ cli::cli_abort("The specified {.arg scenario} values were not found in the database.") }
   }
 
   n.scen <- length(scenario)
@@ -99,7 +99,7 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
     scenario.diff.ref <- scenario.diff.ref[1]
 
     if(!scenario.diff.ref %in% colnames(data)){
-      stop(message = paste0("The reference scenario '",scenario.diff.ref , "' was not found in the database. \n"   ) )
+      cli::cli_abort("The reference scenario {.val {scenario.diff.ref}} was not found in the database.")
     }
   }
 
@@ -136,7 +136,7 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
 
   if(length(liste_var) == 0 ){
     liste_var
-    stop(message = "No variables matching the variable and the group_type were found.\n") }
+    cli::cli_abort("No variables matching the variable and the group_type were found.") }
 
   #### Building the data_base
 
@@ -146,41 +146,41 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
     all.scen <- scenario
     if(diff == TRUE){all.scen <- unique(c(all.scen,scenario.diff.ref))}
 
-    data <-data %>%
-      dplyr::filter(variable %in% liste_var) %>%
-      dplyr::group_by(variable) %>%
-      dplyr::arrange(variable, year) %>%
-      dplyr::mutate_at(all.scen,~(.x/dplyr::lag(.x) - 1)) %>%
+    data <-data |>
+      dplyr::filter(variable %in% liste_var) |>
+      dplyr::group_by(variable) |>
+      dplyr::arrange(variable, year) |>
+      dplyr::mutate_at(all.scen,~(.x/dplyr::lag(.x) - 1)) |>
       dplyr::ungroup()
   }
 
   ##### No diffs
 
   if(diff == FALSE){
-    graph_data <- data %>%
+    graph_data <- data |>
 
-      dplyr::filter(variable %in% liste_var) %>%
-      dplyr::filter(year %in% years_to_plot) %>%
-      tidyr::pivot_longer(cols = all_of(scenario))  %>%
+      dplyr::filter(variable %in% liste_var) |>
+      dplyr::filter(year %in% years_to_plot) |>
+      tidyr::pivot_longer(cols = all_of(scenario))  |>
       dplyr::mutate(grouping = paste0(variable,"_",name))
   }else{
 
     ##### With diffs
     if (abs.diff== FALSE){
-      graph_data <- data %>%
+      graph_data <- data |>
 
-        dplyr::filter(variable %in% liste_var) %>%
-        dplyr::filter(year %in% years_to_plot) %>%
-        dplyr::mutate_at(.,scenario, ~((.x/get(scenario.diff.ref))-1))  %>%
-        tidyr::pivot_longer(cols = all_of(scenario))  %>%
+        dplyr::filter(variable %in% liste_var) |>
+        dplyr::filter(year %in% years_to_plot) |>
+        dplyr::mutate_at(scenario, ~((.x/get(scenario.diff.ref))-1))  |>
+        tidyr::pivot_longer(cols = all_of(scenario))  |>
         dplyr::mutate(grouping = paste0(variable,"_",name))
     }else{
-      graph_data <- data %>%
+      graph_data <- data |>
 
-        dplyr::filter(variable %in% liste_var) %>%
-        dplyr::filter(year %in% years_to_plot) %>%
-        dplyr::mutate_at(.,scenario, ~(.x-get(scenario.diff.ref)))  %>%
-        tidyr::pivot_longer(cols = all_of(scenario))  %>%
+        dplyr::filter(variable %in% liste_var) |>
+        dplyr::filter(year %in% years_to_plot) |>
+        dplyr::mutate_at(scenario, ~(.x-get(scenario.diff.ref)))  |>
+        tidyr::pivot_longer(cols = all_of(scenario))  |>
         dplyr::mutate(grouping = paste0(variable,"_",name))
     }
 
@@ -193,8 +193,8 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
   graph_data$CAT <- graph_data[,tolower(division_type)]
   graph_data$name <- stringr::str_replace_all(graph_data$name, purrr::set_names(scenario.names,scenario))
 
-  series <- unique(graph_data$variable) %>% sort
-  label <- unique(graph_data$CAT) %>% sort
+  series <- unique(graph_data$variable) |> sort()
+  label <- unique(graph_data$CAT) |> sort()
 
 
   #### Preparing x axis breaks
@@ -229,21 +229,21 @@ curve_sc_plot <- function(data , variable, group_type = "sector",
 
   #### Creating the color palette
   if(group== "S"){
-    data_sectors <-unique(data %>% dplyr::select(sector) %>% dplyr::filter(!is.na(sector)) ) %>% unlist() %>% unname()
+    data_sectors <-unique(data |> dplyr::select(sector) |> dplyr::filter(!is.na(sector)) ) |> unlist() |> unname()
     n_sector<-length(data_sectors)
 
 
-    palette <- custom.palette(n = n_sector) %>% purrr::set_names(.,data_sectors)
+    palette <- custom.palette(n = n_sector) |> purrr::set_names(data_sectors)
 
   }
 
 
   if(group== "C"){
-    data_commodities <-unique(data %>% dplyr::select(commodity) %>% dplyr::filter(!is.na(commodity)) ) %>% unlist() %>% unname()
+    data_commodities <-unique(data |> dplyr::select(commodity) |> dplyr::filter(!is.na(commodity)) ) |> unlist() |> unname()
     n_commodity<-length(data_commodities)
 
 
-    palette <- custom.palette(n = n_commodity) %>% purrr::set_names(.,data_commodities)
+    palette <- custom.palette(n = n_commodity) |> purrr::set_names(data_commodities)
 
   }
 
@@ -381,13 +381,13 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
   # browser()
   #### Checking group_type
   if(is.character(group_type)== FALSE){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }else{
     group <- toupper(stringr::str_replace(group_type,"^(.).*$","\\1" ))
   }
 
   if(!group %in% c("S", "C")){
-    stop(message = " Argument group_type must be a character string starting with s for sectors or c for commodities.\n")
+    cli::cli_abort("Argument group_type must be a character string starting with s for sectors or c for commodities.")
   }
 
   if(group == "S"){division_type = "Sector" }
@@ -401,17 +401,17 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
   }
 
   if (length(scenario) == 1 & prod(scenario %in% colnames(data)) == 0 ){
-    cat(paste0("Scenario '",scenario,"' was not found in the database. Will plot baseline instead. \n"   ))
+    cli::cli_alert_warning("Scenario {.val {scenario}} was not found in the database. Will plot baseline instead.")
     scenario <- "baseline"
   }
 
   if (length(scenario) == 1 & prod(scenario %in% colnames(data)) == 0){
-    stop(message = paste0("Scenario '",scenario,"' was not found in the database. \n"   ))
+    cli::cli_abort("Scenario {.val {scenario}} was not found in the database.")
   }
 
   if(length(scenario) > 1 & prod(scenario %in% colnames(data)) == 0){
     scenario <- intersect(scenario , colnames(data))
-    if(purrr::is_empty(scenario)){ stop(message = paste0("The specified scenarios were not found in the database. \n"   )) }
+    if(purrr::is_empty(scenario)){ cli::cli_abort("The specified {.arg scenario} values were not found in the database.") }
   }
 
   n.scen <- length(scenario)
@@ -427,7 +427,7 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
     scenario.diff.ref <- scenario.diff.ref[1]
 
     if(!scenario.diff.ref %in% colnames(data)){
-      stop(message = paste0("The reference scenario '",scenario.diff.ref , "' was not found in the database. \n"   ) )
+      cli::cli_abort("The reference scenario {.val {scenario.diff.ref}} was not found in the database.")
     }
   }
 
@@ -469,27 +469,27 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
 
   if(length(liste_var) == 0 ){
     liste_var
-    stop(message = "No variables matching the variable and the group_type were found.\n") }
+    cli::cli_abort("No variables matching the variable and the group_type were found.") }
 
   #### Building the data_base
 
   ##### No diffs
   # browser()
   if(diff == FALSE){
-    graph_data <- data %>%
+    graph_data <- data |>
 
-      dplyr::filter(variable %in% liste_var) %>%
-      dplyr::filter(year %in% years_to_plot) %>%
+      dplyr::filter(variable %in% liste_var) |>
+      dplyr::filter(year %in% years_to_plot) |>
       tidyr::pivot_longer(cols = all_of(scenario))
   }else{
 
     ##### With diffs
-    graph_data <- data %>%
-      dplyr::filter(variable %in% liste_var) %>%
-      dplyr::filter(year %in% years_to_plot)%>%
-      dplyr::mutate(scen.diff = get(scenario.diff.ref)) %>%
-      dplyr::mutate_at(.vars =  scenario,~( .x -scen.diff )) %>%
-      dplyr::select(-scen.diff) %>%
+    graph_data <- data |>
+      dplyr::filter(variable %in% liste_var) |>
+      dplyr::filter(year %in% years_to_plot)|>
+      dplyr::mutate(scen.diff = get(scenario.diff.ref)) |>
+      dplyr::mutate_at(.vars =  scenario,~( .x -scen.diff )) |>
+      dplyr::select(-scen.diff) |>
       tidyr::pivot_longer(cols = all_of(scenario))
 
 
@@ -509,37 +509,37 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
 
   #### Creating the color palette
   if(group== "S"){
-    data_sectors <-unique(data %>% dplyr::select(sector) %>% dplyr::filter(!is.na(sector)) ) %>% unlist() %>% unname() %>% sort
+    data_sectors <-unique(data |> dplyr::select(sector) |> dplyr::filter(!is.na(sector)) ) |> unlist() |> unname() |> sort()
     n_sector<-length(data_sectors)
 
     if(!is.null(bridge4palette_sectors) & !is.null(names4palette_sectors)){
       palette <- custom.palette(bridge_group = bridge4palette_sectors )
 
-      names(palette)<- toupper(names(palette)) %>% str_replace_all(set_names(names4palette_sectors$name,toupper(names4palette_sectors$code)))
+      names(palette)<- toupper(names(palette)) |> str_replace_all(set_names(names4palette_sectors$name,toupper(names4palette_sectors$code)))
 
       palette <-palette[data_sectors]
 
     }else{
 
-      palette <- custom.palette(n = n_sector) %>% purrr::set_names(data_sectors,.)
+      palette <- purrr::set_names(data_sectors, custom.palette(n = n_sector))
 
     }
   }
 
   if(group== "C"){
-    data_commodities <-unique(data %>% dplyr::select(commodity) %>% dplyr::filter(!is.na(commodity)) ) %>% unlist() %>% unname() %>% sort
+    data_commodities <-unique(data |> dplyr::select(commodity) |> dplyr::filter(!is.na(commodity)) ) |> unlist() |> unname() |> sort()
     n_commodity<-length(data_commodities)
 
 
     if(!is.null(bridge4palette_commodities) & !is.null(names4palette_commodities)){
       palette <- custom.palette(bridge_group = bridge4palette_commodities )
 
-      names(palette)<- toupper(names(palette)) %>% str_replace_all(set_names(names4palette_commodities$name,toupper(names4palette_commodities$code)))
+      names(palette)<- toupper(names(palette)) |> str_replace_all(set_names(names4palette_commodities$name,toupper(names4palette_commodities$code)))
 
       palette <-palette[data_commodities]
     }else{
 
-      palette <- custom.palette(n = n_commodity) %>% purrr::set_names(data_commodities,.)
+      palette <- purrr::set_names(data_commodities, custom.palette(n = n_commodity))
 
     }
   }
@@ -547,7 +547,7 @@ stacked_sc_plot <- function(data , variable, group_type = "sector",
 
 
   if (n.scen > 1){
-    graph_data <- graph_data %>%
+    graph_data <- graph_data |>
       dplyr::mutate(
         scen.type = as.numeric(as.factor(name))
       )

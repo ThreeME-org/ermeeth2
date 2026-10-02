@@ -12,7 +12,7 @@ check_threeme_project(path = ".", what = "This addin")
 \item{what}{the addin name, for the message.}
 }
 \value{
-invisibly `TRUE`, or an error.
+invisibly \code{TRUE}, or an error.
 }
 \description{
 Stop unless the working directory is a ThreeME project

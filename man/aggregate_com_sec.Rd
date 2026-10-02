@@ -41,25 +41,25 @@ commodity code, even if the bridge lists them.}
 }
 \value{
 A list of four data.tables: the input data, the commodity-aggregated
-  database, the sector-aggregated database and the database aggregated on
-  both dimensions. Entries not requested are `NULL`.
+database, the sector-aggregated database and the database aggregated on
+both dimensions. Entries not requested are \code{NULL}.
 }
 \description{
 Commodity and sector codes are read off each variable name and
-  replaced by the group they belong to in the bridge, and the variables
-  sharing a group are combined according to the aggregation rules table
-  (`sum`, `mean` or `weighted_mean`).
+replaced by the group they belong to in the bridge, and the variables
+sharing a group are combined according to the aggregation rules table
+(\code{sum}, \code{mean} or \code{weighted_mean}).
 
-  Codes are recognised by matching the suffixes of a variable name against
-  the codes listed in the bridge, peeling them off from the right one at a
-  time. A variable may therefore carry several commodity codes (as
-  `ES_NRJ_CBIO_CCOA_SAGR` does) and all of them are aggregated.
+Codes are recognised by matching the suffixes of a variable name against
+the codes listed in the bridge, peeling them off from the right one at a
+time. A variable may therefore carry several commodity codes (as
+\code{ES_NRJ_CBIO_CCOA_SAGR} does) and all of them are aggregated.
 
-  A weighted mean is `sum(value * weight) / sum(weight)` within each
-  (group, year, scenario), the weight variable being the rule's `weight_var`
-  carrying the same code suffix as the variable it weights. It falls back to
-  a simple mean when the total weight of a group is zero, or when none of the
-  variables sharing a root has its weight variable in the database. Members
-  whose own weight variable is missing drop out of the weighted average.
+A weighted mean is \code{sum(value * weight) / sum(weight)} within each
+(group, year, scenario), the weight variable being the rule's \code{weight_var}
+carrying the same code suffix as the variable it weights. It falls back to
+a simple mean when the total weight of a group is zero, or when none of the
+variables sharing a root has its weight variable in the database. Members
+whose own weight variable is missing drop out of the weighted average.
 }
 \keyword{internal}

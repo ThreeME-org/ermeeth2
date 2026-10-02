@@ -15,24 +15,24 @@ dict_label(
 \arguments{
 \item{codes}{character vector of variable codes.}
 
-\item{lang}{`"en"` or `"fr"`.}
+\item{lang}{\code{"en"} or \code{"fr"}.}
 
-\item{short}{`TRUE` uses the short label, falling back to the long one where
+\item{short}{\code{TRUE} uses the short label, falling back to the long one where
 there is no short form. Use it for table rows and axis text.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 
-\item{fallback}{`"code"` (the default) returns the code itself for a variable
-the dictionary does not know; `"na"` returns `NA`, which is what
-[dictionary_coverage()] uses to find the gaps.}
+\item{fallback}{\code{"code"} (the default) returns the code itself for a variable
+the dictionary does not know; \code{"na"} returns \code{NA}, which is what
+\code{\link[=dictionary_coverage]{dictionary_coverage()}} uses to find the gaps.}
 }
 \value{
-a character vector as long as `codes`.
+a character vector as long as \code{codes}.
 }
 \description{
-The replacement for `label()`: one lookup rather than a code-to-English hop
-followed by a translation hop, and no dependence on global `language` /
-`label_database` objects.
+The replacement for \code{label()}: one lookup rather than a code-to-English hop
+followed by a translation hop, and no dependence on global \code{language} /
+\code{label_database} objects.
 }
 \examples{
 dict_label(c("GDP", "UNR"))

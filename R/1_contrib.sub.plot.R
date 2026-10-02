@@ -36,14 +36,14 @@ contrib.sub.plot <- function(data,
 
 
 
-  data.1 <- data %>% dplyr::filter(year > startyear & year < endyear,
+  data.1 <- data |> dplyr::filter(year > startyear & year < endyear,
                             !is.na(label),
                             abs(value) > 0.00001)
 
-  series <- unique(data.1$variable) %>% sort
+  series <- unique(data.1$variable) |> sort()
 
   # Palette de n couleurs (nombre de secteurs distingués)
-  pal <- custom.palette(n = length(series)) %>% purrr::set_names(.,series)
+  pal <- custom.palette(n = length(series)) |> purrr::set_names(series)
 
 
    if (is.null(label_series)){
@@ -64,7 +64,7 @@ contrib.sub.plot <- function(data,
 
 
   if (line_tot == TRUE){
-    data.2 <- data %>% dplyr::filter(year > startyear & year < endyear &
+    data.2 <- data |> dplyr::filter(year > startyear & year < endyear &
                                 is.na(label))
     plotseries <-  plotseries +
       geom_line(data = data.2 , aes(x = year, y = value),  size = .4)

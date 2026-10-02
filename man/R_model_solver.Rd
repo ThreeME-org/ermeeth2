@@ -13,21 +13,21 @@ R_model_solver(
 }
 \arguments{
 \item{config_file}{list. The configuration object, as returned by
-[readconfig()].}
+\code{\link[=readconfig]{readconfig()}}.}
 
 \item{before_solving_data}{data passed to the solver before solving.}
 
-\item{overwrite_rcpp}{logical. Whether to use the compiled solver. `TRUE`
-picks thortwo's `sparse` backend, `FALSE` its `dense-r` one, which needs
+\item{overwrite_rcpp}{logical. Whether to use the compiled solver. \code{TRUE}
+picks thortwo's \code{sparse} backend, \code{FALSE} its \code{dense-r} one, which needs
 no compiler.}
 
 \item{cnb}{the new-base calibration to solve against.}
 }
 \value{
-A long-format data.frame with columns `year`, `variable`, one
-  column per scenario, plus `sector` and `commodity`.
+A long-format data.frame with columns \code{year}, \code{variable}, one
+column per scenario, plus \code{sector} and \code{commodity}.
 }
 \description{
 Solves the model using the R solver rather than EViews, and
-  returns the results already reshaped to long format.
+returns the results already reshaped to long format.
 }

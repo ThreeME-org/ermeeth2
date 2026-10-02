@@ -17,10 +17,10 @@ save_3me_output(
 
 \item{project_name}{character. Project name, used as the file stem.}
 
-\item{suffix}{character or `NULL`. Aggregation level suffix, e.g. `"com"`,
-`"sec"`, `"sec_com"`. `NULL` for the main database.}
+\item{suffix}{character or \code{NULL}. Aggregation level suffix, e.g. \code{"com"},
+\code{"sec"}, \code{"sec_com"}. \code{NULL} for the main database.}
 
-\item{formats}{character vector. `"rds"`, `"parquet"` or both.}
+\item{formats}{character vector. \code{"rds"}, \code{"parquet"} or both.}
 
 \item{dir}{character. Output directory.}
 }
@@ -28,8 +28,8 @@ save_3me_output(
 The paths written, invisibly.
 }
 \description{
-Writes one of the simulation output databases to `data/output`,
-  in any combination of RDS and Parquet. Parquet is written with zstd
-  compression; it is about as small as a compressed `.rds`, roughly twice as
-  fast to write, and can be read back selectively by [read_3me_output()].
+Writes one of the simulation output databases to \code{data/output},
+in any combination of RDS and Parquet. Parquet is written with zstd
+compression; it is about as small as a compressed \code{.rds}, roughly twice as
+fast to write, and can be read back selectively by \code{\link[=read_3me_output]{read_3me_output()}}.
 }

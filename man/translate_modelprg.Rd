@@ -16,18 +16,18 @@ translate_modelprg(
 
 \item{calibfile}{character. Path to the calibration csv.}
 
-\item{base.year}{numeric. First year of the model. `NULL` falls back to a
-`baseyear` in the calling scope, which is how this was always called.}
+\item{base.year}{numeric. First year of the model. \code{NULL} falls back to a
+\code{baseyear} in the calling scope, which is how this was always called.}
 
-\item{last.year}{numeric. Last year of the model. `NULL` falls back to a
-`lastyear` in the calling scope.}
+\item{last.year}{numeric. Last year of the model. \code{NULL} falls back to a
+\code{lastyear} in the calling scope.}
 }
 \value{
-A list with elements `endo`, `exo`, `coef`, `equations`, `data` and
-  `errors`.
+A list with elements \code{endo}, \code{exo}, \code{coef}, \code{equations}, \code{data} and
+\code{errors}.
 }
 \description{
-Superseded by [prg_to_thor()], which this calls. Kept so that
-  existing scripts keep working; new code should call [prg_to_thor()], whose
-  `base.year` is a required argument rather than one defaulting to a global.
+Superseded by \code{\link[=prg_to_thor]{prg_to_thor()}}, which this calls. Kept so that
+existing scripts keep working; new code should call \code{\link[=prg_to_thor]{prg_to_thor()}}, whose
+\code{base.year} is a required argument rather than one defaulting to a global.
 }

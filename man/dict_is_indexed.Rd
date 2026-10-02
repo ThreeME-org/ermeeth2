@@ -9,14 +9,14 @@ dict_is_indexed(codes, by = NULL, dict = NULL)
 \arguments{
 \item{codes}{character vector of variable codes.}
 
-\item{by}{`NULL` for "indexed at all", or `"sector"` / `"commodity"` to ask
+\item{by}{\code{NULL} for "indexed at all", or \code{"sector"} / \code{"commodity"} to ask
 about one dimension.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
-a logical vector as long as `codes`. `FALSE` where the dictionary
-  does not know the variable, since an unknown index is not a claim of one.
+a logical vector as long as \code{codes}. \code{FALSE} where the dictionary
+does not know the variable, since an unknown index is not a claim of one.
 }
 \description{
 Is a variable indexed?

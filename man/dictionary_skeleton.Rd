@@ -16,25 +16,25 @@ dictionary_skeleton(
 )
 }
 \arguments{
-\item{sources, exo, base.path}{passed to [mdl_document()] to take the variable
-list from the model itself. `sources` and `data` are alternatives.}
+\item{sources, exo, base.path}{passed to \code{\link[=mdl_document]{mdl_document()}} to take the variable
+list from the model itself. \code{sources} and \code{data} are alternatives.}
 
 \item{data}{a long-format ThreeME data frame, or a character vector of codes,
 to take the variable list from instead.}
 
-\item{file}{path of the CSV to write. `NULL` returns the data frame without
+\item{file}{path of the CSV to write. \code{NULL} returns the data frame without
 writing.}
 
-\item{missing_only}{`TRUE` (the default) writes only the variables the
+\item{missing_only}{\code{TRUE} (the default) writes only the variables the
 dictionary does not already label, which is what you want after a model
-change. `FALSE` writes the full list.}
+change. \code{FALSE} writes the full list.}
 
 \item{index_map}{how index names map to dimensions, see
-[dictionary_index_map()]. This is what fills `indexed_by`: `Y[c, s]` in the
-sources becomes `commodity,sector`, so nobody has to know by heart which
+\code{\link[=dictionary_index_map]{dictionary_index_map()}}. This is what fills \code{indexed_by}: \code{Y[c, s]} in the
+sources becomes \verb{commodity,sector}, so nobody has to know by heart which
 variables carry a sector.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
 invisibly, the data frame written.
@@ -43,8 +43,8 @@ invisibly, the data frame written.
 Emits a CSV carrying every variable found, with the columns of the
 dictionary — prefilled where the current dictionary already knows the
 variable, blank where it does not. The point is that nobody types variable
-codes by hand: they come from the `.mdl` sources, which
-[mdl_document()] already parses, or from a dataset that has been run.
+codes by hand: they come from the \code{.mdl} sources, which
+\code{\link[=mdl_document]{mdl_document()}} already parses, or from a dataset that has been run.
 }
 \examples{
 \dontrun{

@@ -8,13 +8,13 @@ run_dynamo(config_list = configuration)
 }
 \arguments{
 \item{config_list}{list. The configuration object, as returned by
-[readconfig()].}
+\code{\link[=readconfig]{readconfig()}}.}
 }
 \value{
 Called for its side effects. Stops with an error if DynaMo did not
-  produce all the expected files.
+produce all the expected files.
 }
 \description{
 Runs DynaMo over the model files and checks that every expected
-  output file was written, stopping with an error if any is missing.
+output file was written, stopping with an error if any is missing.
 }

@@ -62,7 +62,7 @@ mdl_tokenize <- function(x) {
       }
     }
     if (!hit) {
-      stop("unexpected character '", substring(rest, 1, 1), "'", call. = FALSE)
+      cli::cli_abort("unexpected character {.val {substring(rest, 1, 1)}}", call = NULL)
     }
   }
   data.frame(type = type, value = value, stringsAsFactors = FALSE)
@@ -91,7 +91,7 @@ mdl_at <- function(p, type, value = NULL, ahead = 0L) {
 
 mdl_next <- function(p) {
   tok <- mdl_peek(p)
-  if (is.null(tok)) stop("unexpected end of equation", call. = FALSE)
+  if (is.null(tok)) cli::cli_abort("unexpected end of equation", call = NULL)
   p$i <- p$i + 1L
   tok
 }
@@ -99,8 +99,7 @@ mdl_next <- function(p) {
 mdl_expect <- function(p, type, value = NULL) {
   tok <- mdl_next(p)
   if (tok$type != type || (!is.null(value) && !tok$value %in% value)) {
-    stop("expected ", paste(value %||% type, collapse = " or "),
-         ", found '", tok$value, "'", call. = FALSE)
+    cli::cli_abort("expected {.or {.val {value %||% type}}}, found {.val {tok$value}}", call = NULL)
   }
   tok
 }
@@ -122,12 +121,12 @@ parse_primary <- function(p) {
     return(node("num", value = mdl_next(p)$value))
   }
   if (!mdl_at(p, "name")) {
-    stop("expected a variable, number or '(', found '",
-         (mdl_peek(p) %||% list(value = "<end>"))$value, "'", call. = FALSE)
+    cli::cli_abort("expected a variable, number or {.val (}, found {.val {(mdl_peek(p) %||% list(value = \"<end>\"))$value}}",
+                   call = NULL)
   }
   name <- mdl_next(p)$value
   if (name %in% mdl_keywords) {
-    stop("'", name, "' used where an expression was expected", call. = FALSE)
+    cli::cli_abort("{.val {name}} used where an expression was expected", call = NULL)
   }
   ## Function call
   if (mdl_at(p, "punct", "(")) {
@@ -248,8 +247,7 @@ mdl_parse <- function(x) {
   mdl_expect(p, "op", "=")
   rhs <- parse_qualified(p)
   if (p$i <= nrow(p$tokens)) {
-    stop("unexpected '", mdl_peek(p)$value, "' after the end of the equation",
-         call. = FALSE)
+    cli::cli_abort("unexpected {.val {mdl_peek(p)$value}} after the end of the equation", call = NULL)
   }
   cond <- NULL; over <- NULL; set <- NULL; excluded <- NULL
   if (inherits(rhs, "mdl_qualified")) {
@@ -273,8 +271,7 @@ mdl_parse_var <- function(x) {
   p <- mdl_parser(mdl_tokenize(x))
   v <- parse_primary(p)
   if (p$i <= nrow(p$tokens)) {
-    stop("unexpected '", mdl_peek(p)$value, "' after the variable name",
-         call. = FALSE)
+    cli::cli_abort("unexpected {.val {mdl_peek(p)$value}} after the variable name", call = NULL)
   }
   v
 }

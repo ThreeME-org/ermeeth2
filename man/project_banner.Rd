@@ -10,7 +10,7 @@ project_banner(path = ".")
 \item{path}{the project root.}
 }
 \value{
-a shiny tag, or `NULL` when the project looks right.
+a shiny tag, or \code{NULL} when the project looks right.
 }
 \description{
 A warning banner for an addin opened outside a ThreeME project

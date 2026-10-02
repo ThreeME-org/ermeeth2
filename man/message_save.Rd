@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_save}
 \alias{message_save}
-\title{Preprogrammed ThreeME formatting for SAVING messages}
+\title{Display a saving message}
 \usage{
 message_save(txt_message = "TEST")
 }
@@ -10,8 +10,8 @@ message_save(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for SAVING messages
+Display a saving message
 }

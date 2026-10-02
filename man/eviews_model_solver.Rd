@@ -13,7 +13,7 @@ eviews_model_solver(
 }
 \arguments{
 \item{config_file}{list. The configuration object, as returned by
-[readconfig()].}
+\code{\link[=readconfig]{readconfig()}}.}
 
 \item{before_solving_data}{data to pass to the solver before solving.}
 
@@ -25,10 +25,10 @@ EViews workflow, of a single calibration csv before it is split.}
 }
 \value{
 Called for its side effects on the EViews workflow and the files in
-  `src/compiler`.
+\code{src/compiler}.
 }
 \description{
 Writes the calibration csv files, hands the model over to
-  EViews for solving, reads the results back, then cleans up the temporary
-  calibration files.
+EViews for solving, reads the results back, then cleans up the temporary
+calibration files.
 }

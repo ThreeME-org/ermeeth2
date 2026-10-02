@@ -53,8 +53,8 @@ run_simulations <- function(configuration = config,
 
   ### PART 2 SOURCING SCENARII CALIBRATION
 
-  calib <- fread("src/compiler/calib.csv", data.table = FALSE) %>%
-    select(-all_of("baseyear")) %>%
+  calib <- fread("src/compiler/calib.csv", data.table = FALSE) |>
+    select(-all_of("baseyear")) |>
     mutate(year = year + baseyear)
 
   OGcalib <- calib
@@ -69,41 +69,39 @@ run_simulations <- function(configuration = config,
 
   baseline_vars <- setdiff(names(baseline_ch), "year")
 
-  calib_new_base <- OGcalib %>%
-    filter(year %in% c(firstyear:lastyear)) %>%
-    select(-all_of(baseline_vars)) %>%
+  calib_new_base <- OGcalib |>
+    filter(year %in% c(firstyear:lastyear)) |>
+    select(-all_of(baseline_vars)) |>
     full_join(baseline_ch, by= "year")
   ### calib_new_base now integrates changes with the baseline scenario and should be used to configure shock scenarii
 
   ## D Scenarii shock calibration
   if(automated_shocks == FALSE){
-    shock_ch_scenarii <- scenario %>%
-      map(~source(file.path("configuration","scenarii_calib", str_c("2_calib_shock_",.x,".R")), local = TRUE )) %>%
-      map(~.x$value) %>%
+    shock_ch_scenarii <- scenario |>
+      map(~source(file.path("configuration","scenarii_calib", str_c("2_calib_shock_",.x,".R")), local = TRUE )) |>
+      map(~.x$value) |>
       set_names(scenario)
   }else{
     source(calib_scenario, local = TRUE)
-    shock_ch_scenarii <- purrr::set_names(scenario)  %>%
+    shock_ch_scenarii <- purrr::set_names(scenario)  |>
       map( ~safely(automated_calib_shock)(.x,calib_new_base, parameters_range)$results ) |> purrr::compact()
     failed_scen <- setdiff(scenario, names(shock_ch_scenarii))
     if(length(failed_scen)>0){
-      message_warning("Some Scenarios could not be calibrated, dropping them..")
-
-      cat(failed_scen,sep = "\n")
+      cli::cli_alert_warning("Some scenarios could not be calibrated, dropping them: {.val {failed_scen}}")
       scenario <- names(shock_ch_scenarii)
 
     }else{
-      message_ok("All Scenarios were properly calibrated")
+      cli::cli_alert_success("All scenarios were properly calibrated")
     }
 
   }
 
   if(Rsolver== FALSE){
-    shock_ch_scenarii %>% imap(~write.csv(.x,
+    shock_ch_scenarii |> imap(~write.csv(.x,
                                           file = file.path("configuration","scenarii_calib",str_c("calib_shock_",.y,".csv")),
                                           row.names = FALSE))}
 
-  all_scenarii <- append(shock_ch_scenarii,  list(baseline_ch) ) %>% set_names(c(scenario, "baseline"))
+  all_scenarii <- append(shock_ch_scenarii,  list(baseline_ch) ) |> set_names(c(scenario, "baseline"))
 
 
   ## E. Saving all scenarii to an Excel spreadsheet (it is only for ex-post checking purposes)
@@ -120,7 +118,7 @@ run_simulations <- function(configuration = config,
   ### Preparing the workbook
   wb <- openxlsx::loadWorkbook(xlsx.file)
 
-  all_scenarii %>% imap(function(database, name) {
+  all_scenarii |> imap(function(database, name) {
     if (!name %in% sheets(wb)){
       openxlsx::addWorksheet(wb,sheetName = name)
     }else{
@@ -143,7 +141,7 @@ run_simulations <- function(configuration = config,
   ##### END EXCEL SCENARIO SHOCK SAVE
 
 
-  data_for_solver <- all_scenarii %>%
+  data_for_solver <- all_scenarii |>
     map(~update_data_merge(calib_new_base , .x)) ##data_for solver contains the full databases needed to run the solver for each scenario
 
   ### PART 3 MODEL BUILDING AND SOLVING
@@ -173,8 +171,8 @@ run_simulations <- function(configuration = config,
       c('Transport','C002'),
       c('Services','C003'),
       c('Energy','C004')
-    ) %>%
-      as.data.frame() %>% rename(name = V1,code = V2)
+    ) |>
+      as.data.frame() |> rename(name = V1,code = V2)
 
     ### Sectors: s4
     names_sectors <- rbind(
@@ -186,8 +184,8 @@ run_simulations <- function(configuration = config,
       c('Transport','s002'),
       c('Services','s003'),
       c('Energy','s004')
-    ) %>%
-      as.data.frame() %>% rename(name = V1,code = V2)
+    ) |>
+      as.data.frame() |> rename(name = V1,code = V2)
 
   }
 
@@ -198,6 +196,8 @@ run_simulations <- function(configuration = config,
     data_full <- R_model_solver(
       config_file = configuration,
       before_solving_data = data_for_solver,
+      ## the value reconciled by eviews_checks(), not the raw config one
+      overwrite_rcpp = rcpp_option,
       cnb = calib_new_base
       )
 
@@ -219,10 +219,10 @@ run_simulations <- function(configuration = config,
     data_list_read <-purrr::set_names(scenario)  |> map(~read_3me_eviews_csv(file.path("data","temp","csv",str_c(.x,".csv") ) , variables_selection = variables_to_keep ))
 
     list_0 <- data_list_read[1]
-    list_res <- data_list_read[-1] %>% map(~select(.x,-baseline))
+    list_res <- data_list_read[-1] |> map(~select(.x,-baseline))
 
-    data_list <- c(list_0,list_res) %>%
-      reduce(full_join, by = c("year", "variable")) %>%
+    data_list <- c(list_0,list_res) |>
+      reduce(full_join, by = c("year", "variable")) |>
       aggregate_com_sec(bridge_com = bridge_commodities ,bridge_sec = bridge_sectors ,by_com = reagg_bool ,by_sec = reagg_bool , scenarios =  c("baseline",scenario |> unname())) |> purrr::compact() |>
       map(~ as.data.frame(.x) |> add_com_sec_names(commodities_names = names_commodities,sectors_names = names_sectors) |> longer_data())
 

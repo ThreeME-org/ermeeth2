@@ -11,18 +11,18 @@ dictionary_coverage(data, lang = "en", dict = NULL, quiet = FALSE)
 
 \item{lang}{language whose labels must be present to count as covered.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 
-\item{quiet}{`TRUE` suppresses the summary message.}
+\item{quiet}{\code{TRUE} suppresses the summary message.}
 }
 \value{
-invisibly, a data frame with one row per code and columns `code`,
-  `known` (the code is in the dictionary) and `labelled` (it has a label in
-  `lang`).
+invisibly, a data frame with one row per code and columns \code{code},
+\code{known} (the code is in the dictionary) and \code{labelled} (it has a label in
+\code{lang}).
 }
 \description{
 Run it after a model change to see what the dictionary has not caught up
-with. The gaps are what [dictionary_skeleton()] then writes out for filling
+with. The gaps are what \code{\link[=dictionary_skeleton]{dictionary_skeleton()}} then writes out for filling
 in.
 }
 \examples{

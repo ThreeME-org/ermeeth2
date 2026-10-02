@@ -14,11 +14,11 @@ update_data_merge(old_data, new_data, by_join_var = "year")
 \item{by_join_var}{character vector of the columns to join on. Default is "year"}
 }
 \value{
-a data.frame with the columns of `old_data` updated with the values
-  of `new_data`. If the two data.frames do not have the same number of rows,
-  `old_data` is returned unchanged.
+a data.frame with the columns of \code{old_data} updated with the values
+of \code{new_data}. If the two data.frames do not have the same number of rows,
+\code{old_data} is returned unchanged.
 }
 \description{
 Combine two databases that may have variables in common. The
-  common variables are replaced by their values from the new database.
+common variables are replaced by their values from the new database.
 }

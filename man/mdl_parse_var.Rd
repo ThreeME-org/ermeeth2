@@ -7,10 +7,10 @@
 mdl_parse_var(x)
 }
 \arguments{
-\item{x}{character(1), e.g. `"ADJUST_MARKUP[s]"`.}
+\item{x}{character(1), e.g. \code{"ADJUST_MARKUP[s]"}.}
 }
 \value{
-an `mdl_var` node.
+an \code{mdl_var} node.
 }
 \description{
 Parse a lone variable declaration, as found in an exovar .mdl file

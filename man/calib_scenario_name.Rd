@@ -9,16 +9,16 @@ calib_scenario_name(name, type = c("baseline", "shock"))
 \arguments{
 \item{name}{scenario name.}
 
-\item{type}{`"baseline"` or `"shock"`.}
+\item{type}{\code{"baseline"} or \code{"shock"}.}
 }
 \value{
 the normalised name.
 }
 \description{
-Validates the name and, for a baseline, makes sure it carries the `baseline`
-prefix the file convention needs: `readconfig()` builds the path as
-`1_calib_<scenario_baseline>.R`, so a baseline called `ademe` has to become
-`baseline_ademe` for the file to be found.
+Validates the name and, for a baseline, makes sure it carries the \code{baseline}
+prefix the file convention needs: \code{readconfig()} builds the path as
+\verb{1_calib_<scenario_baseline>.R}, so a baseline called \code{ademe} has to become
+\code{baseline_ademe} for the file to be found.
 }
 \examples{
 calib_scenario_name("ademe", "baseline")

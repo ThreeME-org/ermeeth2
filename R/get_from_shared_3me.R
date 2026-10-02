@@ -91,13 +91,13 @@ get_remote_file <- function(object = NULL, root = NULL, type = NULL, subtype = N
   success <- FALSE
 
   if(is.null(object)){
-    stop(message = message_not_ok("Argument 'object' has not been specified. What are you looking to download?"))}
+    cli::cli_abort("Argument {.arg object} has not been specified. What are you looking to download?")}
 
   ## functions
   search_base <- function(data, subfolder = "plop"){
 
     if(nrow(data) == 0){
-      message_not_ok(glue::glue("Could not find subfolder {subfolder}"))
+      cli::cli_alert_danger("Could not find subfolder {.path {subfolder}}")
       error <- TRUE
     }else{
       error <- FALSE
@@ -112,7 +112,7 @@ get_remote_file <- function(object = NULL, root = NULL, type = NULL, subtype = N
     object_search <- data |> filter(object == object_to_look)
 
     if(nrow(object_search)==0){
-      message_warning(glue::glue("Could not find {object_to_look} in the specified folders. Searching for similarly named files with a different extension."))
+      cli::cli_alert_warning("Could not find {.file {object_to_look}} in the specified folders. Searching for similarly named files with a different extension.")
 
       object_search <- data |> filter(object.net == object_short)
     }
@@ -169,24 +169,23 @@ get_remote_file <- function(object = NULL, root = NULL, type = NULL, subtype = N
   }
 
   if(is.null(object_search)){
-  message_not_ok(glue::glue("No file named '{object_short}' has been found"))
+  cli::cli_alert_danger("No file named {.val {object_short}} has been found")
   }else{
     if(length(object_search)>1){
-      message_warning(glue::glue("Multiple files like '{object_short}' have been found:\n"))
-      cat(object_search,sep = "\n")
-      cat("\nPlease refine your search to narrow it down to one of those files to download.\n")
+      cli::cli_alert_warning("Multiple files like {.val {object_short}} have been found:")
+      cli_vector(object_search, sep = "\n")
+      cli::cli_alert_info("Please refine your search to narrow it down to one of those files to download.")
     }else{
       if(folder_search){
         extramessage <- " in another folder than what was specified"
         }else{
         extramessage <- ""}
-      message_main_step(glue::glue("A file such as '{object_short}' has been found{extramessage} with the following path: \n {object_search}"))
+      cli::cli_alert_success("A file such as {.val {object_short}} has been found{extramessage}: {.path {object_search}}")
 
       dl.url = file.path(repo,object_search)
       dest.url = file.path(destination.folder, basename(dl.url))
-    cat(glue::glue("\nDownloading {dl.url} to {dest.url}\n"))
+    cli::cli_alert_info("Downloading {.url {dl.url}} to {.path {dest.url}}")
 
-    cat("\n")
 
     download.file(url = dl.url,
                   destfile = dest.url)

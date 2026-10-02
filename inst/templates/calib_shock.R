@@ -7,10 +7,10 @@
 ## `year` plus the exogenous variables the shock changes.
 
 # Define the series necessary to calibrate the scenario. Names are lower case.
-series <- c("DWD_C01") %>% tolower
+series <- c("DWD_C01") |> tolower()
 
 # Load the selected series over the simulation range
-selection <- calib_new_base %>% select(year, all_of(series))
+selection <- calib_new_base |> select(year, all_of(series))
 
 ## Change in exogenous variables
 ##

@@ -17,16 +17,16 @@ read_3me_output(
 \arguments{
 \item{project_name}{character. Project name.}
 
-\item{suffix}{character or `NULL`. `NULL` (default) for the main database,
-otherwise `"com"`, `"sec"` or `"sec_com"`.}
+\item{suffix}{character or \code{NULL}. \code{NULL} (default) for the main database,
+otherwise \code{"com"}, \code{"sec"} or \code{"sec_com"}.}
 
-\item{variables}{character vector or `NULL`. Keep only these variables.}
+\item{variables}{character vector or \code{NULL}. Keep only these variables.}
 
-\item{scenarios}{character vector or `NULL`. Keep only these scenarios.}
+\item{scenarios}{character vector or \code{NULL}. Keep only these scenarios.}
 
-\item{years}{numeric vector or `NULL`. Keep only these years.}
+\item{years}{numeric vector or \code{NULL}. Keep only these years.}
 
-\item{columns}{character vector or `NULL`. Keep only these columns.}
+\item{columns}{character vector or \code{NULL}. Keep only these columns.}
 
 \item{dir}{character. Directory holding the output files.}
 }
@@ -34,8 +34,8 @@ otherwise `"com"`, `"sec"` or `"sec_com"`.}
 A data.frame.
 }
 \description{
-Reads back a database written by [save_3me_output()]. When a
-  parquet file is available, `variables`, `scenarios` and `years` are pushed
-  down into the read, so only the rows and columns asked for are ever
-  materialised; filtering a whole `.rds` afterwards costs the full load.
+Reads back a database written by \code{\link[=save_3me_output]{save_3me_output()}}. When a
+parquet file is available, \code{variables}, \code{scenarios} and \code{years} are pushed
+down into the read, so only the rows and columns asked for are ever
+materialised; filtering a whole \code{.rds} afterwards costs the full load.
 }

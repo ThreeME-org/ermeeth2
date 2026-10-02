@@ -50,16 +50,16 @@ R_model_solver <- function(config_file = configuration,
     ####### If model must be recompiled
 
     ### A.1 Transform model.prg file into solver syntax
-    ("Translating model.prg file for the solver") %>% message_sub_step()
+    ("Translating model.prg file for the solver") |> message_sub_step()
     model_to_build <- prg_to_thor(base.year = baseyear, last.year = lastyear)
     if (length(model_to_build$warnings)) {
       translate_report(model_to_build)
-      stop("The model translation reported problems; see the report above.",
-           call. = FALSE)
+      cli::cli_abort("The model translation reported problems; see the report above.",
+           call = NULL)
     }
 
     ### A.2 Build model and save
-    ("Creating the model for simulations") %>% message_sub_step()
+    ("Creating the model for simulations") |> message_sub_step()
     themodel <- thortwo::thor_model(
       name         = "themodel",
       endogenous   = model_to_build$endo,
@@ -70,13 +70,13 @@ R_model_solver <- function(config_file = configuration,
       workdir      = solver_dir,
       verbose      = FALSE)
 
-    ("Saving the model and dependencies for future usage") %>% message_sub_step()
+    ("Saving the model and dependencies for future usage") |> message_sub_step()
     thortwo::export_model(themodel, filename = file.path(solver_dir, "model_thor.txt"))
     ## Self-contained: the .rds carries the generated solver source, so it can
     ## be moved between machines and survives a cleared tempdir.
     thortwo::thor_save(themodel, file.path(solver_dir, "themodel.rds"))
 
-    data_3me <- model_to_build$data %>% filter( year %in% c(firstyear:lastyear))
+    data_3me <- model_to_build$data |> filter( year %in% c(firstyear:lastyear))
     saveRDS(data_3me, file.path(solver_dir, "data_thor.rds"))
 
   }else{
@@ -89,10 +89,17 @@ R_model_solver <- function(config_file = configuration,
 
   #### if new variables created for the Rsolver must be added to calib_new_base
   newly_created_variables <- setdiff(names(data_3me), names(calib_new_base) )
+  ## They must also reach every scenario's database, which is what the solver
+  ## actually reads: the `@elem` values and coefficients are not in calib.csv.
   if(length(newly_created_variables) > 0){
-    calib_new_base <- calib_new_base %>%
-      full_join(data_3me %>%
-                  select(all_of(c("year",newly_created_variables))), by = "year" )
+    new_vars_data <- data_3me |>
+      select(all_of(c("year", newly_created_variables)))
+    calib_new_base <- calib_new_base |>
+      full_join(new_vars_data, by = "year" )
+    data_for_solver <- data_for_solver |>
+      map(~ .x |>
+            select(-any_of(newly_created_variables)) |>
+            left_join(new_vars_data, by = "year"))
   }
 
 
@@ -107,18 +114,20 @@ R_model_solver <- function(config_file = configuration,
   ## check now goes through `calibration_check()`, which evaluates every
   ## equation through the same generated code the solver uses and names the
   ## ones that are off.
-  ("Calibration check at the base year with the calibration data") %>% message_sub_step()
+  ("Calibration check at the base year with the calibration data") |> message_sub_step()
 
   equations_check <- thortwo::calibration_check(
     themodel, data_3me, period = baseyear, index_time = "year",
     tolerance = tolerance_calib_check)
 
   if(nrow(equations_check) == 0 ){
-    ("All equations appear to well calibrated at the baseyear with the calib.csv file.") %>% message_ok()
+    cli::cli_alert_success("All equations are well calibrated at the base year with {.file calib.csv}.")
   }else{
-    ("The following equations are not well calibrated for the baseline scenario:") %>% message_warning()
-    print(equations_check)
-    Sys.sleep(2)
+    cli::cli_alert_warning("{nrow(equations_check)} equation{?s} {?is/are} not well calibrated for the baseline scenario:")
+    for (k in seq_len(nrow(equations_check))) {
+      cli::cli_bullets(c("*" = "{.field {equations_check$equation[k]}} ({equations_check$part[k]}), residual {signif(equations_check$residual[k], 3)}"))
+      cli::cli_verbatim(paste0("    ", equations_check$formula[k]))
+    }
 
     #### TODO : ADD OPTION / PROMPT to stop here
   }
@@ -128,7 +137,7 @@ R_model_solver <- function(config_file = configuration,
 
   solved_data <- data_for_solver
   ## 1. Solving using R : loop needed while we work on parallelisation
-  "Solving each scenario, please wait... \U23F1" %>%   message_main_step()
+  "Solving each scenario, please wait... \U23F1" |>   message_main_step()
   scenar_order <- c("baseline", setdiff(names(data_for_solver), "baseline"))
   tot_scen <- length(scenar_order)
 
@@ -136,11 +145,11 @@ R_model_solver <- function(config_file = configuration,
   for (item_scen in 1:tot_scen){
 
     if(length(variables_to_keep)==0){
-      variables_to_keep <- setdiff(names(data_for_solver[["baseline"]]), "year") %>% tolower
+      variables_to_keep <- setdiff(names(data_for_solver[["baseline"]]), "year") |> tolower()
     }
 
     scenar_solved <- scenar_order[item_scen]
-    str_c("Solving scenario ",scenar_solved ) %>% message_any(str_c(item_scen," / ", tot_scen))
+    cli::cli_alert_info("Solving scenario {.val {scenar_solved}} ({item_scen}/{tot_scen})")
     # browser()
     ## No `skip_tests`: thortwo's checks are vectorised over the data matrix
     ## and cost nothing, and they name the missing variable instead of letting
@@ -149,17 +158,17 @@ R_model_solver <- function(config_file = configuration,
       themodel,
       from = baseyear, to = lastyear,
       data = data_for_solver[[scenar_solved]],
-      index_time = "year", verbose = FALSE) %>%
+      index_time = "year", verbose = FALSE) |>
       select(year, any_of(tolower(variables_to_keep)) )
 
   }
 
   ### Generate long format datafull
 
-  data_full <- solved_data %>% imap(~pivot_longer(.x,cols = !year,names_to = "variable",values_to = .y) %>%
-                                      mutate(variable = toupper(variable))) %>%
-    reduce(full_join, by = c("year","variable")) %>%
-    mutate(sector = NA_character_,commodity = NA_character_) %>% as.data.frame()
+  data_full <- solved_data |> imap(~pivot_longer(.x,cols = !year,names_to = "variable",values_to = .y) |>
+                                      mutate(variable = toupper(variable))) |>
+    reduce(full_join, by = c("year","variable")) |>
+    mutate(sector = NA_character_,commodity = NA_character_) |> as.data.frame()
 
 
 

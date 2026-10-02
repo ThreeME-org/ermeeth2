@@ -31,7 +31,7 @@ threeme_transformations <- function() {
       needs_ref = TRUE, drop_baseline = TRUE, percent = TRUE
     ),
     diff = list(
-      id = "diff", label = "absolute difference to the baseline", symbol = "Δ",
+      id = "diff", label = "absolute difference to the baseline", symbol = "\u0394",
       needs_ref = TRUE, drop_baseline = TRUE, percent = FALSE
     ),
     ppdiff = list(
@@ -39,11 +39,11 @@ threeme_transformations <- function() {
       needs_ref = TRUE, drop_baseline = TRUE, percent = TRUE
     ),
     gr = list(
-      id = "gr", label = "annual growth rate", symbol = "↗",
+      id = "gr", label = "annual growth rate", symbol = "\u2197",
       needs_ref = FALSE, drop_baseline = FALSE, percent = TRUE
     ),
     index100 = list(
-      id = "index100", label = "index (base year = 100)", symbol = "t₀=100",
+      id = "index100", label = "index (base year = 100)", symbol = "t\u2080=100",
       needs_ref = FALSE, drop_baseline = FALSE, percent = FALSE
     )
   )
@@ -72,7 +72,7 @@ resolve_transformation <- function(data, transformation) {
 
   if (is.null(names(transformation))) {
     if (length(transformation) != 1) {
-      stop("`transformation` must be a single value, or a vector named by variable.")
+      cli::cli_abort("`transformation` must be a single value, or a vector named by variable.")
     }
     transformation <- match.arg(transformation, specs)
     return(stats::setNames(rep(transformation, length(variables)), variables))
@@ -80,10 +80,8 @@ resolve_transformation <- function(data, transformation) {
 
   unknown <- setdiff(transformation, specs)
   if (length(unknown) > 0) {
-    stop(paste0(
-      "Unknown transformation(s): ", paste(unique(unknown), collapse = ", "),
-      ". Available: ", paste(specs, collapse = ", "), "."
-    ))
+    cli::cli_abort(c("Unknown transformation{?s}: {.val {unique(unknown)}}.",
+                     "i" = "Available: {.val {specs}}."))
   }
 
   ## An unnamed element acts as the default for the variables not listed.
@@ -139,7 +137,7 @@ threeme_transform <- function(data,
   required <- c("year", "variable", "scenario", "values")
   missing_cols <- setdiff(required, names(data))
   if (length(missing_cols) > 0) {
-    stop(paste("The data is missing the column(s):", paste(missing_cols, collapse = ", ")))
+    cli::cli_abort("The data is missing the column{?s}: {.field {missing_cols}}.")
   }
 
   per_variable <- resolve_transformation(data, transformation)
@@ -147,10 +145,7 @@ threeme_transform <- function(data,
 
   needs_ref <- vapply(unique(per_variable), function(x) transformation_spec(x)$needs_ref, logical(1))
   if (any(needs_ref) && !"values_ref" %in% names(data)) {
-    stop(paste0(
-      "The transformation(s) ", paste(unique(per_variable)[needs_ref], collapse = ", "),
-      " require a 'values_ref' column."
-    ))
+    cli::cli_abort("The transformation{?s} {.val {unique(per_variable)[needs_ref]}} require{?s/} a {.field values_ref} column.")
   }
 
   keys <- series_keys(data)
@@ -186,7 +181,7 @@ threeme_transform <- function(data,
 
   out <- dplyr::bind_rows(pieces)
   if (nrow(out) == 0) {
-    stop("No rows left after transformation. Check `variables`, `scenarios` and `name_baseline`.")
+    cli::cli_abort("No rows left after transformation. Check `variables`, `scenarios` and `name_baseline`.")
   }
   as.data.frame(out)
 }

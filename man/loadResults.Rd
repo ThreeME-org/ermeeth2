@@ -40,12 +40,14 @@ loadResults(
 }
 \value{
 A data.frame with the following columns:
- - variable: name of the ThreeME variable for which the result is reported in a given row
- - year: year for which the result is reported in a given row
- - one column per scenario, named after the scenario (e.g. "baseline") containing
- the values of the results themselves
- - sector : if applicable, the sector name pertaining to the variable, NA otherwise
- - commodity : if applicable, the commodity name pertaining to the variable, NA otherwise
+\itemize{
+\item variable: name of the ThreeME variable for which the result is reported in a given row
+\item year: year for which the result is reported in a given row
+\item one column per scenario, named after the scenario (e.g. "baseline") containing
+the values of the results themselves
+\item sector : if applicable, the sector name pertaining to the variable, NA otherwise
+\item commodity : if applicable, the commodity name pertaining to the variable, NA otherwise
+}
 }
 \description{
 Load ThreeME results from a csv exported by EViews

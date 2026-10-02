@@ -18,30 +18,30 @@ run_addin_app(path = "configuration", output_dir = file.path("data", "output"))
 
 \item{output_dir}{where the output databases are written.}
 
-\item{viewer}{where to open: `"dialog"`, `"browser"` or `"pane"`.}
+\item{viewer}{where to open: \code{"dialog"}, \code{"browser"} or \code{"pane"}.}
 }
 \value{
-invisibly, a list with the `config` used and the `result` of
-  [run_simulations()], or `NULL` if cancelled.
+invisibly, a list with the \code{config} used and the \code{result} of
+\code{\link[=run_simulations]{run_simulations()}}, or \code{NULL} if cancelled.
 
-`run_addin_app()` returns the `shiny.appobj` without launching it.
+\code{run_addin_app()} returns the \code{shiny.appobj} without launching it.
 }
 \description{
 An RStudio addin to launch a run. It asks for the project name
-  first and on its own, because the project name is the output file stem: a
-  run under a name already used replaces that project's databases in place,
-  and there is no undo. The addin says plainly which files a given name would
-  overwrite.
+first and on its own, because the project name is the output file stem: a
+run under a name already used replaces that project's databases in place,
+and there is no undo. The addin says plainly which files a given name would
+overwrite.
 
-  Below that, pick the input and output configurations, and adjust the
-  baseline and shock scenarios for this run without editing the configuration
-  on disk -- the overrides apply to the run only.
+Below that, pick the input and output configurations, and adjust the
+baseline and shock scenarios for this run without editing the configuration
+on disk -- the overrides apply to the run only.
 
-  Only works inside a ThreeME v4 project: it compiles the model from `src/`
-  and writes the output databases into `data/output`.
+Only works inside a ThreeME v4 project: it compiles the model from \verb{src/}
+and writes the output databases into \code{data/output}.
 
-  Launch it from the Addins menu ("Run ThreeME simulations"), or call this
-  function.
+Launch it from the Addins menu ("Run ThreeME simulations"), or call this
+function.
 }
 \examples{
 \dontrun{

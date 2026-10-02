@@ -21,7 +21,7 @@
 # ploplist2 <- wide_data(data = data, variables = variables,out_format = "list")
 #
 # coountry_scenar <- list(FR= ploplist,DE = ploplist2)
-# new <- ploplist %>% map(~.x %>%  mutate(ratio = GDP/WAGES))
+# new <- ploplist |> map(~.x |>  mutate(ratio = GDP/WAGES))
 
 
 # variables <- c("SALAIRE")
@@ -58,11 +58,11 @@ wide_data <- function(data ,
 
   ## database threeme check
   if( prod(c("year","variable") %in% names(data)) == 0 ){
-    stop(message = "The database is missing variables 'year' and/or 'variable'")
+    cli::cli_abort("The database is missing variables 'year' and/or 'variable'")
   }
   if( prod(scenarios %in% names(data)) == 0 ){
     missing_scen <- dplyr::setdiff(scenarios,names(data))
-    stop(message = paste("The database is missing scenario variable(s):", missing_scen))
+    cli::cli_abort("The database is missing scenario variable{?s}: {.val {missing_scen}}")
   }
 
   ## variables check
@@ -73,59 +73,59 @@ wide_data <- function(data ,
   }else{
     variables_not_found <- dplyr::setdiff(variables,all_variables)
     if (length(variables_not_found)>0 ){
-      message(paste("Variable(s)", paste0(variables_not_found,collapse = ", "), "could not be found, they will be ignored."))
+      cli::cli_alert_warning("Variable{?s} {.var {variables_not_found}} could not be found, {?it/they} will be ignored.")
     }
     if(length(variables_not_found) == length(variables)){
-      stop(message="Could not find any of the variables specified.")
+      cli::cli_abort("Could not find any of the variables specified.")
     }
 
   }
 
   if(length(variables) > 1000){
-    message("There is a large number of variables... please wait... \n")
+    cli::cli_alert_info("There is a large number of variables... please wait...")
   }
 
   if(length(variables) >= 10000){
-    message("Maybe have a sip of coffee? \n")
+    cli::cli_alert_info("Maybe have a sip of coffee?")
   }
 
   if(length(variables) >= 12000){
-    message("Have you checked your emails or Slack messages? \n")
+    cli::cli_alert_info("Have you checked your emails or Slack messages?")
   }
 
   if(length(variables) >= 15000){
-    message("Maybe select less variables next time... \n")
+    cli::cli_alert_info("Maybe select less variables next time...")
   }
 
   ## checking out_format
   if(is.null(out_format)){out_format == "list"}
   if(!tolower(out_format) %in% c("list","data.frame","dataframe")){
-   message("out_format must be either 'list' or 'dataframe'. Reverting out_format to 'list'.\n")
+   cli::cli_alert_info("out_format must be either 'list' or 'dataframe'. Reverting out_format to 'list'.")
     out_format <- "list"
   }else{
-    out_format  <-  out_format %>% tolower() %>% stringr::str_remove_all("\\.")
+    out_format  <-  out_format |> tolower() |> stringr::str_remove_all("\\.")
   }
 
   ## Filtering the data
-  data_short <- data %>% dplyr::filter(variable %in% variables)
+  data_short <- data |> dplyr::filter(variable %in% variables)
 
 
   ## Making it wide
-  data_wide <- data_short %>%
+  data_wide <- data_short |>
     tidyr::pivot_wider(
       id_cols = year ,
       names_from = variable,
       names_sep = "." ,
-      values_from = dplyr::all_of(scenarios) )%>% as.data.frame()
+      values_from = dplyr::all_of(scenarios) )|> as.data.frame()
 
   if(out_format == "dataframe"){
     return(data_wide)
   }
 
   if(out_format == "list"){
-    list_data <- purrr::set_names(scenarios)  %>%
-      purrr::map(~data_wide %>%
-                   dplyr::select(year, dplyr::starts_with(paste0(.x,"."))) %>%
+    list_data <- purrr::set_names(scenarios)  |>
+      purrr::map(~data_wide |>
+                   dplyr::select(year, dplyr::starts_with(paste0(.x,"."))) |>
                    dplyr::rename_all(~str_remove(.x,"^.+\\.")) ## should change to use scenario.name
                  )
       return(list_data)

@@ -1,3 +1,69 @@
+# ermeeth2 1.3.0
+
+## Console output goes through cli
+
+* All console output uses `cli` instead of `cat()`, `crayon` and base
+  `stop()` / `warning()` / `message()`. `crayon` is dropped from Imports, `cli`
+  added.
+* **Behaviour change:** the output is now a message (stderr), not stdout.
+  `suppressMessages()` silences it; `capture.output()` no longer does.
+* Errors use `cli::cli_abort()` and warnings `cli::cli_warn()`, with the detail
+  as bullets. The wording is kept where tests or callers match on it.
+* The `message_*()` helpers keep their names and arguments, now on top of cli:
+  `message_ok()` is a success alert, `message_warning()` a warning alert,
+  `message_main_step()` a heading, and so on. `message_3me()` is kept for
+  compatibility.
+* Diagnostic lists (uncalibrated variables, unidentified codes, roots without
+  an aggregation rule) are printed in full and wrapped to the console width.
+  Inline cli vectors would stop at 20 items.
+* The base-year calibration check lists each off equation with its residual
+  instead of printing a data frame.
+* `translate_report()` prints a cli definition list.
+* Fixed: `stop(message("..."))` raised an *empty* error, because `message()`
+  returns `NULL`. This affected `get_sec_com()`, `get_vars()`, the spline
+  functions, `loadResults()` and `get_remote_file()`, which now say what is
+  wrong.
+
+# ermeeth2 1.2.3
+
+* roxygen markdown is switched on (`Roxygen: list(markdown = TRUE)`). The
+  docs were already written in markdown, but rendered with literal backticks,
+  and `[fn()]` cross-references were plain text. They are now `\code{}` and
+  real links, which also clears the "Lost braces" Rd notes in `mdl_document`,
+  `mdl_symbols` and `model_doc`.
+* `dtplyr` is dropped from Imports (never used).
+* The unit symbols in `threeme_transformations()` are written as `\u` escapes,
+  so `R/transformations.R` is ASCII. The strings themselves are unchanged.
+* `CLAUDE.md`, `PLAN.md` and `FROM_THORTWO.md` are excluded from the build.
+
+# ermeeth2 1.2.2
+
+* Every magrittr pipe (`%>%`) in the package code and in the `inst/` templates
+  is now the native pipe (`|>`). Uses of the magrittr `.` placeholder were
+  rewritten explicitly (`.[, col]` inside `mutate()` becomes `.data[[col]]`,
+  `cbind(x, .)` / `rbind(x, .)` take the value as a direct argument, bare
+  function names get their `()`). Outputs are unchanged, checked before and
+  after on a full v4 run for `contrib()`, `contrib_longformat()`,
+  `contrib.sub()`, the splines and the sector plots.
+* `contrib.sub_longformat()` with a shock scenario no longer fails with
+  "object '.' not found": a magrittr `.` had been left behind a native pipe.
+
+# ermeeth2 1.2.1
+
+## R solver fixes (`run_simulations(Rsolver = TRUE)`)
+
+* `R_model_solver()` now adds the variables created by `prg_to_thor()` (`@elem`
+  values, coefficients) to every scenario's database, not only to
+  `calib_new_base`, which nothing read afterwards. On the full v4 model the
+  solve stopped on 347 missing `elem_*` variables.
+* `run_simulations()` passes the `rcpp_option` reconciled by `eviews_checks()`
+  to `R_model_solver()`. When EViews was requested on a non-Windows OS, the
+  switch to R used the raw config value and could fall back to the slow
+  `dense-r` backend instead of `sparse`.
+* `aggregate_com_sec()` returns early when neither `by_com` nor `by_sec` is
+  requested, so models without a bridge file (e.g. the training model) no
+  longer stop with "The bridge contains no usable commodity or sector code."
+
 # ermeeth2 1.1.0
 
 ## Model translation

@@ -8,14 +8,14 @@ cleanup_output(render_dir = file.path("results", "quarto_render"))
 }
 \arguments{
 \item{render_dir}{character. Path to the folder holding the rendered html
-files. Defaults to `results/quarto_render`.}
+files. Defaults to \code{results/quarto_render}.}
 }
 \value{
 Called for its side effect of deleting files. Returns the list of
-  `file.remove()` results, one element per deleted file.
+\code{file.remove()} results, one element per deleted file.
 }
 \description{
 Scans the quarto render folder and deletes the older
-  timestamped copies of each report, keeping only the most recent file for
-  every report root name.
+timestamped copies of each report, keeping only the most recent file for
+every report root name.
 }

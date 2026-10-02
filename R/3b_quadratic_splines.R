@@ -42,11 +42,11 @@ quadratric_splines <- function(x_vector,
   yc <- NULL
   xc <- NULL
 
-  # cat("\n quadra \n")
+  # cli::cli_alert_info("quadra")
   # cat(paste(x_vector))
 
   if(length(x_vector) != 3 | length(x_vector) != 3){
-    stop(message("x_vector and y_vector must be of length 3 each."))}
+    cli::cli_abort("x_vector and y_vector must be of length 3 each.")}
 
   if(side == "right"){
     x_vector<- x_vector[3:1]
@@ -62,9 +62,9 @@ quadratric_splines <- function(x_vector,
   )
 
   local <- environment()
-  coordonnees <- donnees %>% dplyr::select(dplyr::all_of(stringr::str_c("y",c("a","b","c"))),
-                                           dplyr::all_of(stringr::str_c("x",c("a","b","c")))) %>%
-    unique()%>% unlist %>% as.list() %>%  purrr::imap(~assign(.y,.x,envir = local))
+  coordonnees <- donnees |> dplyr::select(dplyr::all_of(stringr::str_c("y",c("a","b","c"))),
+                                           dplyr::all_of(stringr::str_c("x",c("a","b","c")))) |>
+    unique()|> unlist() |> as.list() |>  purrr::imap(~assign(.y,.x,envir = local))
 
   A <- matrix(c( xa^2 , xa , 1 ,
                  xb^2 , xb , 1 ,
@@ -77,30 +77,31 @@ quadratric_splines <- function(x_vector,
 
   x <- c("a2","a1","a0")
 
-  solution <- solve(A,b_vec) %>% purrr::set_names(x)
+  solution <- solve(A,b_vec) |> purrr::set_names(x)
 
 
   missing_points_x <- seq(from = (x_vector[1]), to = (x_vector[2]), by = steps)
-  missing_points_y <- purrr::set_names(missing_points_x) %>%
+  missing_points_y <- purrr::set_names(missing_points_x) |>
     purrr::map_dbl(~solution["a2"]*.x^2 + solution["a1"]*.x + solution["a0"])
 
   input <- purrr::set_names(y_vector,x_vector)
 
 
-  result <- c(missing_points_y,input) %>% data.frame(x = names(.),y = .) %>%
-    dplyr::mutate(x = as.numeric(x))%>%
-    unique() %>% dplyr::arrange(x)
+  points <- c(missing_points_y,input)
+  result <- data.frame(x = names(points),y = points) |>
+    dplyr::mutate(x = as.numeric(x))|>
+    unique() |> dplyr::arrange(x)
 
   result
 }
 
 #
 # plop <- rbind(quadratric_splines(x_vector,y_vector,steps = 0.5, side= "left"),
-#               quadratric_splines(x_vector,y_vector,steps = 0.5, side= "right")) %>%
-#   unique() %>% arrange(x)
+#               quadratric_splines(x_vector,y_vector,steps = 0.5, side= "right")) |>
+#   unique() |> arrange(x)
 #
 # plot_points(x = x_vector, y = y_vector) +
-#   geom_point(data = plop %>% rename(date = x, value = y), aes(y = value),colour = "red" , size = 0.1)
+#   geom_point(data = plop |> rename(date = x, value = y), aes(y = value),colour = "red" , size = 0.1)
 
 
 

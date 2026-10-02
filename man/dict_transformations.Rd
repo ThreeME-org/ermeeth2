@@ -2,7 +2,7 @@
 % Please edit documentation in R/dictionary.R
 \name{dict_transformations}
 \alias{dict_transformations}
-\title{Default transformations as a named vector, ready for `transformation =`}
+\title{Default transformations as a named vector, ready for \verb{transformation =}}
 \usage{
 dict_transformations(codes, default = "reldiff", dict = NULL)
 }
@@ -12,13 +12,13 @@ dict_transformations(codes, default = "reldiff", dict = NULL)
 \item{default}{transformation for variables the dictionary has no default
 for.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
 a character vector named by code.
 }
 \description{
-[table_3me()] accepts a `transformation` named by variable, which is how one
+\code{\link[=table_3me]{table_3me()}} accepts a \code{transformation} named by variable, which is how one
 table mixes relative differences for volumes with points of difference for
 rates. The dictionary carries the sensible default per variable, so a mixed
 table needs no hand-written vector.

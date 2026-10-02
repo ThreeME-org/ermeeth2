@@ -83,7 +83,7 @@ eviews_model_solver<- function(config_file = configuration,
 
 
     # Splits calib.csv in n files: to get around Eviews limitation regarding loading big csv files
-    cat(stringr::str_c("Loading calib.csv file. Size: ", round(file.size("src/compiler/calib.csv")/1000000,3), " MB\n"))
+    cli::cli_alert_info("Loading {.file calib.csv} ({round(file.size(\"src/compiler/calib.csv\")/1000000,3)} MB)")
 
     calib <- fread("src/compiler/calib.csv", data.table = FALSE) |>
       select(-baseyear) |>
@@ -94,7 +94,7 @@ eviews_model_solver<- function(config_file = configuration,
 
     if (nb_calib_files > 1) {
 
-      (paste("calib.csv is larger than", limit.size.calib.csv, "MB (EViews limit when importing csv files). Splitting csv into", nb_calib_files,"files. (Each file contains on average", ncol.in.splitcalib,"variables):")) |> message_warning()
+      cli::cli_alert_warning("{.file calib.csv} is larger than {limit.size.calib.csv} MB (the EViews limit when importing csv files). Splitting it into {nb_calib_files} files of about {round(ncol.in.splitcalib)} variables each.")
 
       for (i in  c(1:nb_calib_files)){
 
@@ -102,7 +102,7 @@ eviews_model_solver<- function(config_file = configuration,
 
         assign(paste0("calib",i), calib |> select(all_of(range.col)))
 
-        (paste0("Saving calib",i,".csv")) |> message_save()
+        cli::cli_alert("Saving {.file calib{i}.csv}")
 
         write.csv(get(paste0("calib",i)),file.path("src","compiler",paste0("calib",i,".csv")))
 
@@ -138,7 +138,7 @@ eviews_model_solver<- function(config_file = configuration,
 
 
     # Run ThreeME in Eviews
-    cat(stringr::str_c("Run ThreeME in Eviews: scenario ",scen," (",shock_nb,"/",length(scenario),")","\n"))
+    cli::cli_alert_info("Run ThreeME in EViews: scenario {.val {scen}} ({shock_nb}/{length(scenario)})")
     sys::exec_wait(normalizePath(path_eviews_exe_2), c(stringr::str_c(eviews_default_path, "run_main_from_R.prg")), timeout = eviews_timeout)
 
     shock_nb = shock_nb + 1
@@ -149,7 +149,7 @@ eviews_model_solver<- function(config_file = configuration,
   for (i in 1:nb_calib_files) {
     file <- stringr::str_c("src/compiler/calib",i,".csv")
     if (file.exists(file)) {
-      cat(stringr::str_c("Removing file calib",i,".csv\n"))
+      cli::cli_alert("Removing file {.file calib{i}.csv}")
       file.remove(file)
     }
   }

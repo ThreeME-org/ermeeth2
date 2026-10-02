@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_not_ok}
 \alias{message_not_ok}
-\title{Preprogrammed ThreeME formatting for NOT Ok messages}
+\title{Display a failure message}
 \usage{
 message_not_ok(txt_message = "TEST")
 }
@@ -10,8 +10,8 @@ message_not_ok(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for NOT Ok messages
+Display a failure message
 }

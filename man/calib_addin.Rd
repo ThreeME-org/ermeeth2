@@ -13,32 +13,32 @@ calib_addin(
 calib_addin_app(path = file.path("configuration", "scenarii_calib"))
 }
 \arguments{
-\item{path}{the `scenarii_calib` folder.}
+\item{path}{the \code{scenarii_calib} folder.}
 
-\item{viewer}{where to open: `"dialog"`, `"browser"` or `"pane"`.}
+\item{viewer}{where to open: \code{"dialog"}, \code{"browser"} or \code{"pane"}.}
 }
 \value{
-invisibly, the path written, or `NULL` if cancelled.
+invisibly, the path written, or \code{NULL} if cancelled.
 
-`calib_addin_app()` returns the `shiny.appobj` without launching it,
-  which is what makes the server logic testable with [shiny::testServer()].
+\code{calib_addin_app()} returns the \code{shiny.appobj} without launching it,
+which is what makes the server logic testable with \code{\link[shiny:testServer]{shiny::testServer()}}.
 }
 \description{
 An RStudio addin to create a baseline or shock calibration
-  script. Pick the type, give it a name, and it writes the file into
-  `configuration/scenarii_calib/` under the name [readconfig()] expects --
-  `1_calib_<name>.R` or `2_calib_shock_<name>.R` -- so the configuration and
-  the file cannot drift apart.
+script. Pick the type, give it a name, and it writes the file into
+\verb{configuration/scenarii_calib/} under the name \code{\link[=readconfig]{readconfig()}} expects --
+\verb{1_calib_<name>.R} or \verb{2_calib_shock_<name>.R} -- so the configuration and
+the file cannot drift apart.
 
-  The script pane is editable, so the scenario can be written here rather
-  than in a second step. It starts from a template that runs as written and
-  changes nothing until edited.
+The script pane is editable, so the scenario can be written here rather
+than in a second step. It starts from a template that runs as written and
+changes nothing until edited.
 
-  Only works inside a ThreeME v4 project: it writes into
-  `configuration/scenarii_calib/`, a path that only means anything there.
+Only works inside a ThreeME v4 project: it writes into
+\verb{configuration/scenarii_calib/}, a path that only means anything there.
 
-  Launch it from the Addins menu ("New ThreeME calibration"), or call this
-  function.
+Launch it from the Addins menu ("New ThreeME calibration"), or call this
+function.
 }
 \examples{
 \dontrun{

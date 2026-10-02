@@ -7,7 +7,7 @@
 get_sample_data(...)
 }
 \arguments{
-\item{...}{arguments to be passed on to `get_remote_file` function}
+\item{...}{arguments to be passed on to \code{get_remote_file} function}
 }
 \value{
 downloads file

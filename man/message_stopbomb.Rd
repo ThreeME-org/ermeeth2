@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_stopbomb}
 \alias{message_stopbomb}
-\title{Preprogrammed ThreeME formatting for STOP messages}
+\title{Display a stop message}
 \usage{
 message_stopbomb(txt_message = "TEST")
 }
@@ -10,8 +10,9 @@ message_stopbomb(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for STOP messages
+Prints the message only; it does not stop. Use
+\code{\link[cli:cli_abort]{cli::cli_abort()}} to signal the error itself.
 }

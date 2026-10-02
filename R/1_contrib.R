@@ -40,11 +40,11 @@ contrib <- function(data,
 
   ## further checks on scenarios
   if (length(scenar) > 2){
-    stop(message = "Indicate a maximum of two scenarios.\n")
+    cli::cli_abort("Indicate a maximum of two scenarios.")
   }
 
   if (length(scenar) == 2 & !"baseline" %in% scenar){
-    stop(message = "If two scenarios are given, one must be the ' 'baseline' scenario.\n")
+    cli::cli_abort("If two scenarios are given, one must be the ' 'baseline' scenario.")
   }
 
   # if (prod(scenar %in% names(data)) == 0 ) {
@@ -55,24 +55,24 @@ contrib <- function(data,
 
   filtered.var <- c(var1,var2)
 
-  data.in <- data %>% dplyr::filter(variable %in% filtered.var)
+  data.in <- data |> dplyr::filter(variable %in% filtered.var)
 
 
   # Weigthts in the baseline scenario
-  data.w_baseline <- data.in  %>%
-    dplyr::select(variable, year, baseline) %>%
+  data.w_baseline <- data.in  |>
+    dplyr::select(variable, year, baseline) |>
     tidyr::pivot_wider(names_from = variable,
-                       values_from = baseline) %>%
-    dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) %>%
+                       values_from = baseline) |>
+    dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) |>
     dplyr::select(year, contains("_weight"))
 
   if (!is.null(neg.value)){
-    data.w_baseline  <- data.w_baseline %>% dplyr::mutate_at(str_c(neg.value,"_weight") , ~((-1) *.x))
+    data.w_baseline  <- data.w_baseline |> dplyr::mutate_at(str_c(neg.value,"_weight") , ~((-1) *.x))
   }
 
   if (length(scenar) == 1) {
-    data.contrib.1 <- data.in %>%  dplyr::mutate(scenario = .[,scenar]) %>%
-      dplyr::select(variable, year, scenario) %>%
+    data.contrib.1 <- data.in |>  dplyr::mutate(scenario = .data[[scenar]]) |>
+      dplyr::select(variable, year, scenario) |>
       tidyr::pivot_wider(names_from = variable,
                          values_from = c(scenario))
 
@@ -84,14 +84,14 @@ contrib <- function(data,
 
 
     ## Diff absolue
-    data.contrib.1 <- data.in %>%  dplyr::mutate(scenario = .[,str_c(shock_scenario)] - .[,"baseline"]) %>%
-      dplyr::select(variable, year, scenario) %>%
+    data.contrib.1 <- data.in |>  dplyr::mutate(scenario = .data[[shock_scenario]] - .data[["baseline"]]) |>
+      dplyr::select(variable, year, scenario) |>
       tidyr::pivot_wider(names_from = variable,
                          values_from = scenario)
 
     ## Diff relative
-    data.contrib.2 <- data.in %>%  dplyr::mutate(scenario = .[,str_c(shock_scenario)] / .[,"baseline"] -1) %>%
-      dplyr::select(variable, year, scenario) %>%
+    data.contrib.2 <- data.in |>  dplyr::mutate(scenario = .data[[shock_scenario]] / .data[["baseline"]] -1) |>
+      dplyr::select(variable, year, scenario) |>
       tidyr::pivot_wider(names_from = variable,
                   values_from = scenario)
   }
@@ -105,25 +105,26 @@ contrib <- function(data,
 
     # Imports en négatif
     if (!is.null(neg.value)){
-      data.contrib.1 <- data.contrib.1 %>% dplyr::mutate_at(neg.value , ~((-1) *.x))
+      data.contrib.1 <- data.contrib.1 |> dplyr::mutate_at(neg.value , ~((-1) *.x))
     }
 
     # Check on the weights
-    weight_check<-  data.contrib.1 %>%
-      dplyr:: mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) %>%
-      dplyr::select(year, contains("_weight")) %>%
-      as.data.frame() %>% `colnames<-`(c("year",var2))  %>%
-      tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)  %>%
-      tidyr::pivot_wider(names_from = variable, values_from = value) %>%
-      dplyr::filter(year == max(year)) %>%
-      dplyr::select(-year) %>% rowSums()
+    weight_check<-  data.contrib.1 |>
+      dplyr:: mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) |>
+      dplyr::select(year, contains("_weight")) |>
+      as.data.frame() |> `colnames<-`(c("year",var2))  |>
+      tidyr::pivot_longer(names_to = "variable", values_to = "value", -year)  |>
+      tidyr::pivot_wider(names_from = variable, values_from = value) |>
+      dplyr::filter(year == max(year)) |>
+      dplyr::select(-year) |> rowSums()
 
 
     # Variation for var 2 variables
-    data.contrib.3 <- data.contrib.2 %>% dplyr::select(-all_of(var1))
+    data.contrib.3 <- data.contrib.2 |> dplyr::select(-all_of(var1))
 
-    data.contrib <-  (dplyr::select(data.contrib.3, year, all_of(var2))[-1] * dplyr::select(data.w_baseline,year, all_of(str_c(var2,"_weight")))[-1]) %>%
-      cbind("year" = data.contrib.2[1], .) %>% as.data.frame() %>%
+    data.contrib <-  cbind("year" = data.contrib.2[1],
+                           dplyr::select(data.contrib.3, year, all_of(var2))[-1] * dplyr::select(data.w_baseline,year, all_of(str_c(var2,"_weight")))[-1]) |>
+      as.data.frame() |>
       tidyr::pivot_longer(names_to = "variable", values_to = "value", - year)
 
 
@@ -135,68 +136,68 @@ contrib <- function(data,
 
       if (length(scenar) == 1) {
         # Taux de croissance annuel pour chaque variable et période (scenar)
-        data.gr_sc <- data.in %>%
-          dplyr::group_by(variable) %>%
+        data.gr_sc <- data.in |>
+          dplyr::group_by(variable) |>
           dplyr::mutate(lag.value = get(scenar) - dplyr::lag(get(scenar), n = 1, default = NA),
-                        value = ((lag.value  / get(scenar)))) %>%
-          dplyr::select(year, variable, value) %>%
+                        value = ((lag.value  / get(scenar)))) |>
+          dplyr::select(year, variable, value) |>
           tidyr::pivot_wider(names_from = variable, values_from = value)
 
         df <-  (dplyr::select(data.gr_sc, year, all_of(var2))[-1] * data.w_baseline[-1] )
 
-        data.contrib <-  cbind("year" = data.gr_sc[1], df) %>% as.data.frame() %>%
+        data.contrib <-  cbind("year" = data.gr_sc[1], df) |> as.data.frame() |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", - year)
 
       } else {
         shock_scenario <- setdiff(scenar,"baseline")
 
-        data.gr_baseline <- data.in %>%
-          dplyr::group_by(variable) %>%
+        data.gr_baseline <- data.in |>
+          dplyr::group_by(variable) |>
           dplyr::mutate(lag.value = baseline - dplyr::lag(baseline, n = 1, default = NA),
-                        value = ((lag.value  / baseline))) %>%
-          dplyr::select(year, variable, value) %>%
+                        value = ((lag.value  / baseline))) |>
+          dplyr::select(year, variable, value) |>
           tidyr::pivot_wider(names_from = variable, values_from = value)
 
-        data.gr_sc <- data.in %>%
-          dplyr::group_by(variable) %>%
+        data.gr_sc <- data.in |>
+          dplyr::group_by(variable) |>
           dplyr::mutate(lag.value = get(shock_scenario) - dplyr::lag(get(shock_scenario), n = 1, default = NA),
-                        value = ((lag.value  / get(shock_scenario)))) %>%
-          dplyr::select(year, variable, value) %>%
+                        value = ((lag.value  / get(shock_scenario)))) |>
+          dplyr::select(year, variable, value) |>
           tidyr::pivot_wider(names_from = variable, values_from = value)
 
         df <-  (dplyr::select(data.gr_sc, year, all_of(var2))[-1] * data.w_baseline[-1]) - (dplyr::select(data.gr_baseline, year, all_of(var2))[-1] * data.w_baseline[-1])
 
 
-        data.contrib <-  cbind("year" = data.gr_baseline[1], df) %>% as.data.frame() %>%
+        data.contrib <-  cbind("year" = data.gr_baseline[1], df) |> as.data.frame() |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", - year)
       }
 
-      weight_check <-  data.w_baseline %>%
-        dplyr::filter(year == max(year)) %>%
-        dplyr::select(-year) %>% rowSums()
+      weight_check <-  data.w_baseline |>
+        dplyr::filter(year == max(year)) |>
+        dplyr::select(-year) |> rowSums()
 
     } else {
       if(indicator == "share"){
 
-        data.contrib <- data.in  %>%
-          dplyr::select(variable, year, scenar) %>%
+        data.contrib <- data.in  |>
+          dplyr::select(variable, year, scenar) |>
           tidyr::pivot_wider(names_from = variable,
-                             values_from = scenar) %>%
-          dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) %>%
-          dplyr::select(year, contains("_weight")) %>%
-          `colnames<-`(c("year",var2)) %>%
+                             values_from = scenar) |>
+          dplyr::mutate_at(.funs = list(weight = ~./get(var1)), .vars = var2) |>
+          dplyr::select(year, contains("_weight")) |>
+          `colnames<-`(c("year",var2)) |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", - year)
 
 
       } else{
-        data.contrib <- data.contrib.1 %>% as.data.frame() %>%
-          dplyr::select(-var1,year, var2) %>%
-          `colnames<-`(c("year",var2)) %>%
+        data.contrib <- data.contrib.1 |> as.data.frame() |>
+          dplyr::select(-var1,year, var2) |>
+          `colnames<-`(c("year",var2)) |>
           tidyr::pivot_longer(names_to = "variable", values_to = "value", - year)
       }
-      weight_check <-  data.w_baseline %>%
-        dplyr::filter(year == max(year)) %>%
-        dplyr::select(-year) %>% rowSums()
+      weight_check <-  data.w_baseline |>
+        dplyr::filter(year == max(year)) |>
+        dplyr::select(-year) |> rowSums()
 
     }
 
@@ -205,9 +206,9 @@ contrib <- function(data,
 
   ## Sanity check message
   if(round(weight_check,check_digit) != 1){
-    cat(str_c("Weights are not summing to one: Try again !\n (difference of: ", 100 * (round(weight_check,check_digit)- 1),"%)"))
+    cli::cli_alert_warning("Weights do not sum to one: try again! (difference of {100 * (round(weight_check, check_digit) - 1)}%)")
   } else{
-    cat("Weights sum to one: Good job !\n")
+    cli::cli_alert_success("Weights sum to one: good job!")
   }
   ##
   data.contrib

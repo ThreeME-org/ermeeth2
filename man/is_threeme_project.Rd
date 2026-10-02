@@ -10,12 +10,12 @@ is_threeme_project(path = ".")
 \item{path}{the project root.}
 }
 \value{
-a list with `ok` (logical) and `missing` (the expected folders that
-  are not there).
+a list with \code{ok} (logical) and \code{missing} (the expected folders that
+are not there).
 }
 \description{
 The addins edit files at fixed paths inside a ThreeME v4 project --
-`configuration/`, `configuration/scenarii_calib/`, `src/model/` -- so opening
+\verb{configuration/}, \verb{configuration/scenarii_calib/}, \verb{src/model/} -- so opening
 one from an unrelated working directory can only misfire. This is the check
 they run before doing anything.
 }

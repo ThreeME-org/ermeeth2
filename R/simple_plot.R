@@ -67,16 +67,16 @@ simple_plot <- function(data,
                         interactive = FALSE) {
 
   if (length(transformation) != 1 || !is.null(names(transformation))) {
-    stop("`simple_plot()` draws one y axis, so it takes a single `transformation`. Use `table_3me()` to mix them.")
+    cli::cli_abort("`simple_plot()` draws one y axis, so it takes a single `transformation`. Use `table_3me()` to mix them.")
   }
   spec <- transformation_spec(transformation)
 
   missing_vars <- setdiff(variables, unique(data$variable))
   if (length(missing_vars) == length(variables)) {
-    stop(paste("None of these variables are in the data:", paste(variables, collapse = ", ")))
+    cli::cli_abort("None of these variables are in the data: {.var {variables}}")
   }
   if (length(missing_vars) > 0) {
-    warning(paste("Variables not found in the data, dropped:", paste(missing_vars, collapse = ", ")))
+    cli::cli_warn("Variables not found in the data, dropped: {.var {missing_vars}}")
     variables <- setdiff(variables, missing_vars)
   }
 

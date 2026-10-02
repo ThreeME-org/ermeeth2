@@ -11,6 +11,6 @@ A character vector of function names.
 }
 \description{
 The same list the solvers support. Kept here so that
-  [prg_variables()] does not have to reach into another package for it.
+\code{\link[=prg_variables]{prg_variables()}} does not have to reach into another package for it.
 }
 \keyword{internal}

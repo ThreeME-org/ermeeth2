@@ -29,7 +29,7 @@ load_excel_calibration(
 
 \item{stop_if_calib_fail}{Boolean. Whether to stop if there is a significant mismatch between original data and excel data. Default: TRUE}
 
-\item{keep_baseyear_calib_data}{Boolean. If `stop_if_calib_fail` is false and there is a significant mismatch in data, setting to TRUE means the calibration data will be used over the excel data at the base year. Default: TRUE}
+\item{keep_baseyear_calib_data}{Boolean. If \code{stop_if_calib_fail} is false and there is a significant mismatch in data, setting to TRUE means the calibration data will be used over the excel data at the base year. Default: TRUE}
 
 \item{calib_baseline}{Name of the calibrated data for the baseline. Default is the ermeeth2 data name "OGcalib"}
 

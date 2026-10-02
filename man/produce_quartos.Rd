@@ -17,7 +17,7 @@ produce_quartos(
 \item{Show}{logical. Whether to open each rendered html when it is done.}
 
 \item{templates_selection}{character vector. Names of the templates to
-render, without the `.qmd` extension.}
+render, without the \code{.qmd} extension.}
 
 \item{parameters}{list. Quarto parameters, one element per template.}
 
@@ -32,5 +32,5 @@ Called for its side effect of rendering the reports.
 }
 \description{
 Renders each selected quarto template with its parameters via
-  [render_from_template()], and optionally opens the results in a browser.
+\code{\link[=render_from_template]{render_from_template()}}, and optionally opens the results in a browser.
 }

@@ -10,9 +10,9 @@ config_assignments(lines)
 \item{lines}{the file, as a character vector of lines.}
 }
 \value{
-a data frame with `name`, `first` and `last` (line numbers). Where a
-  name is assigned more than once the last assignment wins, since that is the
-  one that takes effect.
+a data frame with \code{name}, \code{first} and \code{last} (line numbers). Where a
+name is assigned more than once the last assignment wins, since that is the
+one that takes effect.
 }
 \description{
 Locate the top-level assignments in an R script

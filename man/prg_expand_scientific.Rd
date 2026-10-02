@@ -13,7 +13,7 @@ prg_expand_scientific(eqs)
 The equations, with every numeric literal written out in full.
 }
 \description{
-`1e-05` survives R's parser but not the solver's variable
-  extractor, which reads the stray `e` as a variable name.
+\code{1e-05} survives R's parser but not the solver's variable
+extractor, which reads the stray \code{e} as a variable name.
 }
 \keyword{internal}

@@ -27,7 +27,7 @@ table_3me(
 )
 }
 \arguments{
-\item{data}{a ThreeME long-format dataframe, as produced by [longer_data()].}
+\item{data}{a ThreeME long-format dataframe, as produced by \code{\link[=longer_data]{longer_data()}}.}
 
 \item{variables}{either a character vector of variable codes, or a named list
 of such vectors to organise the rows into groups - the list names become
@@ -36,17 +36,17 @@ the row group labels.}
 \item{transformation}{a single transformation id applied to every variable,
 or a character vector named by variable to mix them in one table. An
 unnamed element is the default for the variables it does not name. See
-[threeme_transformations()].}
+\code{\link[=threeme_transformations]{threeme_transformations()}}.}
 
-\item{scenarios}{character vector of the scenarios of `data` to show.
+\item{scenarios}{character vector of the scenarios of \code{data} to show.
 Defaults to every non-baseline scenario.}
 
 \item{data_secondary}{an optional second ThreeME dataframe, typically the
 same scenarios run under another version of the model. Its columns are
-shown next to those of `data` under a second spanner level.}
+shown next to those of \code{data} under a second spanner level.}
 
 \item{scenarios_secondary}{character vector of the scenarios to take from
-`data_secondary`. Defaults to `scenarios`.}
+\code{data_secondary}. Defaults to \code{scenarios}.}
 
 \item{model_names}{character vector of length 2 naming the two databases in
 the spanners.}
@@ -54,7 +54,7 @@ the spanners.}
 \item{horizons}{numeric vector of horizons, in years after the shock. The
 final year available is always added as a "Long term" column.}
 
-\item{shock_year}{numeric(1) year the shock starts. `NULL` (default) detects
+\item{shock_year}{numeric(1) year the shock starts. \code{NULL} (default) detects
 it as the first year a scenario departs from its reference.}
 
 \item{end_year}{numeric(1) last year shown. Defaults to the last year of the
@@ -66,7 +66,7 @@ variable dictionary will plug in once it exists.}
 
 \item{name_baseline}{character(1) name of the baseline scenario.}
 
-\item{base_year}{numeric(1) base year of the `"index100"` transformation.}
+\item{base_year}{numeric(1) base year of the \code{"index100"} transformation.}
 
 \item{digits}{numeric(1) decimals shown. Two by default, for both percentages
 and levels.}
@@ -75,27 +75,27 @@ and levels.}
 
 \item{caption}{character(1) table caption, for cross-referencing.}
 
-\item{footnote}{character(1) footnote. `NULL` (default) builds one describing
+\item{footnote}{character(1) footnote. \code{NULL} (default) builds one describing
 the transformations used.}
 
-\item{theme}{character(1) `"ofce"` to apply [ofce::theme.gt_ofce()],
-`"none"` to return a plain `gt` table.}
+\item{theme}{character(1) \code{"ofce"} to apply \code{\link[ofce:theme.gt_ofce]{ofce::theme.gt_ofce()}},
+\code{"none"} to return a plain \code{gt} table.}
 }
 \value{
-A `gt_tbl`.
+A \code{gt_tbl}.
 }
 \description{
-A `gt` table of ThreeME results: variables in rows, time
-  horizons in columns, scenarios as column spanners. Each variable can carry
-  its own transformation - GDP in relative difference, employment in
-  absolute difference, the unemployment rate in percentage points - with the
-  unit shown in a column next to the variable name.
+A \code{gt} table of ThreeME results: variables in rows, time
+horizons in columns, scenarios as column spanners. Each variable can carry
+its own transformation - GDP in relative difference, employment in
+absolute difference, the unemployment rate in percentage points - with the
+unit shown in a column next to the variable name.
 
-  This is the single table entry point of the package: it replaces the former
-  `table_macro()`, `table_macro2()`, `table_macro_double()`,
-  `table_reference()` and `table_reference2()`. Passing `data_secondary`
-  covers what `table_macro_double()` did: comparing the same scenarios across
-  two versions of the model.
+This is the single table entry point of the package: it replaces the former
+\code{table_macro()}, \code{table_macro2()}, \code{table_macro_double()},
+\code{table_reference()} and \code{table_reference2()}. Passing \code{data_secondary}
+covers what \code{table_macro_double()} did: comparing the same scenarios across
+two versions of the model.
 }
 \examples{
 \dontrun{

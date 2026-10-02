@@ -13,12 +13,12 @@ detect_shock_year(data, name_baseline = "baseline")
 }
 \value{
 numeric(1). The first year of the data if no scenario ever departs
-  from its reference, or if the data carries no `values_ref` column.
+from its reference, or if the data carries no \code{values_ref} column.
 }
 \description{
 The first year a non-baseline scenario departs from its
-  reference. [table_3me()] uses it to anchor its `t`, `t + 1`, ... columns,
-  which saves the caller from setting the `shockyear` global.
+reference. \code{\link[=table_3me]{table_3me()}} uses it to anchor its \code{t}, \code{t + 1}, ... columns,
+which saves the caller from setting the \code{shockyear} global.
 }
 \examples{
 data_full <- readRDS(system.file("extdata", "minimodel.rds", package = "ermeeth2"))

@@ -145,7 +145,7 @@ mdl_latex <- function(n, symbols = mdl_symbols(), show_conditions = FALSE) {
       binop = render_binop(n),
       fun = render_fun(n),
       qualified = render(n$expr, parent_prec),
-      stop("cannot render a node of type '", n$type, "'", call. = FALSE)
+      cli::cli_abort("cannot render a node of type {.val {n$type}}", call = NULL)
     )
     if (node_prec(n) < parent_prec) {
       out <- paste0("\\left( ", out, " \\right)")

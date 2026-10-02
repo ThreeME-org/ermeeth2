@@ -10,8 +10,8 @@ dictionary_columns()
 a character vector of column names.
 }
 \description{
-The schema every dictionary must carry. `code` is the root variable code,
+The schema every dictionary must carry. \code{code} is the root variable code,
 unindexed: sector and commodity live in their own columns of the long
-format, so `variable` in the data joins straight onto `code` here.
+format, so \code{variable} in the data joins straight onto \code{code} here.
 }
 \keyword{internal}

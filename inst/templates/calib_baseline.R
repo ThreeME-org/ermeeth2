@@ -7,13 +7,13 @@
 ## whose baseline trajectory you want to change.
 
 # Load the calibration over the simulation range
-calib <- OGcalib %>% filter(year %in% c(firstyear:lastyear))
+calib <- OGcalib |> filter(year %in% c(firstyear:lastyear))
 
 # Pick the series you are going to change. Names are lower case.
-series <- c("DWD_C01") %>% tolower
+series <- c("DWD_C01") |> tolower()
 
 # Load the selected series over the simulation range
-selection <- calib %>% select(year, all_of(series))
+selection <- calib |> select(year, all_of(series))
 
 ## Change in exogenous variables
 ##

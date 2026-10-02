@@ -25,7 +25,7 @@ wide_data_2<-function (data,
   # out_format = "dataframe"
 
   if (prod(c("year", "variable") %in% names(data)) == 0) {
-    stop(message = "The database is missing variables 'year' and/or 'variable'")
+    cli::cli_abort("The database is missing variables 'year' and/or 'variable'")
   }
 
   all_variables <- unique(data$variable)
@@ -34,39 +34,38 @@ wide_data_2<-function (data,
   } else {
     variables_not_found <- dplyr::setdiff(variables, all_variables)
     if (length(variables_not_found) > 0) {
-      message(paste("Variable(s)", paste0(variables_not_found,
-                                          collapse = ", "), "could not be found, they will be ignored."))
+      cli::cli_alert_warning("Variable{?s} {.var {variables_not_found}} could not be found, {?it/they} will be ignored.")
     }
     if (length(variables_not_found) == length(variables)) {
-      stop(message = "Could not find any of the variables specified.")
+      cli::cli_abort("Could not find any of the variables specified.")
     }
   }
   if (length(variables) > 1000) {
-    message("There is a large number of variables... please wait... \n")
+    cli::cli_alert_info("There is a large number of variables... please wait...")
   }
   if (length(variables) >= 10000) {
-    message("Maybe have a sip of coffee? \n")
+    cli::cli_alert_info("Maybe have a sip of coffee?")
   }
   if (length(variables) >= 12000) {
-    message("Have you checked your emails or Slack messages? \n")
+    cli::cli_alert_info("Have you checked your emails or Slack messages?")
   }
   if (length(variables) >= 15000) {
-    message("Maybe select less variables next time... \n")
+    cli::cli_alert_info("Maybe select less variables next time...")
   }
   if (is.null(out_format)) {
     out_format == "list"
   }
   if (!tolower(out_format) %in% c("list", "data.frame", "dataframe")) {
-    message("out_format must be either 'list' or 'dataframe'. Reverting out_format to 'list'.\n")
+    cli::cli_alert_info("out_format must be either 'list' or 'dataframe'. Reverting out_format to 'list'.")
     out_format <- "list"
   }else {
-    out_format <- out_format %>% tolower() %>% stringr::str_remove_all("\\.")
+    out_format <- out_format |> tolower() |> stringr::str_remove_all("\\.")
   }
-  data_short <- data %>% dplyr::filter(variable %in% variables)
-  data_wide <- data_short %>% tidyr::pivot_wider(id_cols = c(year),
+  data_short <- data |> dplyr::filter(variable %in% variables)
+  data_wide <- data_short |> tidyr::pivot_wider(id_cols = c(year),
                                                  names_from = c(scenario,variable),
                                                  names_sep = ".",
-                                                 values_from = values) %>% as.data.frame()
+                                                 values_from = values) |> as.data.frame()
 
   scenarios <- data_short$scenario |> unique()
 

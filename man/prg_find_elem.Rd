@@ -2,7 +2,7 @@
 % Please edit documentation in R/translate_model_to_tresthor.R
 \name{prg_find_elem}
 \alias{prg_find_elem}
-\title{Find every `@elem()` occurrence in a set of equations}
+\title{Find every \verb{@elem()} occurrence in a set of equations}
 \usage{
 prg_find_elem(x)
 }
@@ -14,6 +14,6 @@ A character vector of the distinct occurrences, as written.
 }
 \description{
 A regular expression cannot do this:
-  `@elem(pk_scon(-1), 2019)` closes on its second `)`, not its first.
+\verb{@elem(pk_scon(-1), 2019)} closes on its second \verb{)}, not its first.
 }
 \keyword{internal}

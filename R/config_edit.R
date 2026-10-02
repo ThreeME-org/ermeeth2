@@ -84,7 +84,7 @@ config_set <- function(lines, name, value_code, add = TRUE) {
 #'             list(project_name = "my_run", shockyear = 2025))
 #' }
 config_edit <- function(file, values, out = file) {
-  if (!file.exists(file)) stop("no such file: ", file)
+  if (!file.exists(file)) cli::cli_abort("no such file: {.file {file}}")
   lines <- readLines(file, warn = FALSE)
   for (nm in names(values)) {
     v <- values[[nm]]
@@ -93,7 +93,7 @@ config_edit <- function(file, values, out = file) {
   }
   ## a last parse check, so a bad edit fails here rather than at run time
   ok <- tryCatch({ parse(text = lines); TRUE }, error = function(e) conditionMessage(e))
-  if (!isTRUE(ok)) stop("the edit would produce a file that does not parse: ", ok)
+  if (!isTRUE(ok)) cli::cli_abort(c("the edit would produce a file that does not parse:", " " = "{ok}"))
   writeLines(lines, out)
   invisible(out)
 }
@@ -160,7 +160,7 @@ config_fields <- function() {
 #' read_config_values("configuration/config_output_threeme.R", with = vals)
 #' }
 read_config_values <- function(file, fields = NULL, with = list()) {
-  if (!file.exists(file)) stop("no such file: ", file)
+  if (!file.exists(file)) cli::cli_abort("no such file: {.file {file}}")
   env <- new.env(parent = globalenv())
   ## The configs call set_names() and str_c() without qualifying them.
   env$set_names <- rlang::set_names
@@ -235,11 +235,10 @@ is_threeme_project <- function(path = ".") {
 check_threeme_project <- function(path = ".", what = "This addin") {
   chk <- is_threeme_project(path)
   if (chk$ok) return(invisible(TRUE))
-  stop(what, " only works inside a ThreeME v4 project.\n",
-       "Missing from ", normalizePath(path, mustWork = FALSE), ": ",
-       paste(chk$missing, collapse = ", "), ".\n",
-       "Open the ThreeME project (its .Rproj) and try again.",
-       call. = FALSE)
+  cli::cli_abort(c("{what} only works inside a ThreeME v4 project.",
+                   "x" = "Missing from {.path {normalizePath(path, mustWork = FALSE)}}: {.file {chk$missing}}.",
+                   "i" = "Open the ThreeME project (its {.file .Rproj}) and try again."),
+                 call = NULL)
 }
 
 #' A warning banner for an addin opened outside a ThreeME project

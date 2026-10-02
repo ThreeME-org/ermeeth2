@@ -34,7 +34,7 @@ save_3me_output <- function(data,
 
   if ("parquet" %in% formats) {
     if (!requireNamespace("arrow", quietly = TRUE)) {
-      message_warning("Package 'arrow' is not installed, the parquet output was skipped. Install it with pak::pak('arrow').")
+      cli::cli_alert_warning("Package {.pkg arrow} is not installed, the parquet output was skipped. Install it with {.code pak::pak(\"arrow\")}.")
     } else {
       f <- file.path(dir, paste0(stem, ".parquet"))
       arrow::write_parquet(data, f, compression = "zstd")
@@ -97,7 +97,7 @@ read_3me_output <- function(project_name,
   }
 
   if (!file.exists(rds)) {
-    stop("No output found for '", stem, "' in ", dir, " (looked for .parquet and .rds).")
+    cli::cli_abort("No output found for {.val {stem}} in {.path {dir}} (looked for {.file .parquet} and {.file .rds}).")
   }
 
   out <- readRDS(rds)

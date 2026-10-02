@@ -10,31 +10,31 @@ prg_rewrite_comparisons(eqs)
 \item{eqs}{character vector of equations.}
 }
 \value{
-A list with `eqs`, the rewritten equations, and `n`, the number of
-  tests rewritten.
+A list with \code{eqs}, the rewritten equations, and \code{n}, the number of
+tests rewritten.
 }
 \description{
-`(A < B)` evaluates to 1 or 0 in EViews. The solver has no
-  comparison operators -- and a step function has no useful derivative --
-  so each test becomes the algebraic indicator
+\code{(A < B)} evaluates to 1 or 0 in EViews. The solver has no
+comparison operators -- and a step function has no useful derivative --
+so each test becomes the algebraic indicator
 
-  \preformatted{
+\preformatted{
   A > B   ->   0.5 * (1 + (A-B) / (|A-B| + eps))
   A < B   ->   0.5 * (1 - (A-B) / (|A-B| + eps))
   }
 
-  which is exactly 1 or 0 away from the crossing, and whose derivative there
-  is `eps/(|A-B|+eps)^2`, i.e. numerically zero. `>=` and `<=` are treated as
-  `>` and `<`; they differ only on the measure-zero set `A == B`, where this
-  form returns 0.5 rather than the 0/0 produced by the difference-quotient
-  version used previously.
+which is exactly 1 or 0 away from the crossing, and whose derivative there
+is \verb{eps/(|A-B|+eps)^2}, i.e. numerically zero. \code{>=} and \code{<=} are treated as
+\code{>} and \code{<}; they differ only on the measure-zero set \code{A == B}, where this
+form returns 0.5 rather than the 0/0 produced by the difference-quotient
+version used previously.
 
-  Right at the crossing the indicator is not differentiable, so a model
-  sitting exactly on a threshold can stall. Nothing in a translation can fix
-  that: it is a property of writing a discontinuity into a model that is then
-  solved by Newton.
+Right at the crossing the indicator is not differentiable, so a model
+sitting exactly on a threshold can stall. Nothing in a translation can fix
+that: it is a property of writing a discontinuity into a model that is then
+solved by Newton.
 
-  Each test must be parenthesised on its own, which is how the compiler emits
-  them; anything else raises an error rather than being guessed at.
+Each test must be parenthesised on its own, which is how the compiler emits
+them; anything else raises an error rather than being guessed at.
 }
 \keyword{internal}

@@ -20,20 +20,20 @@ teXdoc(
 
 \item{base.path}{source files directory}
 
-\item{out}{output file name (no directory: see `out.path`)}
+\item{out}{output file name (no directory: see \code{out.path})}
 
 \item{out.path}{output files directory (default is the working directory)}
 
-\item{compile_pdf}{`TRUE` compiles the tex file into a pdf}
+\item{compile_pdf}{\code{TRUE} compiles the tex file into a pdf}
 }
 \value{
-invisibly, the value of [model_doc()].
+invisibly, the value of \code{\link[=model_doc]{model_doc()}}.
 }
 \description{
-Deprecated. Use [model_doc()] with
-  `format = "tex"`. This wrapper forwards to it so existing scripts keep
-  running; it no longer writes the `<out>_preface.tex` companion file,
-  which only existed to feed [make_eq_qmd()].
+Deprecated. Use \code{\link[=model_doc]{model_doc()}} with
+\code{format = "tex"}. This wrapper forwards to it so existing scripts keep
+running; it no longer writes the \verb{<out>_preface.tex} companion file,
+which only existed to feed \code{\link[=make_eq_qmd]{make_eq_qmd()}}.
 }
 \examples{
 \dontrun{

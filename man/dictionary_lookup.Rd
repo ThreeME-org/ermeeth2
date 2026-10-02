@@ -11,14 +11,14 @@ dictionary_lookup(codes, field, dict = NULL, fallback = c("code", "na"))
 
 \item{field}{the dictionary column to read.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 
-\item{fallback}{value used where the dictionary has nothing. `"code"` falls
+\item{fallback}{value used where the dictionary has nothing. \code{"code"} falls
 back to the code itself, which is what keeps an unknown variable readable
-on a plot instead of turning into `NA`.}
+on a plot instead of turning into \code{NA}.}
 }
 \value{
-a character vector as long as `codes`.
+a character vector as long as \code{codes}.
 }
 \description{
 Look one column of the dictionary up for a set of codes

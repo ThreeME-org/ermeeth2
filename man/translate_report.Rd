@@ -7,10 +7,10 @@
 translate_report(tr)
 }
 \arguments{
-\item{tr}{the value of [prg_to_thor()].}
+\item{tr}{the value of \code{\link[=prg_to_thor]{prg_to_thor()}}.}
 }
 \value{
-`tr`, invisibly. Called for the report it prints.
+\code{tr}, invisibly. Called for the report it prints.
 }
 \description{
 Report what a translation did and what it could not do

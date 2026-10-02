@@ -17,7 +17,7 @@ contrib.sub_longformat(
 
 \item{var1}{character string. main variable}
 
-\item{group_type}{character string. `"sector"` or `"commodity"`, the
+\item{group_type}{character string. \code{"sector"} or \code{"commodity"}, the
 dimension to break the contributions down by.}
 
 \item{scenar}{scenarios, max 2. If two are given, one must be the baseline.}
@@ -28,6 +28,6 @@ dimension to break the contributions down by.}
 a data.frame with the sub-contributions computed
 }
 \description{
-Breaks the contributions to `var1` down by sector or commodity,
-  for up to two scenarios.
+Breaks the contributions to \code{var1} down by sector or commodity,
+for up to two scenarios.
 }

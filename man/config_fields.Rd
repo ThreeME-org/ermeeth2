@@ -7,7 +7,7 @@
 config_fields()
 }
 \value{
-a data frame with `name`, `section`, `type` and `label`.
+a data frame with \code{name}, \code{section}, \code{type} and \code{label}.
 }
 \description{
 Held as data so the addin builds its controls from it rather than repeating

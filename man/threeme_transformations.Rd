@@ -11,18 +11,18 @@ A named list of transformation specifications.
 }
 \description{
 The registry of the ways a ThreeME variable can be looked at.
-  Both [simple_plot()] and [table_3me()] take their `transformation`
-  argument from this list, so a transformation only has to be described once.
+Both \code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}} take their \code{transformation}
+argument from this list, so a transformation only has to be described once.
 
 Each entry carries:
 \describe{
-  \item{label}{a human-readable description, used in footnotes and axis labels}
-  \item{symbol}{the short unit marker shown in the table's unit column}
-  \item{needs_ref}{whether the transformation requires a `values_ref` column}
-  \item{drop_baseline}{whether the baseline rows are meaningless (all zero)
-    and should be dropped}
-  \item{percent}{whether the result is a share, to be displayed multiplied by
-    100 with a percent-style formatter}
+\item{label}{a human-readable description, used in footnotes and axis labels}
+\item{symbol}{the short unit marker shown in the table's unit column}
+\item{needs_ref}{whether the transformation requires a \code{values_ref} column}
+\item{drop_baseline}{whether the baseline rows are meaningless (all zero)
+and should be dropped}
+\item{percent}{whether the result is a share, to be displayed multiplied by
+100 with a percent-style formatter}
 }
 }
 \examples{

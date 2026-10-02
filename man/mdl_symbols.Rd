@@ -11,20 +11,20 @@ mdl_symbols(extra = NULL)
 override symbols for a model that uses other conventions.}
 }
 \value{
-a named character vector, names are `.mdl` name heads, values
-  are LaTeX.
+a named character vector, names are \code{.mdl} name heads, values
+are LaTeX.
 }
 \description{
 The ThreeME naming conventions, as data rather than as a
-  chain of `str_replace()` calls. A name is split on `_`: the head is
-  looked up here, the remaining chunks become the superscript, so
-  `PROD_L[f, s]` renders as `PROD^{L}_{f, s}` and `ES_NRJ` as
-  `\\eta^{NRJ}`. Trailing digits on the head are moved into the
-  superscript (`ADJUST0_F` gives `\\alpha^{0,F}`).
+chain of \code{str_replace()} calls. A name is split on \verb{_}: the head is
+looked up here, the remaining chunks become the superscript, so
+\code{PROD_L[f, s]} renders as \verb{PROD^\{L\}_\{f, s\}} and \code{ES_NRJ} as
+\verb{\\\\eta^\{NRJ\}}. Trailing digits on the head are moved into the
+superscript (\code{ADJUST0_F} gives \verb{\\\\alpha^\{0,F\}}).
 
-  Lookup is exact on the head chunk, so unlike the old implementation
-  `tau` no longer matches inside `Beta_tauX`, and a name that is not in
-  the table is left alone.
+Lookup is exact on the head chunk, so unlike the old implementation
+\code{tau} no longer matches inside \code{Beta_tauX}, and a name that is not in
+the table is left alone.
 }
 \examples{
 head(mdl_symbols())

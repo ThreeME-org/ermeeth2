@@ -7,18 +7,18 @@
 mdl_variables(node)
 }
 \arguments{
-\item{node}{an `mdl_node`, as returned by [mdl_parse()] or [mdl_parse_var()].}
+\item{node}{an \code{mdl_node}, as returned by \code{\link[=mdl_parse]{mdl_parse()}} or \code{\link[=mdl_parse_var]{mdl_parse_var()}}.}
 }
 \value{
-a data frame with one row per variable *reference*, columns `name`
-  and `index` (one row per index, `NA` for an unindexed reference).
+a data frame with one row per variable \emph{reference}, columns \code{name}
+and \code{index} (one row per index, \code{NA} for an unindexed reference).
 }
 \description{
 Walks the whole tree, not just the left-hand side. A ThreeME variable often
-never appears as the dependent variable of any equation -- `CH[c]` is
-determined through `PCH[c] * CH[c] = ...`, and prices appear mostly on
+never appears as the dependent variable of any equation -- \code{CH[c]} is
+determined through \code{PCH[c] * CH[c] = ...}, and prices appear mostly on
 right-hand sides -- so collecting only dependent variables misses most of
-the model. [dictionary_skeleton()] uses this to work out which variables
+the model. \code{\link[=dictionary_skeleton]{dictionary_skeleton()}} uses this to work out which variables
 carry which indices.
 }
 \examples{

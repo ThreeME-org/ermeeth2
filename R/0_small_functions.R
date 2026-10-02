@@ -16,7 +16,7 @@ variables_like <- function(data,test,view = TRUE){
   sector <- NULL
   commodity <- NULL
 
-  VariableShow <- data %>% dplyr::filter(grepl(test, variable)) %>% select(variable,sector,commodity) %>% unique()
+  VariableShow <- data |> dplyr::filter(grepl(test, variable)) |> select(variable,sector,commodity) |> unique()
   if(view == TRUE)
     {
       View(VariableShow)
@@ -50,8 +50,8 @@ pythagore <- function(a = 1,b = 5, fr_format = FALSE){
 
 c <- (a^2 + b^2)^(1/2)
 
-if(fr_format == TRUE){c %>% as.character() %>% stringr::str_replace("\\.",",")}else{
-  c %>% as.character()
+if(fr_format == TRUE){c |> as.character() |> stringr::str_replace("\\.",",")}else{
+  c |> as.character()
 }
 
 

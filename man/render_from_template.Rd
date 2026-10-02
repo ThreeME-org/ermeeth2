@@ -26,7 +26,7 @@ rendering.}
 \item{output_file_name}{character. Name of the rendered output file.}
 
 \item{quarto_parameters_list}{list. Parameters passed to the template as
-quarto `execute_params`.}
+quarto \code{execute_params}.}
 
 \item{render_folder}{character. Folder the rendered output lands in.}
 
@@ -37,6 +37,6 @@ Called for its side effect of rendering the report.
 }
 \description{
 Copies a quarto template to an interim file, renders it with
-  the given parameters, removes the interim file, and optionally opens the
-  result.
+the given parameters, removes the interim file, and optionally opens the
+result.
 }

@@ -75,7 +75,9 @@ For now, dictionary hasnt been built yet so you can omit this (while planning fo
  
  
 ## side project : exploring a model. 
-In config_input one specifies the equation files, then dynamo compiles the equations into a prg
+In config_input one specifies the equation files, then dynamo compiles the equations into a prg. we would like to have an adjacency matrix, what variable influences a given variable. (make a dependency graph )
+
+we would like to be able to click on a varaible and it displays if exogenous or endogenous , if endogenous the equation that defines it, and the variables that influences it
 
 # Claude updates here 
 
@@ -327,19 +329,37 @@ From handoff §4 (open bugs) and §5 (overhaul candidates):
       is *attached*, so the qualified call errors.
 - [x] `base.year` is a required argument of `prg_to_thor()` rather than a global
       default (progress on the `if(exists(...))` item below).
-- [ ] Port `R_model_solver()` off tresthor onto thortwo. The four API calls
-      (`create_model`, `export_model`, `save_model`, `load_model`) map onto
-      `thor_model` / `export_model` / `thor_save` / `thor_load`. The blocker is
-      the baseyear calibration check (`Rmodelsolver.R` A.5), which reaches into
-      `themodel@prologue`, `@prologue_equations_f` and `@equation_list` --
-      slots thortwo's class redesign removed. `thortwo::model_residuals()` does
-      the same job on any backend, but returns per-*block* maxima, whereas the
-      check reports *which equations* are off. Needs a per-equation residual
-      from thortwo first.
+- [x] Port `R_model_solver()` off tresthor onto thortwo. The A.5 calibration
+      check goes through `thortwo::calibration_check()`. Verified end-to-end
+      (2026-10-02, 1.2.1) in a scratch copy of ThreeME_V4 with a hook that errors
+      if tresthor is ever loaded: the training model and the full v4 model
+      (3973 equations, `sparse`, 43 s with a saved model) both run through
+      `run_simulations()`. That surfaced three bugs, fixed in 1.2.1 (see NEWS).
+- [ ] ThreeME_V4's `src/setup.R` still lists `tresthor` in
+      `required_GIT_packages`; replace it with `thortwo` there.
+- [ ] Full v4 model: the calibration check flags `verif_all` (epilogue,
+      residual -1) at the base year. Model/calibration side, not the solver.
 - [ ] `max_tresthor_capability` (config_load.R, post_config_check.R) is a model
       size threshold in kb that exists because the dense solver could not cope
       past ~300 kb. thortwo's sparse backend removes that limit; revisit the
       threshold rather than renaming it.
+
+## Open bugs (found 2026-10-02, to look into later)
+
+- [ ] `stacked_sc_plot()`: the commodity path refers to
+      `bridge4palette_commodities`, but the argument is `bridge4palette_commodity`
+      -> "object not found".
+- [ ] `curve_sc_plot()` / `stacked_sc_plot()`: the default `template` resolves to
+      `NULL` and errors; it only works when `template` is passed.
+- [ ] `add_com_sec_names()`: `commodity` falls back to `s_code` instead of `c_code`
+      for codes missing from the bridge.
+- [ ] `run_simulations()` calls `sheets()` unqualified in the Excel-export
+      branch (`export_scenarii_to_excel = TRUE`); should be `openxlsx::sheets()`.
+- [ ] `table.output()` calls an undefined `width()`.
+- [ ] R CMD check: one NOTE left, undefined globals across legacy functions
+      (`<- NULL` declarations missing, or real globals such as
+      `scenario_to_analyse`).
+- [ ] `dev/` scratch files still use `%>%` (package code is all `|>` since 1.2.2).
 
 ## Decided / out of scope
 

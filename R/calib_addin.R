@@ -9,7 +9,7 @@
 #' @keywords internal
 calib_template_text <- function(type, title) {
   f <- system.file("templates", paste0("calib_", type, ".R"), package = "ermeeth2")
-  if (!nzchar(f)) stop("the ", type, " template is missing from the package.")
+  if (!nzchar(f)) cli::cli_abort("the {type} template is missing from the package.")
   body <- readLines(f, warn = FALSE)
   body <- gsub("{{title}}", if (nzchar(title)) title else type, body, fixed = TRUE)
   body <- gsub("{{date}}", format(Sys.Date()), body, fixed = TRUE)
@@ -68,7 +68,7 @@ calib_addin_app <- function(path = file.path("configuration", "scenarii_calib"))
 
   for (pkg in c("shiny", "bslib", "rstudioapi")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
-      stop("The calibration addin needs the '", pkg, "' package. Install it first.")
+      cli::cli_abort("The calibration addin needs the {.pkg {pkg}} package. Install it first.")
     }
   }
 

@@ -8,22 +8,22 @@ threeme_dictionary(dict = NULL, overlay = TRUE)
 }
 \arguments{
 \item{dict}{a data frame or a path to a CSV, layered on top of the packaged
-dictionary. `NULL` (the default) uses whatever the option provides.}
+dictionary. \code{NULL} (the default) uses whatever the option provides.}
 
-\item{overlay}{`TRUE` (the default) layers `dict` over the packaged
-dictionary. `FALSE` uses `dict` alone, ignoring both other layers.}
+\item{overlay}{\code{TRUE} (the default) layers \code{dict} over the packaged
+dictionary. \code{FALSE} uses \code{dict} alone, ignoring both other layers.}
 }
 \value{
-a data frame with the columns of [dictionary_columns()].
+a data frame with the columns of \code{\link[=dictionary_columns]{dictionary_columns()}}.
 }
 \description{
 Returns the dictionary used to resolve variable codes to labels, units,
 groups and default transformations.
 }
 \details{
-Resolution order, each layer overriding the one before it by `code`:
-the packaged dictionary, then the `ermeeth2.dictionary` option, then the
-`dict` argument. Layering is what lets a project name only the variables the
+Resolution order, each layer overriding the one before it by \code{code}:
+the packaged dictionary, then the \code{ermeeth2.dictionary} option, then the
+\code{dict} argument. Layering is what lets a project name only the variables the
 packaged copy does not know about yet, rather than restating all of it.
 }
 \examples{

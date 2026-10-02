@@ -8,14 +8,14 @@ dictionary_index_map(extra = NULL)
 }
 \arguments{
 \item{extra}{a named character vector merged over the defaults, e.g.
-`c(r = "region")`.}
+\code{c(r = "region")}.}
 }
 \value{
 a named character vector mapping index name to dimension.
 }
 \description{
-The ThreeME convention: `s` indexes sectors, `c` indexes commodities. Held
-as data, like [mdl_symbols()], so a model using other letters can extend it
+The ThreeME convention: \code{s} indexes sectors, \code{c} indexes commodities. Held
+as data, like \code{\link[=mdl_symbols]{mdl_symbols()}}, so a model using other letters can extend it
 rather than fork the code.
 }
 \examples{

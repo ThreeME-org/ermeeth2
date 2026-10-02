@@ -2,7 +2,7 @@
 % Please edit documentation in R/dictionary.R
 \name{dict_groups}
 \alias{dict_groups}
-\title{Variable groups as a named list, ready for `variables =`}
+\title{Variable groups as a named list, ready for \verb{variables =}}
 \usage{
 dict_groups(codes, other = "Other", dict = NULL)
 }
@@ -11,14 +11,14 @@ dict_groups(codes, other = "Other", dict = NULL)
 
 \item{other}{group name for variables with no group in the dictionary.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
 a named list of character vectors.
 }
 \description{
-[table_3me()] takes `variables` as a named list to build row groups. This
-turns a flat vector of codes into that list using the dictionary's `group`
+\code{\link[=table_3me]{table_3me()}} takes \code{variables} as a named list to build row groups. This
+turns a flat vector of codes into that list using the dictionary's \code{group}
 column, preserving the order the codes came in.
 }
 \examples{

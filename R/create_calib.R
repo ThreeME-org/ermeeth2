@@ -57,16 +57,14 @@ calib_file_name <- function(name, type = c("baseline", "shock")) {
 calib_scenario_name <- function(name, type = c("baseline", "shock")) {
   type <- match.arg(type)
   if (!is.character(name) || length(name) != 1L || is.na(name) || !nzchar(name)) {
-    stop("`name` must be a single non-empty string.")
+    cli::cli_abort("`name` must be a single non-empty string.")
   }
   if (grepl("[A-Z]", name)) {
-    stop("`name` must be lower case: got \"", name, "\". ",
-         "The configuration lower-cases scenario names, so an upper-case name ",
-         "would not match its own file.")
+    cli::cli_abort(c("{.arg name} must be lower case: got {.val {name}}.",
+                     "i" = "The configuration lower-cases scenario names, so an upper-case name would not match its own file."))
   }
   if (!grepl("^[a-z][a-z0-9_-]*$", name)) {
-    stop("`name` must start with a letter and hold only lower-case letters, ",
-         "digits, `_` and `-`: got \"", name, "\".")
+    cli::cli_abort("{.arg name} must start with a letter and hold only lower-case letters, digits, {.val _} and {.val -}: got {.val {name}}.")
   }
   if (type == "baseline" && !grepl("^baseline", name)) {
     name <- paste0("baseline_", name)
@@ -111,17 +109,17 @@ create_calib <- function(name, type = c("baseline", "shock"), title = NULL,
   target <- calib_path(name, type, path = path)
 
   if (!dir.exists(path)) {
-    stop("no such folder: ", path, "\n",
-         "Run this from the root of a ThreeME project, or pass `path`.")
+    cli::cli_abort(c("no such folder: {.path {path}}",
+                     "i" = "Run this from the root of a ThreeME project, or pass {.arg path}."))
   }
   if (file.exists(target) && !overwrite) {
-    stop(target, " already exists.\n",
-         "Pass `overwrite = TRUE` to replace it, or pick another name.")
+    cli::cli_abort(c("{.file {target}} already exists.",
+                     "i" = "Pass {.code overwrite = TRUE} to replace it, or pick another name."))
   }
 
   template <- system.file("templates", paste0("calib_", type, ".R"),
                           package = "ermeeth2")
-  if (!nzchar(template)) stop("the ", type, " template is missing from the package.")
+  if (!nzchar(template)) cli::cli_abort("the {type} template is missing from the package.")
 
   body <- readLines(template, warn = FALSE)
   body <- gsub("{{title}}", if (is.null(title)) scenario else title, body, fixed = TRUE)
@@ -129,13 +127,13 @@ create_calib <- function(name, type = c("baseline", "shock"), title = NULL,
   writeLines(body, target)
 
   if (!quiet) {
-    message("Created ", target, "\n",
-            "Point the configuration at it with ",
-            if (type == "baseline") {
-              paste0("`scenario_baseline = \"", scenario, "\"`")
-            } else {
-              paste0("`scenario = c(\"", scenario, "\")`")
-            }, ".")
+    setting <- if (type == "baseline") {
+      paste0("scenario_baseline = \"", scenario, "\"")
+    } else {
+      paste0("scenario = c(\"", scenario, "\")")
+    }
+    cli::cli_inform(c("v" = "Created {.file {target}}",
+                      "i" = "Point the configuration at it with {.code {setting}}."))
   }
   if (open && rstudioapi::isAvailable()) {
     try(rstudioapi::navigateToFile(target), silent = TRUE)

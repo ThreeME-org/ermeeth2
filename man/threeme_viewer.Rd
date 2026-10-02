@@ -11,35 +11,35 @@ threeme_viewer_app(data = NULL, data_expr = NULL)
 }
 \arguments{
 \item{data}{an optional starting point: a ThreeME long-format dataframe, or
-the path to an `.rds` file holding one. When `NULL` (default) the viewer
+the path to an \code{.rds} file holding one. When \code{NULL} (default) the viewer
 opens on its data panel.}
 
-\item{viewer}{where to open: `"dialog"` for an RStudio dialog, `"browser"`
-for the system browser, `"pane"` for the RStudio viewer pane. Outside
+\item{viewer}{where to open: \code{"dialog"} for an RStudio dialog, \code{"browser"}
+for the system browser, \code{"pane"} for the RStudio viewer pane. Outside
 RStudio this always falls back to the browser.}
 
-\item{data_expr}{character(1) how to refer to `data` in the generated code.
-Defaults to the expression `data` was passed as.}
+\item{data_expr}{character(1) how to refer to \code{data} in the generated code.
+Defaults to the expression \code{data} was passed as.}
 }
 \value{
-Invisibly, a list with the last `plot` and `table` built and the
-  `code` that produced them.
+Invisibly, a list with the last \code{plot} and \code{table} built and the
+\code{code} that produced them.
 
-`threeme_viewer_app()` returns the `shiny.appobj` behind the viewer,
-  without launching it. Useful for testing, or for serving the viewer
-  outside RStudio.
+\code{threeme_viewer_app()} returns the \code{shiny.appobj} behind the viewer,
+without launching it. Useful for testing, or for serving the viewer
+outside RStudio.
 }
 \description{
 An RStudio addin to look at a simulation result interactively:
-  point it at a `data_full` object or `.rds` file, tick the variables you
-  want, and it draws the plot and builds the table, exposing the arguments of
-  [simple_plot()] and [table_3me()] as controls.
+point it at a \code{data_full} object or \code{.rds} file, tick the variables you
+want, and it draws the plot and builds the table, exposing the arguments of
+\code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}} as controls.
 
-  The Code tab shows the two calls it just ran, so a session of clicking ends
-  with something to paste into a quarto. Inside RStudio, the *Insert code*
-  button drops them at the cursor.
+The Code tab shows the two calls it just ran, so a session of clicking ends
+with something to paste into a quarto. Inside RStudio, the \emph{Insert code}
+button drops them at the cursor.
 
-  Launch it from the Addins menu ("ThreeME viewer"), or call this function.
+Launch it from the Addins menu ("ThreeME viewer"), or call this function.
 }
 \examples{
 \dontrun{

@@ -17,13 +17,12 @@ label <- function(variable_code,
                   data = NULL,
                   lang = "en"){
 
-  warning("`label()` is deprecated: use `dict_label()`, which reads ",
-          "`threeme_dictionary()`. The `data` argument is ignored.",
-          call. = FALSE)
+  cli::cli_warn(c("{.fn label} is deprecated: use {.fn dict_label}, which reads {.fn threeme_dictionary}.",
+                  "i" = "The {.arg data} argument is ignored."), call = NULL)
 
   if (!lang %in% dictionary_languages()) {
-    stop("`lang = \"", lang, "\"` is not carried by the dictionary. ",
-         "Available: ", paste(dictionary_languages(), collapse = ", "), ".")
+    cli::cli_abort(c("{.code lang = \"{lang}\"} is not carried by the dictionary.",
+                     "i" = "Available: {.val {dictionary_languages()}}."))
   }
   dict_label(variable_code, lang = lang)
 }

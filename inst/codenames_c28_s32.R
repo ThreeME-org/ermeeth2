@@ -36,8 +36,8 @@ c('Transport','C005'),
 c('Services','C006'),
 c('Fossil based energy','C007'),
 c('Other energy','C008')
-) %>%
-  as.data.frame() %>% rename(name = V1,code = V2)
+) |>
+  as.data.frame() |> rename(name = V1,code = V2)
 
 names_sectors <- rbind(
 c('Agriculture and fishing','sagr'),
@@ -80,5 +80,5 @@ c('Transport','S005'),
 c('Services','S006'),
 c('Fossil based energy','S007'),
 c('Other energy','S008')
-) %>%
-  as.data.frame() %>% rename(name = V1,code = V2)
+) |>
+  as.data.frame() |> rename(name = V1,code = V2)

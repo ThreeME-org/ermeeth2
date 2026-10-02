@@ -21,11 +21,11 @@ custom.palette <- function(n = NULL,
                            palette_base = NULL){
 
   if (is.null(bridge_group) & is.null(n)){
-    stop(message = " Pleeeease, specifiy at least a number n or a brudge (ex:bridge_sectors) .\n")
+    cli::cli_abort("Pleeeease, specifiy at least a number n or a brudge (ex:bridge_sectors) .")
   }
 
   if (!is.null(bridge_group) & !is.null(n)){
-    cat("Droping n and retaining bridge option .\n")
+    cli::cli_alert_info("Droping n and retaining bridge option .")
   }
 
 
@@ -66,7 +66,7 @@ custom.palette <- function(n = NULL,
 
   if (!is.null(bridge_group)){
     pal_group <- purrr::set_names(pal_base[1:length(bridge_group)],names(bridge_group))
-    brd <- purrr::set_names(names(bridge_group)) %>%
+    brd <- purrr::set_names(names(bridge_group)) |>
       purrr::map(~list(subgroup = bridge_group[[.x]], base_col = pal_group[.x]))
 
 
@@ -93,8 +93,8 @@ custom.palette <- function(n = NULL,
      }
 
 
-     pal_subgroup <-  names(bridge_group)  %>%
-       map(~colors_subgroup(brd[[.x]]$base_col, length(brd[[.x]]$subgroup), brd[[.x]]$subgroup )) %>%
+     pal_subgroup <-  names(bridge_group)  |>
+       map(~colors_subgroup(brd[[.x]]$base_col, length(brd[[.x]]$subgroup), brd[[.x]]$subgroup )) |>
        reduce(c)
 
      pal_all_groups <- c(pal_subgroup,pal_group)

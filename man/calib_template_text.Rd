@@ -7,7 +7,7 @@
 calib_template_text(type, title)
 }
 \arguments{
-\item{type}{`"baseline"` or `"shock"`.}
+\item{type}{\code{"baseline"} or \code{"shock"}.}
 
 \item{title}{the header line.}
 }

@@ -12,32 +12,32 @@ config_addin_app(path = "configuration")
 \arguments{
 \item{path}{the configuration folder.}
 
-\item{viewer}{where to open: `"dialog"`, `"browser"` or `"pane"`.}
+\item{viewer}{where to open: \code{"dialog"}, \code{"browser"} or \code{"pane"}.}
 }
 \value{
 invisibly, a list of the files written.
 
-`config_addin_app()` returns the `shiny.appobj` without launching it.
+\code{config_addin_app()} returns the \code{shiny.appobj} without launching it.
 }
 \description{
 An RStudio addin to fill in a ThreeME configuration. Each
-  section of the input configuration is a tab -- basics, scenarios, file
-  lists, solver -- and the output configuration is one more, listing the
-  quartos to render.
+section of the input configuration is a tab -- basics, scenarios, file
+lists, solver -- and the output configuration is one more, listing the
+quartos to render.
 
-  Edits are **surgical**: only the assignments you change are rewritten, and
-  every comment, commented-out alternative and live code block in the file is
-  left byte-for-byte alone. A configuration file is R code rather than data,
-  so regenerating it from a template would throw that away.
+Edits are \strong{surgical}: only the assignments you change are rewritten, and
+every comment, commented-out alternative and live code block in the file is
+left byte-for-byte alone. A configuration file is R code rather than data,
+so regenerating it from a template would throw that away.
 
-  Naming a scenario the project has no calibration for offers to create it,
-  through the same template [create_shock()] uses.
+Naming a scenario the project has no calibration for offers to create it,
+through the same template \code{\link[=create_shock]{create_shock()}} uses.
 
-  Only works inside a ThreeME v4 project: it reads and writes
-  `configuration/config_input_*.R` and `config_output_*.R`.
+Only works inside a ThreeME v4 project: it reads and writes
+\code{configuration/config_input_*.R} and \code{config_output_*.R}.
 
-  Launch it from the Addins menu ("ThreeME configuration"), or call this
-  function.
+Launch it from the Addins menu ("ThreeME configuration"), or call this
+function.
 }
 \examples{
 \dontrun{

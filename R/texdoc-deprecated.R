@@ -33,8 +33,8 @@
 #' }
 teXdoc <- function(sources, exo = c(), base.path = "src/model", out = "doc",
                    out.path = getwd(), compile_pdf = FALSE) {
-  warning("`teXdoc()` is deprecated: use `model_doc(format = \"tex\")`, ",
-          "or `model_doc()` for Quarto output.", call. = FALSE)
+  cli::cli_warn("{.fn teXdoc} is deprecated: use {.code model_doc(format = \"tex\")}, or {.fn model_doc} for Quarto output.",
+                call = NULL)
   invisible(model_doc(sources = sources, exo = exo, base.path = base.path,
                       out = out, out.path = out.path, format = "tex",
                       compile_pdf = compile_pdf))
@@ -58,8 +58,7 @@ make_eq_qmd <- function(preface = "03.1-eq_preface.tex",
                         maintex = "03.1-eq.tex",
                         path = file.path("results", "quarto_templates", "results_side_files"),
                         out.dir = file.path("results", "quarto_templates", "results_side_files")) {
-  stop("`make_eq_qmd()` is removed. `model_doc()` writes the Quarto document ",
-       "directly from the .mdl sources:\n",
-       "  model_doc(sources = ..., exo = ..., base.path = ..., out.path = \"",
-       out.dir, "\")", call. = FALSE)
+  cli::cli_abort(c("{.fn make_eq_qmd} is removed. {.fn model_doc} writes the Quarto document directly from the .mdl sources:",
+                   " " = "{.code model_doc(sources = ..., exo = ..., base.path = ..., out.path = \"{out.dir}\")}"),
+                 call = NULL)
 }

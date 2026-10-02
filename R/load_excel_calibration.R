@@ -21,7 +21,6 @@
 #' @importFrom readxl read_excel
 #' @importFrom data.table fread
 #' @importFrom purrr map set_names reduce
-#' @importFrom crayon yellow bgBlack
 #'
 #' @examples
 #' \dontrun{
@@ -43,23 +42,22 @@ load_excel_calibration<- function(excel_sheet = "configuration/scenarii_calib/sc
 
 ){
 
-  wyellow <- function(text){crayon::yellow(crayon::bgBlack(text) )}
   test_base <- function(varName = "base"){tryCatch({get(varName); TRUE}, error = function(e) FALSE) }
 
   xl_data <- readxl::read_excel(excel_sheet,sheet = sheet_to_load )
 
   ###Importing and cleaning excel data
   names(xl_data)[c(1:2)]<- c("to_load","variable")
-  import_base <- xl_data %>% dplyr::filter(to_load != 0) %>% dplyr::select(-to_load) %>%
-    t() %>% as.data.frame()
+  import_base <- xl_data |> dplyr::filter(to_load != 0) |> dplyr::select(-to_load) |>
+    t() |> as.data.frame()
 
-  years <- row.names(import_base)[-1] %>% as.numeric()
-  vars <- import_base[1,] %>% as.vector() %>% purrr::reduce(c) %>% tolower()
+  years <- row.names(import_base)[-1] |> as.numeric()
+  vars <- import_base[1,] |> as.vector() |> purrr::reduce(c) |> tolower()
 
-  cleaned_base <- import_base[-1,]  %>% as.data.frame() %>%
-    dplyr::rename_all(~vars)%>%
-    dplyr::mutate(year = years) %>%
-    dplyr::mutate_all(~stringr::str_remove_all(.x,"\\s")  %>% as.numeric())
+  cleaned_base <- import_base[-1,]  |> as.data.frame() |>
+    dplyr::rename_all(~vars)|>
+    dplyr::mutate(year = years) |>
+    dplyr::mutate_all(~stringr::str_remove_all(.x,"\\s")  |> as.numeric())
 
   if(baseline){
     if(test_base("calib_baseline")){
@@ -68,7 +66,7 @@ load_excel_calibration<- function(excel_sheet = "configuration/scenarii_calib/sc
       calib_data <- data.table::fread("src/compiler/calib.csv", data.table = FALSE) |>
         dplyr::select(-baseyear) |>
         dplyr::mutate(year = year + base_year)
-      cat("\nCouldn't find calib_new_base, using the dynamo generated calib.csv file instead.\n")
+      cli::cli_alert_info("Couldn't find calib_new_base, using the dynamo generated calib.csv file instead.")
     }
 
   }else{
@@ -78,65 +76,63 @@ load_excel_calibration<- function(excel_sheet = "configuration/scenarii_calib/sc
       calib_data <- data.table::fread("src/compiler/calib.csv", data.table = FALSE) |>
         dplyr::select(-baseyear) |>
         dplyr::mutate(year = year + base_year)
-      cat("\nCouldn't find calib_new_base, using the dynamo generated calib.csv file instead.\n")
+      cli::cli_alert_info("Couldn't find calib_new_base, using the dynamo generated calib.csv file instead.")
     }
   }
 
 
-  original_data <- calib_data %>% dplyr::select(year, dplyr::any_of(vars))
+  original_data <- calib_data |> dplyr::select(year, dplyr::any_of(vars))
   vars_not_prexisting <- setdiff(names(cleaned_base),names(original_data))
 
   if(length(vars_not_prexisting)>0){
-    cat(paste0("\nThe following variables were found in the excel sheet but not in calib files:\n"))
-    cat(vars_not_prexisting, sep = "\n")
-    cat("\nThey will be added anyways\n")}
+    cli::cli_alert_info("The following variables were found in the Excel sheet but not in the calib files. They will be added anyway:")
+    cli_vector(vars_not_prexisting)}
 
 
   ##baseyear check
-  check <- original_data[which(original_data$year==base_year),] - (cleaned_base %>% dplyr::select(dplyr::all_of(names(original_data))) )[which(cleaned_base$year==base_year),]
+  check <- original_data[which(original_data$year==base_year),] - (cleaned_base |> dplyr::select(dplyr::all_of(names(original_data))) )[which(cleaned_base$year==base_year),]
 
-  test <- check[which(abs(check)>check_tol)] %>% names()
+  test <- check[which(abs(check)>check_tol)] |> names()
   if(length(test)>0){
 
-    cat(wyellow("\nThe following variables do not match calibrated data at base year:\n") )
-    cat(test, sep = "\n")
-    cat("\n")
-    if(stop_if_calib_fail){stop("Mismatch with calibrated data")}else{
+    cli::cli_alert_warning("The following variables do not match the calibrated data at the base year:")
+    cli_vector(test)
+    if(stop_if_calib_fail){cli::cli_abort("Mismatch with calibrated data")}else{
       if(keep_baseyear_calib_data){
-        cat(wyellow("Continuing replacing with the calibrated data for the baseyear"))
+        cli::cli_alert_info("Continuing, replacing with the calibrated data for the base year.")
       }else{
-        cat(wyellow("Continuing with new data loaded from Excel"))}
+        cli::cli_alert_info("Continuing with the new data loaded from Excel.")}
     }
 
   }
   if(keep_baseyear_calib_data){ base_i = 0}else{base_i = 1}
 
   ###finding which vars to fill
-  data_na <- original_data %>% dplyr::mutate_at(setdiff(names(.),"year"), ~ifelse(year<=(base_year-base_i),.x,NA))
-  imported_base <- cleaned_base  %>% dplyr::mutate_at(setdiff(names(.),"year"), ~ifelse(year==(base_year*(1-base_i)),NA,.x))
+  data_na <- original_data |> dplyr::mutate_at(setdiff(names(original_data),"year"), ~ifelse(year<=(base_year-base_i),.x,NA))
+  imported_base <- cleaned_base  |> dplyr::mutate_at(setdiff(names(cleaned_base),"year"), ~ifelse(year==(base_year*(1-base_i)),NA,.x))
 
   joined<- dplyr::full_join(data_na,imported_base, by="year")
-  vars_to_merge <- names(joined)[which(grepl(".+\\.x$",names(joined)))] %>% stringr::str_remove("\\.x$")
+  vars_to_merge <- names(joined)[which(grepl(".+\\.x$",names(joined)))] |> stringr::str_remove("\\.x$")
 
   merged <- purrr::map(vars_to_merge,
                 function(vari=.x){
-                  joined %>% dplyr::select(dplyr::all_of(c("year",stringr::str_c(vari, c(".x",".y")) ))) %>%
+                  joined |> dplyr::select(dplyr::all_of(c("year",stringr::str_c(vari, c(".x",".y")) ))) |>
                     dplyr::mutate_at(stringr::str_c(vari,".x") , ~ifelse(is.na(.x),joined[,stringr::str_c(vari,".y")] ,.x)  )
-                }) %>% purrr::reduce(left_join,by = "year") %>%
+                }) |> purrr::reduce(left_join,by = "year") |>
     dplyr::select(dplyr::all_of(c("year",stringr::str_c(vars_to_merge,".x"))))
-  names(merged) <-   names(merged) %>% stringr::str_remove("\\.x$")
+  names(merged) <-   names(merged) |> stringr::str_remove("\\.x$")
 
-  ready_data <-dplyr::full_join(merged,joined, by = "year") %>% dplyr::select(-dplyr::ends_with(".y"))%>% dplyr::select(-dplyr::ends_with(".x"))
+  ready_data <-dplyr::full_join(merged,joined, by = "year") |> dplyr::select(-dplyr::ends_with(".y"))|> dplyr::select(-dplyr::ends_with(".x"))
 
   ### FILLING IN THE BLANKS
-  vars_to_fill <- names(ready_data)[which( (ready_data %>% purrr::map(~sum(is.na(.x))) %>% purrr::reduce(c))>0)]
+  vars_to_fill <- names(ready_data)[which( (ready_data |> purrr::map(~sum(is.na(.x))) |> purrr::reduce(c))>0)]
 
   if(length(vars_to_fill >0))
 
-  {filler <- vars_to_fill %>% purrr::map(
+  {filler <- vars_to_fill |> purrr::map(
     function(vari=.x){
       years_b = ready_data$year
-      plop <- ready_data %>% dplyr::select(dplyr::all_of(c("year",vari))) %>%
+      plop <- ready_data |> dplyr::select(dplyr::all_of(c("year",vari))) |>
         dplyr::filter_all(~!is.na(.x))
       interpolation_series ( date_vector = plop[,"year"],
                                       value_vector = plop[,vari],
@@ -144,11 +140,11 @@ load_excel_calibration<- function(excel_sheet = "configuration/scenarii_calib/sc
                                       last.date = max(years_b))
     }
 
-  ) %>% purrr::set_names(vars_to_fill) %>%  purrr::reduce(cbind) %>% as.data.frame()%>% purrr::set_names(vars_to_fill) %>%
+  ) |> purrr::set_names(vars_to_fill) |>  purrr::reduce(cbind) |> as.data.frame()|> purrr::set_names(vars_to_fill) |>
     dplyr::mutate(year = ready_data$year)
 
   ### completed data
-  complete_data <- ready_data %>% dplyr::select(-dplyr::all_of(vars_to_fill)) %>% dplyr::full_join(filler, by="year")
+  complete_data <- ready_data |> dplyr::select(-dplyr::all_of(vars_to_fill)) |> dplyr::full_join(filler, by="year")
   }else{
     complete_data <- ready_data
   }

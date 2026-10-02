@@ -6,30 +6,30 @@
 \title{ThreeME variable dictionary (packaged data)}
 \format{
 A data frame with one row per variable and the columns of
-  [dictionary_columns()]:
+\code{\link[=dictionary_columns]{dictionary_columns()}}:
 \describe{
-  \item{code}{root variable code, unindexed.}
-  \item{label_en, label_fr}{full label.}
-  \item{label_short_en, label_short_fr}{short label for table rows and axes.}
-  \item{unit}{natural unit of the level. Display only.}
-  \item{default_transformation}{one of [threeme_transformations()].}
-  \item{group}{row group for [table_3me()].}
-  \item{indexed_by}{which index columns the code can populate: `sector`,
-    `commodity`, both as `"sector,commodity"`, or empty for none. Derived
-    from the `.mdl` sources by [dictionary_skeleton()], not typed by hand.
-    It is not a claim that every row is indexed: most ThreeME variables
-    exist at the aggregate level too (`GDP` as well as `GDP[c]`), and those
-    rows carry `NA` in the index column.}
-  \item{definition_en, definition_fr}{prose definition, for tooltips and the
-    documentation site.}
+\item{code}{root variable code, unindexed.}
+\item{label_en, label_fr}{full label.}
+\item{label_short_en, label_short_fr}{short label for table rows and axes.}
+\item{unit}{natural unit of the level. Display only.}
+\item{default_transformation}{one of \code{\link[=threeme_transformations]{threeme_transformations()}}.}
+\item{group}{row group for \code{\link[=table_3me]{table_3me()}}.}
+\item{indexed_by}{which index columns the code can populate: \code{sector},
+\code{commodity}, both as \code{"sector,commodity"}, or empty for none. Derived
+from the \code{.mdl} sources by \code{\link[=dictionary_skeleton]{dictionary_skeleton()}}, not typed by hand.
+It is not a claim that every row is indexed: most ThreeME variables
+exist at the aggregate level too (\code{GDP} as well as \code{GDP[c]}), and those
+rows carry \code{NA} in the index column.}
+\item{definition_en, definition_fr}{prose definition, for tooltips and the
+documentation site.}
 }
 }
 \usage{
 data(threeme_dictionary_data)
 }
 \description{
-One row per root variable code. Edit `data-raw/dictionary.csv` and rerun
-`data-raw/dictionary.R` to rebuild; read it through [threeme_dictionary()]
+One row per root variable code. Edit \code{data-raw/dictionary.csv} and rerun
+\code{data-raw/dictionary.R} to rebuild; read it through \code{\link[=threeme_dictionary]{threeme_dictionary()}}
 rather than using this object directly, so that project overrides apply.
 }
 \keyword{datasets}

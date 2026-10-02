@@ -7,13 +7,13 @@
 mdl_read_lines(path)
 }
 \arguments{
-\item{path}{path to a `.mdl` file.}
+\item{path}{path to a \code{.mdl} file.}
 }
 \value{
-a data frame with columns `line` (the number of the *first*
-  source line of the stitched statement) and `text`.
+a data frame with columns \code{line} (the number of the \emph{first}
+source line of the stitched statement) and \code{text}.
 }
 \description{
-Lines ending in ` _` continue on the next line.
+Lines ending in \verb{ _} continue on the next line.
 }
 \keyword{internal}

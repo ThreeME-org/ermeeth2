@@ -10,7 +10,7 @@ transformation_spec(transformation)
 \item{transformation}{character(1) the transformation id.}
 }
 \value{
-The matching element of [threeme_transformations()].
+The matching element of \code{\link[=threeme_transformations]{threeme_transformations()}}.
 }
 \description{
 Look up one transformation specification

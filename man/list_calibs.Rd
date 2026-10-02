@@ -10,13 +10,13 @@ list_calibs(
 )
 }
 \arguments{
-\item{path}{the `scenarii_calib` folder.}
+\item{path}{the \code{scenarii_calib} folder.}
 
 \item{type}{which to list.}
 }
 \value{
-a data frame with `name` (as it goes into the configuration), `type`
-  and `file`.
+a data frame with \code{name} (as it goes into the configuration), \code{type}
+and \code{file}.
 }
 \description{
 List the scenario calibrations a project holds

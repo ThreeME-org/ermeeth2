@@ -161,8 +161,8 @@ prg_rewrite_comparisons <- function(eqs) {
         }
       }
       if (left == 0L || right == 0L) {
-        stop("A comparison is not enclosed in its own parentheses, so its ",
-             "operands cannot be identified:\n  ", s, call. = FALSE)
+        cli::cli_abort(c("A comparison is not enclosed in its own parentheses, so its operands cannot be identified:",
+                         " " = "{s}"), call = NULL)
       }
 
       A <- substr(s, left + 1L, pos - 1L)
@@ -228,7 +228,7 @@ prg_find_elem <- function(x) {
           if (depth == 0L) break
         }
         i <- i + 1L
-        if (i > n) stop("Unbalanced parentheses in: ", line, call. = FALSE)
+        if (i > n) cli::cli_abort(c("Unbalanced parentheses in:", " " = "{line}"), call = NULL)
       }
       out <- c(out, substr(line, s, i))
     }
@@ -246,7 +246,7 @@ prg_find_elem <- function(x) {
 prg_parse_elem <- function(e) {
   inner <- substr(e, 7L, nchar(e) - 1L)          # strip "@elem(" and ")"
   at <- max(gregexpr(",", inner, fixed = TRUE)[[1]])
-  if (at == -1L) stop("@elem without a year: ", e, call. = FALSE)
+  if (at == -1L) cli::cli_abort(c("{.code @elem} without a year:", " " = "{e}"), call = NULL)
   list(expr = trimws(substr(inner, 1L, at - 1L)),
        year = as.integer(trimws(substring(inner, at + 1L))))
 }
@@ -355,42 +355,43 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
                         model_prefix = "^[a-z_0-9]+\\.append",
                         verbose = TRUE) {
 
-  say <- function(...) if (verbose) cat(..., sep = "")
+  step   <- function(...) if (verbose) cli::cli_alert_info(cli_escape(paste0(...)))
+  detail <- function(...) if (verbose) cli::cli_verbatim(paste0("  ", ...))
   warnings_out <- character(0)
   warn <- function(msg) {
     warnings_out <<- c(warnings_out, msg)
-    say("   ! ", msg, "\n")
+    if (verbose) cli::cli_alert_warning("{msg}")
   }
 
-  if (missing(base.year)) stop("`base.year` is required.", call. = FALSE)
+  if (missing(base.year)) cli::cli_abort("{.arg base.year} is required.", call = NULL)
   stopifnot(file.exists(modfile), file.exists(calibfile))
 
   ## ---- 1. equations -------------------------------------------------------
-  say("1. reading ", basename(modfile), "\n")
+  step("Reading ", basename(modfile))
   eqs <- tolower(readLines(modfile, warn = FALSE))
   eqs <- sub(model_prefix, "", eqs)
   eqs <- gsub("'.*$", "", eqs)                    # EViews end-of-line comments
   eqs <- gsub("\\s+", "", eqs)
   eqs <- eqs[nzchar(eqs)]
-  say("   ", length(eqs), " equations\n")
+  detail("", length(eqs), " equations")
 
   ## ---- 2. calibration -----------------------------------------------------
-  say("2. reading ", basename(calibfile), "\n")
+  step("Reading ", basename(calibfile))
   calib <- utils::read.csv(calibfile, check.names = FALSE)
   names(calib) <- tolower(names(calib))
   calib <- calib[, names(calib) != "baseyear", drop = FALSE]
   if (!"year" %in% names(calib)) {
-    stop("The calibration file has no `year` column.", call. = FALSE)
+    cli::cli_abort("The calibration file has no {.field year} column.", call = NULL)
   }
   calib$year <- as.integer(round(calib$year)) + base.year
   if (!is.null(first.year)) calib <- calib[calib$year >= first.year, , drop = FALSE]
   if (!is.null(last.year))  calib <- calib[calib$year <= last.year,  , drop = FALSE]
   rownames(calib) <- NULL
-  say("   ", nrow(calib), " periods (", min(calib$year), "-", max(calib$year),
-      "), ", ncol(calib) - 1L, " variables\n")
+  detail("", nrow(calib), " periods (", min(calib$year), "-", max(calib$year),
+      "), ", ncol(calib) - 1L, " variables")
 
   ## ---- 3. @elem -> coefficients ------------------------------------------
-  say("3. resolving @elem\n")
+  step("Resolving @elem")
   occ <- prg_find_elem(eqs)
   elem <- NULL
 
@@ -406,8 +407,8 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
     elem$value <- mapply(prg_eval_elem, elem$expr, elem$year,
                          MoreArgs = list(calib = calib), USE.NAMES = FALSE)
 
-    say("   ", nrow(elem), " distinct @elem -> ",
-        length(unique(elem$name)), " coefficients\n")
+    detail("", nrow(elem), " distinct @elem -> ",
+        length(unique(elem$name)), " coefficients")
 
     bad <- elem[is.na(elem$value), , drop = FALSE]
     if (nrow(bad)) {
@@ -440,18 +441,18 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
                                         nrow = nrow(calib),
                                         dimnames = list(NULL, coeff_tbl$name))))
   } else {
-    say("   none\n")
+    detail("none")
   }
 
   ## ---- 4. EViews -> thoR syntax ------------------------------------------
-  say("4. rewriting lags and differences\n")
+  step("Rewriting lags and differences")
   ## `x(-1)` -> `lag(x,1)`, before `d(` so a lag inside a difference is
   ## already in thoR form
   eqs <- gsub("([a-z][a-z0-9_]*)\\(-([0-9]+)\\)", "lag(\\1,\\2)", eqs)
   ## `d(...)` -> `delta(1,...)`, but not the `d` ending an identifier
   eqs <- gsub("(?<![a-z0-9_])d\\(", "delta(1,", eqs, perl = TRUE)
   if (any(grepl("delta(1,og(", eqs, fixed = TRUE))) {
-    stop("dlog() is not handled by this translator.", call. = FALSE)
+    cli::cli_abort("{.fn dlog} is not handled by this translator.", call = NULL)
   }
   eqs <- gsub("+-", "-", eqs, fixed = TRUE)
 
@@ -459,8 +460,8 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
   if (n_cmp) {
     rc <- prg_rewrite_comparisons(eqs)
     eqs <- rc$eqs
-    say("   rewrote ", rc$n, " logical test(s) in ", n_cmp,
-        " equation(s) as indicators\n")
+    detail("rewrote ", rc$n, " logical test(s) in ", n_cmp,
+        " equation(s) as indicators")
   }
   eqs <- prg_expand_scientific(eqs)
 
@@ -471,7 +472,7 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
   }
 
   ## ---- 5. classify the variables -----------------------------------------
-  say("5. classifying variables\n")
+  step("Classifying variables")
   ## The endogenous variable of an equation is the first one on its left-hand
   ## side: the compiler emits equations already normalised that way.
   lhs <- sub("=.*$", "", eqs)
@@ -497,8 +498,8 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
   endo <- sort(unique(endo))
   exo  <- sort(setdiff(all_vars, c(endo, coef)))
 
-  say("   ", length(endo), " endogenous, ", length(exo), " exogenous, ",
-      length(coef), " coefficients\n")
+  detail("", length(endo), " endogenous, ", length(exo), " exogenous, ",
+      length(coef), " coefficients")
   if (length(endo) != length(eqs)) {
     warn(sprintf("%d equations for %d endogenous variables: the model is not square",
                  length(eqs), length(endo)))
@@ -513,7 +514,7 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
 
   ## ---- 6. optionally write the model file --------------------------------
   if (!is.null(out_file)) {
-    say("6. writing ", basename(out_file), "\n")
+    step("Writing ", basename(out_file))
     dir.create(dirname(out_file), recursive = TRUE, showWarnings = FALSE)
     writeLines(c(
       "endogenous variables :", paste(endo, collapse = ","), "##############",
@@ -534,17 +535,17 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
 #' @returns `tr`, invisibly. Called for the report it prints.
 #' @export
 translate_report <- function(tr) {
-  cat("\n--- translation report ---\n")
-  cat("equations   :", length(tr$equations), "\n")
-  cat("endogenous  :", length(tr$endo), "\n")
-  cat("exogenous   :", length(tr$exo), "\n")
-  cat("coefficients:", length(tr$coef), "\n")
-  cat("database    :", nrow(tr$data), "periods x", ncol(tr$data) - 1L, "variables\n")
+  cli::cli_h3("Translation report")
+  cli::cli_dl(c(
+    equations    = length(tr$equations),
+    endogenous   = length(tr$endo),
+    exogenous    = length(tr$exo),
+    coefficients = length(tr$coef),
+    database     = paste(nrow(tr$data), "periods x", ncol(tr$data) - 1L, "variables")))
   if (length(tr$warnings) == 0L) {
-    cat("warnings    : none\n")
+    cli::cli_alert_success("No warnings.")
   } else {
-    cat("warnings    :\n")
-    cat(paste0("  - ", tr$warnings, collapse = "\n"), "\n")
+    for (w in tr$warnings) cli::cli_alert_warning("{w}")
   }
   invisible(tr)
 }
@@ -579,9 +580,9 @@ translate_modelprg <- function(
   if (is.null(base.year)) {
     base.year <- get0("baseyear", envir = parent.frame(), ifnotfound = NULL)
     if (is.null(base.year)) {
-      stop("`base.year` was not given and no `baseyear` was found in the ",
-           "calling scope. Pass it explicitly, as prg_to_thor() requires.",
-           call. = FALSE)
+      cli::cli_abort(c("{.arg base.year} was not given and no {.code baseyear} was found in the calling scope.",
+                       "i" = "Pass it explicitly, as {.fn prg_to_thor} requires."),
+                     call = NULL)
     }
   }
   if (is.null(last.year)) {

@@ -36,33 +36,33 @@ create_shock(
 }
 \arguments{
 \item{name}{scenario name: lower case, starting with a letter, and otherwise
-letters, digits, `_` and `-`. For a baseline a `baseline_` prefix is added
+letters, digits, \verb{_} and \code{-}. For a baseline a \code{baseline_} prefix is added
 if it is not there already.}
 
-\item{type}{`"baseline"` or `"shock"`.}
+\item{type}{\code{"baseline"} or \code{"shock"}.}
 
 \item{title}{a one-line description, written into the header. Defaults to the
 name.}
 
-\item{path}{the `scenarii_calib` folder.}
+\item{path}{the \code{scenarii_calib} folder.}
 
-\item{overwrite}{`TRUE` replaces an existing file. The default refuses,
+\item{overwrite}{\code{TRUE} replaces an existing file. The default refuses,
 because a scenario script is hand-written work.}
 
-\item{open}{`TRUE` opens the new file in RStudio when RStudio is available.}
+\item{open}{\code{TRUE} opens the new file in RStudio when RStudio is available.}
 
-\item{quiet}{`TRUE` suppresses the message.}
+\item{quiet}{\code{TRUE} suppresses the message.}
 }
 \value{
 invisibly, the path written.
 }
 \description{
 Writes the skeleton of a baseline or shock calibration into
-  `configuration/scenarii_calib/`, named so that [readconfig()] finds it.
-  The skeleton loads the calibration, selects a year and one inconsequential
-  variable (world demand), applies a neutral transformation, and ends on the
-  `baseline_ch` / `shock_ch` object the pipeline reads -- so it runs as
-  written, and produces no change until you edit it.
+\verb{configuration/scenarii_calib/}, named so that \code{\link[=readconfig]{readconfig()}} finds it.
+The skeleton loads the calibration, selects a year and one inconsequential
+variable (world demand), applies a neutral transformation, and ends on the
+\code{baseline_ch} / \code{shock_ch} object the pipeline reads -- so it runs as
+written, and produces no change until you edit it.
 }
 \examples{
 \dontrun{

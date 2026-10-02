@@ -24,61 +24,61 @@ model_doc(
 )
 }
 \arguments{
-\item{sources}{character vector of `.mdl` files holding the equations.}
+\item{sources}{character vector of \code{.mdl} files holding the equations.}
 
-\item{exo}{character vector of `.mdl` files holding the exogenous
+\item{exo}{character vector of \code{.mdl} files holding the exogenous
 variable declarations.}
 
-\item{base.path}{directory `sources` and `exo` are relative to.}
+\item{base.path}{directory \code{sources} and \code{exo} are relative to.}
 
 \item{out}{output file name, without extension.}
 
 \item{out.path}{output directory, created if needed.}
 
-\item{format}{`"qmd"` (default), `"tex"`, or `"both"`.}
+\item{format}{\code{"qmd"} (default), \code{"tex"}, or \code{"both"}.}
 
-\item{title}{document title. Used in the YAML header when `standalone`,
-and as the LaTeX `\\title`.}
+\item{title}{document title. Used in the YAML header when \code{standalone},
+and as the LaTeX \verb{\\\\title}.}
 
-\item{standalone}{`TRUE` (default) writes a document that renders on its
-own: a YAML header for Quarto, a preamble and `\\begin{document}` for
-LaTeX. `FALSE` writes a fragment meant to be pulled into a larger
-document with `{{< include >}}` or `\\input`.}
+\item{standalone}{\code{TRUE} (default) writes a document that renders on its
+own: a YAML header for Quarto, a preamble and \verb{\\\\begin\{document\}} for
+LaTeX. \code{FALSE} writes a fragment meant to be pulled into a larger
+document with \verb{\{\{< include >\}\}} or \verb{\\\\input}.}
 
-\item{heading_level}{the markdown level the `#####` headings of the
-sources map to. Defaults to 2 (`##`), so the document title stays `#`.}
+\item{heading_level}{the markdown level the \verb{#####} headings of the
+sources map to. Defaults to 2 (\verb{##}), so the document title stays \verb{#}.}
 
 \item{exo_title, glossary_title}{headings of the two generated sections.
-Set either to `NA` to leave that section out.}
+Set either to \code{NA} to leave that section out.}
 
-\item{symbols}{symbol table, see [mdl_symbols()].}
+\item{symbols}{symbol table, see \code{\link[=mdl_symbols]{mdl_symbols()}}.}
 
-\item{show_conditions}{`TRUE` prints the `if ...` selectors alongside the
-equations. See [mdl_latex()].}
+\item{show_conditions}{\code{TRUE} prints the \verb{if ...} selectors alongside the
+equations. See \code{\link[=mdl_latex]{mdl_latex()}}.}
 
 \item{overrides}{named character vector of hand-written LaTeX keyed by
 variable name, used instead of the parsed rendering.}
 
-\item{compile_pdf}{`TRUE` runs [tools::texi2pdf()] on the LaTeX output.
-Ignored unless a `.tex` file is produced.}
+\item{compile_pdf}{\code{TRUE} runs \code{\link[tools:texi2pdf]{tools::texi2pdf()}} on the LaTeX output.
+Ignored unless a \code{.tex} file is produced.}
 
-\item{quiet}{`TRUE` suppresses the summary message.}
+\item{quiet}{\code{TRUE} suppresses the summary message.}
 }
 \value{
-invisibly, a list with `files` (the paths written) and `items`
-  (the parsed document, as returned by [mdl_document()]).
+invisibly, a list with \code{files} (the paths written) and \code{items}
+(the parsed document, as returned by \code{\link[=mdl_document]{mdl_document()}}).
 }
 \description{
-Reads the `.mdl` files a ThreeME-style model is written in
-  and writes the equations, the exogenous variables and a glossary as a
-  Quarto document, with every equation cross-referenceable
-  (`@eq-<file>-<variable>`).
+Reads the \code{.mdl} files a ThreeME-style model is written in
+and writes the equations, the exogenous variables and a glossary as a
+Quarto document, with every equation cross-referenceable
+(\verb{@eq-<file>-<variable>}).
 
-  This replaces `teXdoc()` and `make_eq_qmd()`. The `.mdl` parser is now
-  part of the package (see [mdl_parse()]) rather than a `pegr` grammar,
-  equations that fail to parse are reported instead of silently dropped,
-  and the LaTeX output is a second renderer of the same parsed document
-  rather than the source the Quarto was scraped from.
+This replaces \code{teXdoc()} and \code{make_eq_qmd()}. The \code{.mdl} parser is now
+part of the package (see \code{\link[=mdl_parse]{mdl_parse()}}) rather than a \code{pegr} grammar,
+equations that fail to parse are reported instead of silently dropped,
+and the LaTeX output is a second renderer of the same parsed document
+rather than the source the Quarto was scraped from.
 }
 \examples{
 \dontrun{

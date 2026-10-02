@@ -10,10 +10,10 @@ config_edit(file, values, out = file)
 \item{file}{path to the configuration file.}
 
 \item{values}{a named list of replacements. Each element is either R source
-text (wrap it in [I()] to say "this is already code") or a value to be
+text (wrap it in \code{\link[=I]{I()}} to say "this is already code") or a value to be
 deparsed.}
 
-\item{out}{where to write. Defaults to `file`, editing in place.}
+\item{out}{where to write. Defaults to \code{file}, editing in place.}
 }
 \value{
 invisibly, the path written.

@@ -12,9 +12,9 @@ carried by the configuration object.}
 }
 \value{
 Called for its side effect of reporting check results to the
-  console.
+console.
 }
 \description{
 Validates the advanced configuration arguments against what the
-  compiler step actually produced, and reports any mismatch.
+compiler step actually produced, and reports any mismatch.
 }

@@ -8,14 +8,14 @@ eviews_checks(config_list = configuration)
 }
 \arguments{
 \item{config_list}{list. The configuration object, as returned by
-[readconfig()].}
+\code{\link[=readconfig]{readconfig()}}.}
 }
 \value{
-A list with elements `path_eviews_exe`, `Rsolver`, `rcpp_option`
-  and `use.superlu`.
+A list with elements \code{path_eviews_exe}, \code{Rsolver}, \code{rcpp_option}
+and \code{use.superlu}.
 }
 \description{
 Resolves the path to the EViews executable and reconciles the
-  solver-related options, so the caller knows which solver will actually be
-  used.
+solver-related options, so the caller knows which solver will actually be
+used.
 }

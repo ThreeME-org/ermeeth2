@@ -25,61 +25,61 @@ simple_plot(
 )
 }
 \arguments{
-\item{data}{a ThreeME long-format dataframe, as produced by [longer_data()]:
-columns `year`, `variable`, `scenario`, `values` and `values_ref`, and
-optionally `sector` / `commodity`.}
+\item{data}{a ThreeME long-format dataframe, as produced by \code{\link[=longer_data]{longer_data()}}:
+columns \code{year}, \code{variable}, \code{scenario}, \code{values} and \code{values_ref}, and
+optionally \code{sector} / \code{commodity}.}
 
 \item{variables}{character vector of the variables to plot.}
 
 \item{scenarios}{character vector of the scenarios to plot. Defaults to every
-scenario in `data`.}
+scenario in \code{data}.}
 
 \item{transformation}{character(1) one of the ids of
-[threeme_transformations()]. A plot carries a single y axis, so mixing
-transformations in one call is not allowed - use [table_3me()] for that.}
+\code{\link[=threeme_transformations]{threeme_transformations()}}. A plot carries a single y axis, so mixing
+transformations in one call is not allowed - use \code{\link[=table_3me]{table_3me()}} for that.}
 
 \item{labels}{named character vector mapping variable codes to display
 labels, or an unnamed vector with one entry per variable. Codes it does not
 cover keep their code. Defaults to the codes themselves.}
 
 \item{startyear, endyear}{numeric(1) first and last year plotted. Default to
-the range of `data`.}
+the range of \code{data}.}
 
-\item{base_year}{numeric(1) base year of the `"index100"` transformation.}
+\item{base_year}{numeric(1) base year of the \code{"index100"} transformation.}
 
 \item{name_baseline}{character(1) name of the baseline scenario.}
 
 \item{palette}{character vector of colours, optionally named by variable or
-scenario, passed to [threeme_palette()].}
+scenario, passed to \code{\link[=threeme_palette]{threeme_palette()}}.}
 
-\item{colour_by}{character(1) `"variable"` or `"scenario"`: which dimension
-gets the colour, the other getting the linetype. Defaults to `"scenario"`
-when a single variable is plotted, `"variable"` otherwise.}
+\item{colour_by}{character(1) \code{"variable"} or \code{"scenario"}: which dimension
+gets the colour, the other getting the linetype. Defaults to \code{"scenario"}
+when a single variable is plotted, \code{"variable"} otherwise.}
 
 \item{title, subtitle, caption}{character(1) plot labels.}
 
 \item{digits}{numeric(1) number of decimals on the y axis labels.}
 
-\item{x_breaks}{numeric(1) spacing of the x axis ticks. `NULL` (default)
+\item{x_breaks}{numeric(1) spacing of the x axis ticks. \code{NULL} (default)
 picks a spacing from the length of the period.}
 
-\item{interactive}{boolean(1) return an interactive `girafe` object instead
+\item{interactive}{boolean(1) return an interactive \code{girafe} object instead
 of a plain ggplot.}
 }
 \value{
-A `ggplot`, or a `girafe` object when `interactive = TRUE`.
+A \code{ggplot}, or a \code{girafe} object when \code{interactive = TRUE}.
 }
 \description{
 A line chart of a set of ThreeME variables, over one or several
-  scenarios, in any of the transformations listed by
-  [threeme_transformations()] and defaulting to the relative difference to
-  the baseline. This is the single plotting entry point of the package: it
-  replaces the former `simple_plot()` and `simpleplot()`.
+scenarios, in any of the transformations listed by
+\code{\link[=threeme_transformations]{threeme_transformations()}} and defaulting to the relative difference to
+the baseline. This is the single plotting entry point of the package: it
+replaces the former \code{simple_plot()} and \code{simpleplot()}.
 
-  With `interactive = TRUE` the lines gain small hover points carrying a
-  tooltip with the scenario name, the level under the shock and under the
-  baseline, the growth rate and the relative difference, and the plot is
-  returned as a `girafe` object through [ofce::girafy()].
+With \code{interactive = TRUE} the lines gain small hover points carrying a
+tooltip with the scenario name, the level under the shock and under the
+baseline, the growth rate and the relative difference, and the plot is
+returned as a \code{girafe} object through \code{\link[ofce:girafy]{ofce::girafy()}}.
 }
 \examples{
 \dontrun{

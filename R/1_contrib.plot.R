@@ -40,7 +40,7 @@ contrib.plot <- function(data,
   format_img <- c("svg")  # Choose format: "png", "svg"
 
   if (is.null(series)){
-    series <-  data[["variable"]] %>% unique()
+    series <-  data[["variable"]] |> unique()
   }
 
   if (is.null(label_series)){
@@ -55,7 +55,7 @@ contrib.plot <- function(data,
 
 
   ## Data filtering
-  data <- data %>% dplyr::filter(year >= startyear & year <= endyear)
+  data <- data |> dplyr::filter(year >= startyear & year <= endyear)
 
   if (is.null(custom_x_breaks)) {
     n_years <- endyear - startyear
@@ -110,11 +110,11 @@ contrib.plot <- function(data,
 
   if (line_tot == TRUE){
     # Data for ploting the line
-    data.2 <- data %>%
-      dplyr::filter(year >= startyear & year <= endyear) %>%
-      tidyr::pivot_wider(names_from = variable, values_from = value) %>%
-      dplyr::rowwise() %>%
-      dplyr::mutate(value = sum(dplyr::c_across(series))) %>%
+    data.2 <- data |>
+      dplyr::filter(year >= startyear & year <= endyear) |>
+      tidyr::pivot_wider(names_from = variable, values_from = value) |>
+      dplyr::rowwise() |>
+      dplyr::mutate(value = sum(dplyr::c_across(series))) |>
       dplyr::select(year, value)
 
     plot <-  plot +

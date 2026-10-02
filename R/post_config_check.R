@@ -14,45 +14,44 @@ post_compiler_checks <- function(base_advanced_arguments){
   ## 1.  Checking that the calib.csv file has all the endogenous variables declared in the model.prg file
 
   ### Get all equations from the equation list
-  mod_from_dynamo <- readLines(file.path("src", "compiler", "model.prg")) %>%
+  mod_from_dynamo <- readLines(file.path("src", "compiler", "model.prg")) |>
     str_remove_all("^a_3ME\\.append\\s")
-  list_endo <- mod_from_dynamo %>%
+  list_endo <- mod_from_dynamo |>
 
     ### Remove basic common things and keep LHS of equations
-    str_remove_all("\\s+") %>%
-    str_remove_all("=.*$") %>%
+    str_remove_all("\\s+") |>
+    str_remove_all("=.*$") |>
 
     ### remove funcions
-    str_remove_all("\\w+\\(") %>%
-    str_replace_all("^|$","@") %>%
-    str_replace_all("(\\+|-|\\*|/|\\(|\\)|\\^)","@") %>%
+    str_remove_all("\\w+\\(") |>
+    str_replace_all("^|$","@") |>
+    str_replace_all("(\\+|-|\\*|/|\\(|\\)|\\^)","@") |>
 
     ### remove numbers
-    str_replace_all("@\\d+(\\.\\d+)?@","@") %>%
+    str_replace_all("@\\d+(\\.\\d+)?@","@") |>
 
     ### clean up
-    str_replace_all("@+","@") %>%
+    str_replace_all("@+","@") |>
 
     ### remove extra variables
-    str_replace_all("^(@\\w+\\@).*$","\\1") %>%
+    str_replace_all("^(@\\w+\\@).*$","\\1") |>
     str_remove_all("@")
 
   equation_table <- data.frame(endogenous = list_endo, equation = mod_from_dynamo)
 
-  calib_vars <- data.table::fread("src/compiler/calib.csv", data.table = FALSE ) %>% names()
+  calib_vars <- data.table::fread("src/compiler/calib.csv", data.table = FALSE ) |> names()
 
   missing_calibs <- setdiff(list_endo,calib_vars)
 
   if(length(missing_calibs) > 0){
 
-    ("The following endogenous variables have not been calibrated in the calib.csv file:") %>% message_not_ok()
+    cli::cli_alert_danger("{length(missing_calibs)} endogenous variable{?s} {?is/are} not calibrated in {.file calib.csv}:")
 
-    plop <- equation_table %>% filter(endogenous %in% missing_calibs)
-    cat(plop$endogenous, sep = "   ")
-    cat("\n")
+    plop <- equation_table |> filter(endogenous %in% missing_calibs)
+    cli_vector(plop$endogenous)
   }else{
 
-    ("All endogenous variables are present in the calib.csv file.") %>% message_ok()
+    cli::cli_alert_success("All endogenous variables are present in {.file calib.csv}.")
 
   }
 
@@ -84,11 +83,10 @@ eviews_checks<- function(config_list = configuration){
   if(file.size(file.path("src","compiler","model.prg")) > max_tresthor_capability *1000 & Rsolver == TRUE  ){
     Rsolver <- FALSE
     if (grepl("win", tolower(osVersion))){
-      ("The model appears to be too large for current R solver capabilities, EViews should be used instead.") %>% message_warning()
+      cli::cli_alert_warning("The model appears to be too large for the R solver; EViews will be used instead.")
     }else{
-      ("The model appears to be too large for current R solver capabilities. EViews should be used instead, however running EViews requires a Windows OS.") %>% message_not_ok
-      ("Stopping now") %>% message_stopbomb()
-      stop(error ="Cannot run the specified configuration of ThreeME on this computer.")
+      cli::cli_abort(c("Cannot run this configuration of ThreeME on this computer.",
+                       "x" = "The model appears to be too large for the R solver, and EViews requires Windows."))
     }
   }
 
@@ -96,7 +94,7 @@ eviews_checks<- function(config_list = configuration){
       grepl("win", tolower(osVersion)) == FALSE &
       Rsolver == FALSE
   ){
-    ("It looks like you are not using Windows, EViews cannot be used on other OSs than Windows. \nHowever, since the model specified is not too large, the model will be solved through R.") %>% message_any("\U2757  \U1F914")
+    cli::cli_alert_warning("EViews only runs on Windows. The model is small enough for the R solver, so it will be solved in R.")
 
     Rsolver <- TRUE
     rcpp_option = TRUE
@@ -110,9 +108,9 @@ eviews_checks<- function(config_list = configuration){
   if (grepl("win", tolower(osVersion)) & Rsolver == FALSE){
 
     if (file.exists(path_eviews_exe)) {
-      paste0("Default EViews path: \nThe EViews path provided (",path_eviews_exe,") is correct.") %>% message_ok()
+      cli::cli_alert_success("EViews found at {.path {path_eviews_exe}}.")
     } else {
-      paste0("Default EViews path: \nThe EViews path provided (",path_eviews_exe,") is incorrect.") %>% message_warning()
+      cli::cli_alert_warning("No EViews at the configured path {.path {path_eviews_exe}}; searching the usual locations.")
 
       nb_eviews.exe <- 0
       for (progfolder in c("C:/Program Files","C:/Program Files (x86)")){
@@ -123,7 +121,7 @@ eviews_checks<- function(config_list = configuration){
           if (file.exists(path_eviews_exe_tested)) {
             path_eviews_exe <- path_eviews_exe_tested
             nb_eviews.exe <- nb_eviews.exe + 1
-            paste0("Possible path: ", path_eviews_exe, ". \n") %>% message_ok()
+            cli::cli_alert_success("Possible path: {.path {path_eviews_exe}}")
 
 
           }
@@ -132,21 +130,18 @@ eviews_checks<- function(config_list = configuration){
           if (file.exists(path_eviews_exe_tested)) {
             path_eviews_exe <- path_eviews_exe_tested
             nb_eviews.exe <- nb_eviews.exe + 1
-            paste0("Possible path: ", path_eviews_exe, ". \n") %>% message_ok()
+            cli::cli_alert_success("Possible path: {.path {path_eviews_exe}}")
 
           }
         }
       }
       if (nb_eviews.exe == 0) {
-        ("No Eviews.exe found. \nCheck if Eviews is installed if you wish to use the EViews solver.") %>% message_not_ok()
-        ("Stopping now") %>% message_stopbomb()
-        stop(error = "Cannot find EViews.")
+        cli::cli_abort(c("Cannot find EViews.",
+                         "i" = "Check that EViews is installed if you wish to use the EViews solver."))
 
       }else{
-        paste0(nb_eviews.exe, " path(s) found.\n","The following Eviews executable will be used: ",
-               path_eviews_exe,
-               ". \nChange manually if you wish to use another version.\n",
-               "In the config file, change the following line: path_eviews_exe <- DESIRED PATH" ) %>% message_any("\U1F4A1")
+        cli::cli_inform(c("i" = "{nb_eviews.exe} EViews path{?s} found. Using {.path {path_eviews_exe}}.",
+                          " " = "To use another version, set {.code path_eviews_exe} in the config file."))
 
       }
 

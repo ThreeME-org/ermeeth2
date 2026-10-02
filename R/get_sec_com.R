@@ -20,7 +20,7 @@
 get_sec_com <- function(list.mdl = file.path("src","model","threeme",paste0("R_lists_",config$input$iso3,"_",config$input$classification,".mdl")),
                         sectors = TRUE, commodities = TRUE, energy_commodities = TRUE){
 
-  if(!file.exists(list.mdl)){stop(message(stringr::str_c(" Could not find the specified mdl list :\n", list.mdl, "\n")))}
+  if(!file.exists(list.mdl)){cli::cli_abort("Could not find the specified mdl list: {.file {list.mdl}}")}
 
   list_sec <- NULL
   list_com <- NULL

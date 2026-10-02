@@ -11,9 +11,9 @@ read_config_values(file, fields = NULL, with = list())
 
 \item{fields}{which names to return. Defaults to everything the file assigns.}
 
-\item{with}{a named list injected before sourcing. An **output**
-configuration is not self-contained -- `quartos_parameters` refers to
-`project_name`, `lastyear` and `scenario`, which the *input* configuration
+\item{with}{a named list injected before sourcing. An \strong{output}
+configuration is not self-contained -- \code{quartos_parameters} refers to
+\code{project_name}, \code{lastyear} and \code{scenario}, which the \emph{input} configuration
 defines -- so reading one on its own fails unless the input values are
 passed in here.}
 }
@@ -22,8 +22,8 @@ a named list.
 }
 \description{
 Sources the file in a throwaway environment, so the values come back exactly
-as the pipeline would see them -- `firstyear` computed from `baseyear`,
-`calib_files` built from `iso3`, and so on.
+as the pipeline would see them -- \code{firstyear} computed from \code{baseyear},
+\code{calib_files} built from \code{iso3}, and so on.
 }
 \examples{
 \dontrun{

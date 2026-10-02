@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_warning}
 \alias{message_warning}
-\title{Preprogrammed ThreeME formatting for warning messages}
+\title{Display a warning message}
 \usage{
 message_warning(txt_message = "TEST")
 }
@@ -10,8 +10,9 @@ message_warning(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for warning messages
+Informative only: no R warning is raised. Use
+\code{\link[cli:cli_warn]{cli::cli_warn()}} when the caller should be able to catch it.
 }

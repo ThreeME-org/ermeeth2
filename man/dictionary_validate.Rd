@@ -12,10 +12,10 @@ dictionary_validate(dict, what = "dictionary")
 \item{what}{what to call it in error messages.}
 }
 \value{
-the data frame, with every column of [dictionary_columns()].
+the data frame, with every column of \code{\link[=dictionary_columns]{dictionary_columns()}}.
 }
 \description{
 Missing optional columns are added empty, so a project can supply a CSV with
-just `code` and `label_fr` and still get a usable dictionary back.
+just \code{code} and \code{label_fr} and still get a usable dictionary back.
 }
 \keyword{internal}

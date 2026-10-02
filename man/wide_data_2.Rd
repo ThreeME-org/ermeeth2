@@ -7,20 +7,20 @@
 wide_data_2(data, variables = NULL, out_format = "list")
 }
 \arguments{
-\item{data}{data.frame in long format, with at least `year` and `variable`
+\item{data}{data.frame in long format, with at least \code{year} and \code{variable}
 columns.}
 
-\item{variables}{character vector. Variables to keep, or `NULL` for all.}
+\item{variables}{character vector. Variables to keep, or \code{NULL} for all.}
 
-\item{out_format}{character. `"dataframe"` for a single wide data.frame,
-`"list"` for one data.frame per scenario.}
+\item{out_format}{character. \code{"dataframe"} for a single wide data.frame,
+\code{"list"} for one data.frame per scenario.}
 }
 \value{
-A data.frame when `out_format` is `"dataframe"`, otherwise a named
-  list of data.frames, one per scenario.
+A data.frame when \code{out_format} is \code{"dataframe"}, otherwise a named
+list of data.frames, one per scenario.
 }
 \description{
 Pivots long-format results into one column per
-  scenario-variable pair, returned either as a single data.frame or split
-  into one data.frame per scenario.
+scenario-variable pair, returned either as a single data.frame or split
+into one data.frame per scenario.
 }

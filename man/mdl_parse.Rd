@@ -11,15 +11,15 @@ mdl_parse(x)
 continuation lines already stitched.}
 }
 \value{
-an `mdl_eq` node: a list with `lhs`, `rhs`, `cond`, `over`,
-  `set`, `excluded` and `over_keyword` (`TRUE` when the equation was
-  prefixed with `@over`).
+an \code{mdl_eq} node: a list with \code{lhs}, \code{rhs}, \code{cond}, \code{over},
+\code{set}, \code{excluded} and \code{over_keyword} (\code{TRUE} when the equation was
+prefixed with \verb{@over}).
 }
 \description{
-The replacement for the `pegr` grammar the old `teXdoc()`
-  used. Unlike that grammar this one has operator precedence, so
-  `a / b * c` parses as `(a / b) * c` rather than `a / (b * c)`, and it
-  raises an error on input it cannot parse instead of returning nothing.
+The replacement for the \code{pegr} grammar the old \code{teXdoc()}
+used. Unlike that grammar this one has operator precedence, so
+\code{a / b * c} parses as \code{(a / b) * c} rather than \code{a / (b * c)}, and it
+raises an error on input it cannot parse instead of returning nothing.
 }
 \examples{
 eq <- mdl_parse("Y[c, s] = PhiY[c, s] * YQ[c] if Y[c, s] <> 0")

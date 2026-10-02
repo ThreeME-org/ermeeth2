@@ -14,32 +14,32 @@ mdl_document(
 )
 }
 \arguments{
-\item{sources}{character vector of `.mdl` files holding the equations.}
+\item{sources}{character vector of \code{.mdl} files holding the equations.}
 
-\item{exo}{character vector of `.mdl` files holding the exogenous
+\item{exo}{character vector of \code{.mdl} files holding the exogenous
 variable declarations.}
 
 \item{base.path}{directory the file names are relative to.}
 
-\item{symbols}{symbol table, see [mdl_symbols()].}
+\item{symbols}{symbol table, see \code{\link[=mdl_symbols]{mdl_symbols()}}.}
 
-\item{show_conditions}{passed to [mdl_latex()].}
+\item{show_conditions}{passed to \code{\link[=mdl_latex]{mdl_latex()}}.}
 
 \item{overrides}{optional named character vector of hand-written LaTeX,
-keyed by variable name (e.g. `c("PCH_CES" = "PCH^{CES} = ...")`), used
-instead of the parsed rendering. Replaces the hardcoded `explicit` list
-that used to sit inside `teXdoc()`.}
+keyed by variable name (e.g. \code{c("PCH_CES" = "PCH^{CES} = ...")}), used
+instead of the parsed rendering. Replaces the hardcoded \code{explicit} list
+that used to sit inside \code{teXdoc()}.}
 }
 \value{
-a data frame with one row per item, columns `file`, `line`,
-  `kind` (`heading`, `text`, `equation`, `exovar`), `level`, `title`,
-  `description`, `raw`, `latex`, `variable`, `id`, `error` and `indices`
-  (the index names of the left-hand side, comma separated, `NA` when the
-  variable is not indexed).
+a data frame with one row per item, columns \code{file}, \code{line},
+\code{kind} (\code{heading}, \code{text}, \code{equation}, \code{exovar}), \code{level}, \code{title},
+\code{description}, \code{raw}, \code{latex}, \code{variable}, \code{id}, \code{error} and \code{indices}
+(the index names of the left-hand side, comma separated, \code{NA} when the
+variable is not indexed).
 }
 \description{
-The single parsing pass behind [model_doc()]. Useful on its
-  own to check a model parses, or to build some other output from it.
+The single parsing pass behind \code{\link[=model_doc]{model_doc()}}. Useful on its
+own to check a model parses, or to build some other output from it.
 }
 \examples{
 items <- mdl_document(

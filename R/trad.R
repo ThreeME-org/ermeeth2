@@ -20,8 +20,7 @@ trad <- function(x,data = trad_database,
 
   if(exists("language") == FALSE){
 
-    paste0("Please set translation destination language.") %>%
-      message_warning()
+    cli::cli_alert_warning("Please set the translation destination language.")
   }
 
   trad_data <- data

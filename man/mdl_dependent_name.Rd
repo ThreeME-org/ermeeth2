@@ -7,10 +7,10 @@
 mdl_dependent_name(eq)
 }
 \arguments{
-\item{eq}{an `mdl_eq` node, from [mdl_parse()].}
+\item{eq}{an \code{mdl_eq} node, from \code{\link[=mdl_parse]{mdl_parse()}}.}
 }
 \value{
-character(1), e.g. `"F_n[f, s]"`, or `NA_character_`.
+character(1), e.g. \code{"F_n[f, s]"}, or \code{NA_character_}.
 }
 \description{
 The name of an equation's dependent variable, indices included

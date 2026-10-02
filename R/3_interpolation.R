@@ -69,35 +69,35 @@ interpolation_series <- function(date_vector  = NULL,
 
   ### running checks
   if(is.null(date_vector)){
-    stop(message="No date_vector specified.\n")
+    cli::cli_abort("No date_vector specified.")
   }
   if(is.null(value_vector)){
-    stop(message="No value_vector specified.\n")
+    cli::cli_abort("No value_vector specified.")
   }
 
   if(length(date_vector) != length(value_vector)){
-    stop(message="value_vector and date_vector must be of the same length.\n")
+    cli::cli_abort("value_vector and date_vector must be of the same length.")
   }
 
   if(max(date_vector) > last.date){
-    message("The specified last.date is earlier than lastest date provided in date_vector, the argument will be ignored.\n")
+    cli::cli_alert_info("The specified last.date is earlier than lastest date provided in date_vector, the argument will be ignored.")
     last.date <- max(date_vector)
   }
 
   if(min(date_vector) < first.date){
-    message("The specified first.date is later than earliest date provided in date_vector, the argument will be ignored.\n")
+    cli::cli_alert_info("The specified first.date is later than earliest date provided in date_vector, the argument will be ignored.")
     first.date <- min(date_vector)
   }
 
   if(!is.numeric(value_vector)){
-    stop(message = "value_vector must be numeric. \n")
+    cli::cli_abort("value_vector must be numeric.")
   }
 
-  input_array_def  <- input_array  <- data.frame(date = date_vector,input_vector = value_vector) %>% dplyr::arrange(date)
+  input_array_def  <- input_array  <- data.frame(date = date_vector,input_vector = value_vector) |> dplyr::arrange(date)
   index_vector_def <- index_vector <- seq(from = first.date, to = last.date, by = seq.step )
 
   if(prod(date_vector %in% index_vector) == 0){
-    stop(message="Some dates from date_vector could not be found in the sequence from = first.date to = last.date by seq.step. Please check seq.step specification. \n")
+    cli::cli_abort("Some dates from date_vector could not be found in the sequence from = first.date to = last.date by seq.step. Please check seq.step specification.")
   }
 
   if(lubridate::is.Date(index_vector)){
@@ -105,46 +105,46 @@ interpolation_series <- function(date_vector  = NULL,
 
   }
 
-  res_array <- data.frame(date = index_vector,res_vector = rep(NA, length(index_vector))) %>%
-    dplyr::full_join(input_array, by = "date") %>%
+  res_array <- data.frame(date = index_vector,res_vector = rep(NA, length(index_vector))) |>
+    dplyr::full_join(input_array, by = "date") |>
     dplyr::mutate(res_vector = ifelse(is.na(input_vector),res_vector,input_vector),
            res_vector = ifelse(date < min(date_vector),
                                input_array$input_vector[which(input_array$date == min(date_vector))] , res_vector) ,
            res_vector = ifelse(date > max(date_vector),
                                input_array$input_vector[which(input_array$date == max(date_vector))] , res_vector) ,
            test.r = dplyr::lag(date)
-    )  %>% dplyr::select(-input_vector)
+    )  |> dplyr::select(-input_vector)
 
   ## step 1 locate the intervals that need filling in
 
   if(is.na(res_array$res_vector[1])){
-    stop(message= "Functional error : NA found in first position")
+    cli::cli_abort("Functional error : NA found in first position")
   }
   if(is.na(res_array$res_vector[nrow(res_array)])){
-    stop(message= "Functional error : NA found in last position")
+    cli::cli_abort("Functional error : NA found in last position")
   }
 
-  non_na_dates <- data.frame(date = res_array$date[which(!is.na(res_array$res_vector))]) %>%
+  non_na_dates <- data.frame(date = res_array$date[which(!is.na(res_array$res_vector))]) |>
     dplyr::mutate(test.t = dplyr::lag(date))
 
-  intervals <- res_array %>% dplyr::left_join(non_na_dates, by = "date") %>% dplyr::filter(test.r != test.t) %>% dplyr::select(test.t,test.r) %>% dplyr::mutate(test.r = test.r + seq.step) %>% dplyr::rename(start = test.t, end = test.r)
+  intervals <- res_array |> dplyr::left_join(non_na_dates, by = "date") |> dplyr::filter(test.r != test.t) |> dplyr::select(test.t,test.r) |> dplyr::mutate(test.r = test.r + seq.step) |> dplyr::rename(start = test.t, end = test.r)
 
 
-if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
-    purrr::map(~c(intervals$start[.x],intervals$end[.x])) %>%
-    purrr::map(~seq(from = .x[1], to = .x[2], by = seq.step)) %>%
-    purrr::map(~res_array %>% dplyr::filter(date %in% .x) %>%
-          dplyr::select(-test.r) %>%
+if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) |>
+    purrr::map(~c(intervals$start[.x],intervals$end[.x])) |>
+    purrr::map(~seq(from = .x[1], to = .x[2], by = seq.step)) |>
+    purrr::map(~res_array |> dplyr::filter(date %in% .x) |>
+          dplyr::select(-test.r) |>
           ## insert different methods here
           dplyr::mutate(res_vector = linear_fill(res_vector)) )
 
-  final_res <-na.vectors %>%  purrr::reduce(rbind) %>%
-    rbind(res_array %>% dplyr::select(date, res_vector) %>% dplyr::filter(!is.na(res_vector))) %>%
-    unique() %>% dplyr::arrange(date)}else{
+  final_res <-na.vectors |>  purrr::reduce(rbind) |>
+    rbind(res_array |> dplyr::select(date, res_vector) |> dplyr::filter(!is.na(res_vector))) |>
+    unique() |> dplyr::arrange(date)}else{
 
-      final_res <- res_array %>% dplyr::select(date, res_vector) %>% dplyr::filter(!is.na(res_vector)) %>%
-        dplyr::mutate_all(~round(.x,7)) %>%
-        unique() %>% dplyr::arrange(date)
+      final_res <- res_array |> dplyr::select(date, res_vector) |> dplyr::filter(!is.na(res_vector)) |>
+        dplyr::mutate_all(~round(.x,7)) |>
+        unique() |> dplyr::arrange(date)
     }
 
   ###### NON LINEAR INTERPOLATION STARTS HERE
@@ -155,13 +155,13 @@ if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
 
 
   if(first.date < min(input_array$date)){
-    input_array_bis <- rbind(input_array_bis , c(first(input_array$date)- seq.step , first(input_array$input_vector))) %>%
+    input_array_bis <- rbind(input_array_bis , c(first(input_array$date)- seq.step , first(input_array$input_vector))) |>
       dplyr::arrange(date)
     left_line <- TRUE
   }
 
   if(last.date > max(input_array$date)){
-    input_array_bis <- rbind(input_array_bis , c(last(input_array$date)+ seq.step , last(input_array$input_vector))) %>%
+    input_array_bis <- rbind(input_array_bis , c(last(input_array$date)+ seq.step , last(input_array$input_vector))) |>
       dplyr::arrange(date)
     right_line <- TRUE
     }
@@ -177,14 +177,14 @@ if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
       if(right_line == TRUE){sides <- c("left")}
 
       ## Quadratic case only
-      final_res_smoothed <- sides %>%
-        purrr::map(~quadratric_splines(input_array_bis$date , input_array_bis$input_vector , steps = seq.step , side= .x) ) %>%
+      final_res_smoothed <- sides |>
+        purrr::map(~quadratric_splines(input_array_bis$date , input_array_bis$input_vector , steps = seq.step , side= .x) ) |>
 
-        purrr::reduce(rbind) %>% unique() %>%
-        dplyr::rename(date = x, res_vector = y) %>%
-        rbind(res_array %>% dplyr::select(date, res_vector) %>% dplyr::filter(!is.na(res_vector)))%>%
-        dplyr::mutate_all(~round(.x,7)) %>%
-        unique() %>% dplyr::arrange(date)
+        purrr::reduce(rbind) |> unique() |>
+        dplyr::rename(date = x, res_vector = y) |>
+        rbind(res_array |> dplyr::select(date, res_vector) |> dplyr::filter(!is.na(res_vector)))|>
+        dplyr::mutate_all(~round(.x,7)) |>
+        unique() |> dplyr::arrange(date)
     }
 
 
@@ -197,13 +197,13 @@ if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
       if(length(sides) == 0){
         res_ends_smoothed <- data.frame(date = c(first(date_vector)), res_vector = first(value_vector))
       }else{
-        res_ends_smoothed <-sides %>%
+        res_ends_smoothed <-sides |>
           purrr::imap(~quadratric_splines(input_array_bis$date[.x[1]:.x[2]] ,
                                    input_array_bis$input_vector[.x[1]:.x[2]]  ,
                                    steps = seq.step ,
-                                   side= .y) ) %>%
+                                   side= .y) ) |>
 
-          purrr::reduce(rbind) %>% unique() %>%
+          purrr::reduce(rbind) |> unique() |>
           dplyr::rename(date = x, res_vector = y)
       }
 
@@ -211,24 +211,24 @@ if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
       ## 1 determine all quartets
       input_array_bis$index_start <- 1:nrow(input_array_bis)
       input_array_bis$index_end <- dplyr::lead(input_array_bis$index_start,3)
-      quartets <- input_array_bis %>%
-        dplyr::filter(!is.na(index_end)) %>% dplyr::select(index_start, index_end) %>%
-        t() %>% as.data.frame() %>% purrr::map(~c(.x[1]:.x[2]))
+      quartets <- input_array_bis |>
+        dplyr::filter(!is.na(index_end)) |> dplyr::select(index_start, index_end) |>
+        t() |> as.data.frame() |> purrr::map(~c(.x[1]:.x[2]))
 
-      res_smoothed_cube <- quartets %>%
+      res_smoothed_cube <- quartets |>
         purrr::map(~catmullrom_splines(input_array_bis$date[.x],
                                        input_array_bis$input_vector[.x],
-                                       steps = seq.step)) %>%
+                                       steps = seq.step)) |>
 
-        purrr::reduce(rbind) %>% unique() %>%
+        purrr::reduce(rbind) |> unique() |>
         dplyr::rename(date = x, res_vector = y)
 
       final_res_smoothed <- rbind(res_ends_smoothed,
                                   res_smoothed_cube,
-                                  (res_array %>% dplyr::select(date, res_vector) %>% dplyr::filter(!is.na(res_vector)))
-                                  ) %>%
-        dplyr::mutate_all(~round(.x,7)) %>%
-      unique() %>% dplyr::arrange(date)
+                                  (res_array |> dplyr::select(date, res_vector) |> dplyr::filter(!is.na(res_vector)))
+                                  ) |>
+        dplyr::mutate_all(~round(.x,7)) |>
+      unique() |> dplyr::arrange(date)
 
 
 
@@ -243,16 +243,16 @@ if(nrow(intervals)>0){na.vectors <- c(1:nrow(intervals)) %>%
 
 if(sum(duplicated(final_res_smoothed$date)) >0  ){
 
-  final_res_smoothed <- final_res_smoothed %>% mutate(dupes = duplicated(date)) %>%
-    filter(dupes == FALSE) %>% select(-dupes) %>%
-    arrange(date) %>% as.data.frame()
+  final_res_smoothed <- final_res_smoothed |> mutate(dupes = duplicated(date)) |>
+    filter(dupes == FALSE) |> select(-dupes) |>
+    arrange(date) |> as.data.frame()
 
 }
 
 
 
 
-compare <- left_join(final_res,final_res_smoothed %>% rename(res_vector_smoothed = res_vector), by = "date")
+compare <- left_join(final_res,final_res_smoothed |> rename(res_vector_smoothed = res_vector), by = "date")
 
 
 plot.interpol <- ggplot2::ggplot(compare, ggplot2::aes(x=date, y=res_vector)) +
@@ -265,7 +265,7 @@ plot.interpol <- ggplot2::ggplot(compare, ggplot2::aes(x=date, y=res_vector)) +
       ggplot2::ylab("Y")
 
 
-result_short <- final_res_smoothed$res_vector %>% purrr::set_names(final_res_smoothed$date)
+result_short <- final_res_smoothed$res_vector |> purrr::set_names(final_res_smoothed$date)
 
 
 result_full <- list(input = input_array,
@@ -281,7 +281,7 @@ res
 
 # ### One Test
 # random_size = sample(4:15,1)
-# date_test  =  sample(1:400,random_size,FALSE) %>% sort()
+# date_test  =  sample(1:400,random_size,FALSE) |> sort()
 # value_test = sample(1:100,random_size,TRUE)
 # seq.step_test = 1
 #
@@ -301,11 +301,11 @@ res
 #
 #
 # n_test = 16
-# mega_test<- c(1:n_test) %>% map(~.x)
+# mega_test<- c(1:n_test) |> map(~.x)
 #
 # for(i in 1:n_test){
 #   random_size = sample(9:20,1)
-#   date_test  =  sample(1:400,random_size,FALSE) %>% sort()
+#   date_test  =  sample(1:400,random_size,FALSE) |> sort()
 #   value_test = sample(1:100,random_size,TRUE)
 #   seq.step_test = sample(c(0.25,0.5,1),1)
 #
@@ -332,7 +332,7 @@ res
 #                                       first.date = first_date_x, last.date = last_date_x, full_results = TRUE)
 # print(length(plop$result_vector) == n)
 #
-# test <- plop$result_array %>% filter(date == 2045)
+# test <- plop$result_array |> filter(date == 2045)
 # test[1, "res_vector"] == test[2,"res_vector"]
 # test[1, "res_vector_smoothed"] - test[2,"res_vector_smoothed"]
 # test[1, "date"] == test[2,"date"]
@@ -346,7 +346,7 @@ res
 #                               first.date = first_date_x, last.date = last_date_x, full_results = TRUE)
 # print(length(plop$result_vector) == n)
 #
-# test <- plop$result_array %>% filter(date == 2045)
+# test <- plop$result_array |> filter(date == 2045)
 # test[1, "res_vector"] == test[2,"res_vector"]
 # test[1, "res_vector_smoothed"] - test[2,"res_vector_smoothed"]
 # test[1, "date"] == test[2,"date"]

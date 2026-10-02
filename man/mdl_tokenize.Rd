@@ -10,8 +10,8 @@ mdl_tokenize(x)
 \item{x}{character(1), a single (already stitched) source line.}
 }
 \value{
-a data frame with columns `type` (`number`, `name`, `op`,
-  `punct`) and `value`, whitespace dropped.
+a data frame with columns \code{type} (\code{number}, \code{name}, \code{op},
+\code{punct}) and \code{value}, whitespace dropped.
 }
 \description{
 Tokenize one line of .mdl source

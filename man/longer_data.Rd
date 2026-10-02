@@ -12,11 +12,11 @@ longer_data(data, nom_ref = "baseline")
 \item{nom_ref}{character. Name of the reference (baseline) scenario.}
 }
 \value{
-A data.frame with columns `year`, `variable`, `scenario`, `values`,
-  `values_ref` and `index_scen`.
+A data.frame with columns \code{year}, \code{variable}, \code{scenario}, \code{values},
+\code{values_ref} and \code{index_scen}.
 }
 \description{
 Pivots wide simulation output into the long format the plot and
-  table functions expect, adding the reference-scenario columns
-  `values_ref` and `index_scen`.
+table functions expect, adding the reference-scenario columns
+\code{values_ref} and \code{index_scen}.
 }

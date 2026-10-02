@@ -7,12 +7,12 @@
 mdl_latex(n, symbols = mdl_symbols(), show_conditions = FALSE)
 }
 \arguments{
-\item{n}{a node from [mdl_parse()] or [mdl_parse_var()].}
+\item{n}{a node from \code{\link[=mdl_parse]{mdl_parse()}} or \code{\link[=mdl_parse_var]{mdl_parse_var()}}.}
 
-\item{symbols}{the symbol table, see [mdl_symbols()].}
+\item{symbols}{the symbol table, see \code{\link[=mdl_symbols]{mdl_symbols()}}.}
 
-\item{show_conditions}{`TRUE` appends the `if ...` selector an equation
-carries (`if Y[c, s] <> 0`) to the rendered maths. These select which
+\item{show_conditions}{\code{TRUE} appends the \verb{if ...} selector an equation
+carries (\verb{if Y[c, s] <> 0}) to the rendered maths. These select which
 instances of an indexed equation exist rather than saying anything
 about the economics, so they are dropped by default.}
 }

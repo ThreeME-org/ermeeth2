@@ -92,16 +92,16 @@ dict_is_indexed <- function(codes, by = NULL, dict = NULL) {
 #' @keywords internal
 dictionary_validate <- function(dict, what = "dictionary") {
   if (!is.data.frame(dict)) {
-    stop("`", what, "` must be a data frame, not a ", class(dict)[1], ".")
+    cli::cli_abort("{.arg {what}} must be a data frame, not a {.cls {class(dict)[1]}}.")
   }
   if (!"code" %in% names(dict)) {
-    stop("`", what, "` has no `code` column. Columns found: ",
-         paste(names(dict), collapse = ", "), ".")
+    cli::cli_abort(c("{.arg {what}} has no `code` column.",
+                     "i" = "Columns found: {.field {names(dict)}}."))
   }
   dict$code <- as.character(dict$code)
   dupes <- unique(dict$code[duplicated(dict$code)])
   if (length(dupes)) {
-    stop("`", what, "` has duplicated codes: ", paste(dupes, collapse = ", "), ".")
+    cli::cli_abort("{.arg {what}} has duplicated codes: {.val {dupes}}.")
   }
   for (col in setdiff(dictionary_columns(), names(dict))) {
     dict[[col]] <- NA_character_
@@ -113,16 +113,15 @@ dictionary_validate <- function(dict, what = "dictionary") {
   tr <- dict$default_transformation
   bad <- unique(tr[!is.na(tr) & !tr %in% names(known)])
   if (length(bad)) {
-    stop("`", what, "` sets unknown `default_transformation`: ",
-         paste(bad, collapse = ", "), ".\n",
-         "Available: ", paste(names(known), collapse = ", "), ".")
+    cli::cli_abort(c("{.arg {what}} sets unknown `default_transformation`: {.val {bad}}.",
+                     "i" = "Available: {.val {names(known)}}."))
   }
   bad_idx <- unique(unlist(index_split(dict$indexed_by)))
   bad_idx <- setdiff(bad_idx, c("sector", "commodity"))
   if (length(bad_idx)) {
-    stop("`", what, "` sets unknown `indexed_by`: ", paste(bad_idx, collapse = ", "),
-         ".\nAvailable: sector, commodity, or both as \"sector,commodity\". ",
-         "Leave it empty for a variable that carries no index.")
+    cli::cli_abort(c("{.arg {what}} sets unknown `indexed_by`: {.val {bad_idx}}.",
+                     "i" = "Available: {.val sector}, {.val commodity}, or both as {.val sector,commodity}.",
+                     "i" = "Leave it empty for a variable that carries no index."))
   }
   dict[, c(dictionary_columns(),
            setdiff(names(dict), dictionary_columns())), drop = FALSE]
@@ -137,7 +136,7 @@ dictionary_validate <- function(dict, what = "dictionary") {
 #' @keywords internal
 dictionary_read <- function(x, what = "dict") {
   if (is.character(x) && length(x) == 1L) {
-    if (!file.exists(x)) stop("`", what, "`: no such file: ", x)
+    if (!file.exists(x)) cli::cli_abort("{.arg {what}}: no such file: {.file {x}}")
     x <- utils::read.csv(x, stringsAsFactors = FALSE, encoding = "UTF-8",
                          na.strings = c("", "NA"))
   }
@@ -170,7 +169,7 @@ dictionary_read <- function(x, what = "dict") {
 #' nrow(threeme_dictionary(mine)) == nrow(threeme_dictionary()) + 1
 threeme_dictionary <- function(dict = NULL, overlay = TRUE) {
   if (!overlay) {
-    if (is.null(dict)) stop("`overlay = FALSE` needs a `dict` to use instead.")
+    if (is.null(dict)) cli::cli_abort("`overlay = FALSE` needs a `dict` to use instead.")
     return(dictionary_read(dict, "dict"))
   }
 
@@ -208,7 +207,7 @@ dictionary_lookup <- function(codes, field, dict = NULL, fallback = c("code", "n
     threeme_dictionary(dict)
   }
   if (!field %in% names(d)) {
-    stop("`", field, "` is not a column of the dictionary.")
+    cli::cli_abort("{.field {field}} is not a column of the dictionary.")
   }
   codes <- as.character(codes)
   out <- d[[field]][match(codes, d$code)]
@@ -362,8 +361,8 @@ dictionary_coverage <- function(data, lang = "en", dict = NULL, quiet = FALSE) {
   lang <- match.arg(lang, dictionary_languages())
   codes <- if (is.data.frame(data)) {
     if (!"variable" %in% names(data)) {
-      stop("`data` has no `variable` column. Pass a long-format ThreeME ",
-           "data frame, or a character vector of codes.")
+      cli::cli_abort(c("{.arg data} has no `variable` column.",
+                       "i" = "Pass a long-format ThreeME data frame, or a character vector of codes."))
     }
     unique(as.character(data$variable))
   } else {
@@ -380,14 +379,13 @@ dictionary_coverage <- function(data, lang = "en", dict = NULL, quiet = FALSE) {
   )
   if (!quiet) {
     missing <- out$code[!out$labelled]
-    msg <- paste0(sum(out$labelled), "/", nrow(out), " variables have a `",
-                  lang, "` label.")
+    msg <- c("i" = "{sum(out$labelled)}/{nrow(out)} variables have a {.val {lang}} label.")
     if (length(missing)) {
-      msg <- paste0(msg, "\nMissing: ", paste(utils::head(missing, 20), collapse = ", "),
-                    if (length(missing) > 20) paste0(" ... and ", length(missing) - 20, " more"),
-                    "\nRun `dictionary_skeleton()` to write them out for filling in.")
+      msg <- c(msg,
+               " " = "Missing: {missing}",
+               " " = "Run {.fn dictionary_skeleton} to write them out for filling in.")
     }
-    message(msg)
+    cli::cli_inform(msg)
   }
   invisible(out)
 }
@@ -431,11 +429,10 @@ dictionary_skeleton <- function(sources = NULL, exo = character(0),
                                 file = NULL, missing_only = TRUE,
                                 index_map = dictionary_index_map(), dict = NULL) {
   if (is.null(sources) && is.null(data)) {
-    stop("Give either `sources` (the .mdl files) or `data` (a dataset) to take ",
-         "the variable list from.")
+    cli::cli_abort("Give either `sources` (the .mdl files) or `data` (a dataset) to take the variable list from.")
   }
   if (!is.null(sources) && !is.null(data)) {
-    stop("Give `sources` or `data`, not both.")
+    cli::cli_abort("Give `sources` or `data`, not both.")
   }
 
   descriptions <- character(0)
@@ -476,11 +473,9 @@ dictionary_skeleton <- function(sources = NULL, exo = character(0),
 
     unmapped <- setdiff(unique(refs$index[!is.na(refs$index)]), names(index_map))
     if (length(unmapped)) {
-      warning(length(unmapped), " index name(s) are not in `index_map`, so they ",
-              "do not appear in `indexed_by`: ",
-              paste(sort(unique(unmapped)), collapse = ", "),
-              ".\nExtend it with `index_map = dictionary_index_map(c(",
-              sort(unmapped)[1], " = \"...\"))`.", call. = FALSE)
+      cli::cli_warn(c("{length(unmapped)} index name{?s} {?is/are} not in {.arg index_map}, so {?it does/they do} not appear in `indexed_by`: {.val {sort(unique(unmapped))}}.",
+                      "i" = "Extend it with {.code index_map = dictionary_index_map(c({sort(unmapped)[1]} = \"...\"))}."),
+                    call = NULL)
     }
 
     order_of <- unique(unname(index_map))
@@ -527,8 +522,8 @@ dictionary_skeleton <- function(sources = NULL, exo = character(0),
 
   if (!is.null(file)) {
     utils::write.csv(out, file, row.names = FALSE, na = "", fileEncoding = "UTF-8")
-    message(nrow(out), " variable(s) written to ", file,
-            ".\nFill in the label columns, then rerun data-raw/dictionary.R.")
+    cli::cli_inform(c("v" = "{nrow(out)} variable{?s} written to {.file {file}}.",
+                      "i" = "Fill in the label columns, then rerun {.file data-raw/dictionary.R}."))
   }
   invisible(out)
 }

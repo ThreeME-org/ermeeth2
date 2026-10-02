@@ -16,14 +16,14 @@ calib_file_name(name, type = c("baseline", "shock"))
 \arguments{
 \item{name}{scenario name.}
 
-\item{type}{`"baseline"` or `"shock"`.}
+\item{type}{\code{"baseline"} or \code{"shock"}.}
 
-\item{path}{the `scenarii_calib` folder.}
+\item{path}{the \code{scenarii_calib} folder.}
 }
 \value{
-the file path, following the convention [readconfig()] expects.
+the file path, following the convention \code{\link[=readconfig]{readconfig()}} expects.
 
-`calib_file_name()` returns the bare file name.
+\code{calib_file_name()} returns the bare file name.
 }
 \description{
 Where a scenario calibration script lives

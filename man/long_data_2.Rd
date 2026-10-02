@@ -14,20 +14,20 @@ long_data_2(
 \arguments{
 \item{data}{data.frame. Simulation output.}
 
-\item{sector_names_table}{data.frame with `code` and `name` columns mapping
-sector codes to labels, or `NULL` to leave the codes untouched.}
+\item{sector_names_table}{data.frame with \code{code} and \code{name} columns mapping
+sector codes to labels, or \code{NULL} to leave the codes untouched.}
 
-\item{commodity_names_table}{data.frame with `code` and `name` columns
-mapping commodity codes to labels, or `NULL` to leave the codes untouched.}
+\item{commodity_names_table}{data.frame with \code{code} and \code{name} columns
+mapping commodity codes to labels, or \code{NULL} to leave the codes untouched.}
 
 \item{scenario_ref}{character. Name of the reference (baseline) scenario.}
 }
 \value{
-A long-format data.frame, with `sector` and `commodity` columns in
-  addition to those produced by [longer_data()].
+A long-format data.frame, with \code{sector} and \code{commodity} columns in
+addition to those produced by \code{\link[=longer_data]{longer_data()}}.
 }
 \description{
-Like [longer_data()], but additionally splits the sector and
-  commodity suffixes out of the variable names and replaces the codes with
-  readable labels.
+Like \code{\link[=longer_data]{longer_data()}}, but additionally splits the sector and
+commodity suffixes out of the variable names and replaces the codes with
+readable labels.
 }

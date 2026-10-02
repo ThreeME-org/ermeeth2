@@ -9,16 +9,16 @@ dict_units(codes, dict = NULL)
 \arguments{
 \item{codes}{character vector of variable codes.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
 a character vector named by code.
 }
 \description{
-The natural unit of the *level* of each variable, which is a different thing
-from the unit symbol a transformation produces: `threeme_transformations()`
-owns the `%` that comes out of a relative difference, while the dictionary
-owns the `M€` a level is denominated in. Display only — override it per
+The natural unit of the \emph{level} of each variable, which is a different thing
+from the unit symbol a transformation produces: \code{threeme_transformations()}
+owns the \verb{\%} that comes out of a relative difference, while the dictionary
+owns the \verb{M€} a level is denominated in. Display only — override it per
 project where the currency or the scale differs.
 }
 \examples{

@@ -12,7 +12,7 @@ make_eq_qmd(
 )
 }
 \arguments{
-\item{preface, maintex}{paths to the tex files the old `teXdoc()` wrote.}
+\item{preface, maintex}{paths to the tex files the old \code{teXdoc()} wrote.}
 
 \item{path}{files path}
 
@@ -23,8 +23,8 @@ nothing: always raises an error.
 }
 \description{
 Deprecated. The Quarto output is no
-  longer derived from the LaTeX output: call [model_doc()] on the `.mdl`
-  sources instead, which produces one self-contained `.qmd`. This
-  function now only raises an error pointing there, because it cannot
-  recover the `.mdl` sources from the `.tex` files it used to read.
+longer derived from the LaTeX output: call \code{\link[=model_doc]{model_doc()}} on the \code{.mdl}
+sources instead, which produces one self-contained \code{.qmd}. This
+function now only raises an error pointing there, because it cannot
+recover the \code{.mdl} sources from the \code{.tex} files it used to read.
 }

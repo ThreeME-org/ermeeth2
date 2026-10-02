@@ -12,32 +12,32 @@ threeme_transform(
 )
 }
 \arguments{
-\item{data}{a ThreeME long-format dataframe, with at least `year`,
-`variable`, `scenario` and `values` (plus `values_ref` for the
+\item{data}{a ThreeME long-format dataframe, with at least \code{year},
+\code{variable}, \code{scenario} and \code{values} (plus \code{values_ref} for the
 transformations comparing to a reference scenario).}
 
 \item{transformation}{either a single transformation id applied to every
 variable, or a character vector named by variable to mix transformations
 in one call. An unnamed element in that vector is used as the default for
-the variables it does not name. See [threeme_transformations()].}
+the variables it does not name. See \code{\link[=threeme_transformations]{threeme_transformations()}}.}
 
 \item{name_baseline}{character(1) name of the baseline scenario. Its rows are
 dropped for the transformations expressed relative to it, where they would
 be identically zero.}
 
-\item{base_year}{numeric(1) base year of the `"index100"` transformation.
-Defaults to the first year of `data`.}
+\item{base_year}{numeric(1) base year of the \code{"index100"} transformation.
+Defaults to the first year of \code{data}.}
 }
 \value{
-`data` with the added `value`, `transformation` and `unit` columns.
-  Rows may be dropped (baseline rows for difference transformations); the
-  first year of each series is `NA` for `"gr"`.
+\code{data} with the added \code{value}, \code{transformation} and \code{unit} columns.
+Rows may be dropped (baseline rows for difference transformations); the
+first year of each series is \code{NA} for \code{"gr"}.
 }
 \description{
-Adds a `value` column holding the transformed series, plus
-  `transformation` and `unit` columns describing it. This is the single
-  place where "relative difference", "growth rate" and friends are defined;
-  [simple_plot()] and [table_3me()] both go through it.
+Adds a \code{value} column holding the transformed series, plus
+\code{transformation} and \code{unit} columns describing it. This is the single
+place where "relative difference", "growth rate" and friends are defined;
+\code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}} both go through it.
 }
 \examples{
 \dontrun{

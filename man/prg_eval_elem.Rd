@@ -11,14 +11,14 @@ prg_eval_elem(expr, year, calib)
 
 \item{year}{the year to read at.}
 
-\item{calib}{the calibration data.frame, with an absolute `year` column.}
+\item{calib}{the calibration data.frame, with an absolute \code{year} column.}
 }
 \value{
-A numeric scalar, or `NA` if a variable is absent from `calib`.
+A numeric scalar, or \code{NA} if a variable is absent from \code{calib}.
 }
 \description{
 Variable reads become lookups by year, so a lag inside the
-  expression is honoured: in `@elem(a/b(-1), 2019)`, `a` is read at 2019 and
-  `b` at 2018.
+expression is honoured: in \verb{@elem(a/b(-1), 2019)}, \code{a} is read at 2019 and
+\code{b} at 2018.
 }
 \keyword{internal}

@@ -2,17 +2,17 @@
 % Please edit documentation in R/dictionary.R
 \name{index_split}
 \alias{index_split}
-\title{Split an `indexed_by` field into its parts}
+\title{Split an \code{indexed_by} field into its parts}
 \usage{
 index_split(x)
 }
 \arguments{
-\item{x}{character vector of `indexed_by` values.}
+\item{x}{character vector of \code{indexed_by} values.}
 }
 \value{
 a list of character vectors, empty where the variable is unindexed.
 }
 \description{
-Split an `indexed_by` field into its parts
+Split an \code{indexed_by} field into its parts
 }
 \keyword{internal}

@@ -150,22 +150,23 @@ add_com_sec_names<- function(data  ,
 
 
   if( unidentified > 0 ){
-    message_warning(" The following sector/commodity codes could not be identified. Either add them to the bridge and code names for the chosen classification or add them to argument `exception_codes` ")
+    cli::cli_alert_warning("Some sector/commodity codes could not be identified. Add them to the bridge and code names of the chosen classification, or to {.arg exception_s_c}.")
 
-    cat("\n Unidentified sector codes:\n ")
     vars_s <- variable_id |> dplyr::filter(unidentified_s ==1) |> dplyr::select(variable, s_code)
-    vars_s$s_code |> unique() |> cat(sep = "  ")
+    if (nrow(vars_s) > 0) {
+      cli::cli_text("Unidentified sector codes:")
+      cli_vector(unique(vars_s$s_code))
+      cli::cli_text("found on the following variables:")
+      cli_vector(vars_s$variable)
+    }
 
-    cat("\n Found on the following variables: \n")
-    vars_s$variable |> cat(sep = "\n")
-
-    cat("\n\n Unidentified commodities codes:\n ")
     vars_c<-variable_id |> dplyr::filter(unidentified_c == 1 ) |> dplyr::select(variable, c_code )
-    vars_c$c_code |> unique() |> cat(sep = "  ")
-
-    cat("\n Found on the following variables: \n")
-
-    vars_c$variable |> cat(sep = "  ")
+    if (nrow(vars_c) > 0) {
+      cli::cli_text("Unidentified commodity codes:")
+      cli_vector(unique(vars_c$c_code))
+      cli::cli_text("found on the following variables:")
+      cli_vector(vars_c$variable)
+    }
   }
 
 

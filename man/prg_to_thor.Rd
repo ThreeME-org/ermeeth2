@@ -18,39 +18,39 @@ prg_to_thor(
 \arguments{
 \item{modfile}{character. Path to the compiled model program.}
 
-\item{calibfile}{character. Path to the calibration csv, whose `year` column
-is relative to `base.year`.}
+\item{calibfile}{character. Path to the calibration csv, whose \code{year} column
+is relative to \code{base.year}.}
 
 \item{base.year}{numeric. The calendar year that relative year 0 is.
-Required: unlike [translate_modelprg()], it does not default to a global.}
+Required: unlike \code{\link[=translate_modelprg]{translate_modelprg()}}, it does not default to a global.}
 
 \item{last.year}{numeric. Optional upper bound on the database.}
 
 \item{first.year}{numeric. Optional lower bound on the database.}
 
 \item{out_file}{character. Optional path to also write the model out as a
-`.txt`, in the four-section format the solver's parser reads.}
+\code{.txt}, in the four-section format the solver's parser reads.}
 
 \item{model_prefix}{character. Regular expression matching the EViews model
-object name prefixed to each `.append` line.}
+object name prefixed to each \code{.append} line.}
 
 \item{verbose}{logical. Report progress.}
 }
 \value{
-A list with `equations`, `endo`, `exo`, `coef`, `data`, `elem` (the
-  coefficient table), `warnings` and `file`.
+A list with \code{equations}, \code{endo}, \code{exo}, \code{coef}, \code{data}, \code{elem} (the
+coefficient table), \code{warnings} and \code{file}.
 }
 \description{
-Reads the compiled `model.prg` and its calibration csv and
-  turns them into the pieces the solver needs: the equation list, the
-  endogenous / exogenous / coefficient split, and the data with the `@elem`
-  coefficients broadcast onto it as constant columns.
+Reads the compiled \code{model.prg} and its calibration csv and
+turns them into the pieces the solver needs: the equation list, the
+endogenous / exogenous / coefficient split, and the data with the \verb{@elem}
+coefficients broadcast onto it as constant columns.
 
-  The result feeds `thortwo::thor_model()` by way of `out_file`, or
-  `tresthor::create_model()` directly from `endo` / `exo` / `coef` /
-  `equations`. Nothing here depends on either package.
+The result feeds \code{thortwo::thor_model()} by way of \code{out_file}, or
+\code{tresthor::create_model()} directly from \code{endo} / \code{exo} / \code{coef} /
+\code{equations}. Nothing here depends on either package.
 
-  Supersedes [translate_modelprg()]; see the file header for what differs.
+Supersedes \code{\link[=translate_modelprg]{translate_modelprg()}}; see the file header for what differs.
 }
 \examples{
 \dontrun{

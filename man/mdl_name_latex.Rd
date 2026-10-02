@@ -7,12 +7,12 @@
 mdl_name_latex(name, symbols = mdl_symbols())
 }
 \arguments{
-\item{name}{character(1), the raw name, e.g. `"PROD_L"`.}
+\item{name}{character(1), the raw name, e.g. \code{"PROD_L"}.}
 
-\item{symbols}{the symbol table, see [mdl_symbols()].}
+\item{symbols}{the symbol table, see \code{\link[=mdl_symbols]{mdl_symbols()}}.}
 }
 \value{
-character(1) of LaTeX, without the surrounding `$`.
+character(1) of LaTeX, without the surrounding \code{$}.
 }
 \description{
 Render a .mdl variable name as LaTeX

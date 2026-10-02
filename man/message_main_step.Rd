@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_main_step}
 \alias{message_main_step}
-\title{Preprogrammed ThreeME formatting for MAIN STEPS messages}
+\title{Display a main step heading}
 \usage{
 message_main_step(txt_message = "TEST")
 }
@@ -10,8 +10,8 @@ message_main_step(txt_message = "TEST")
 \item{txt_message}{text to display}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for MAIN STEPS messages
+Display a main step heading
 }

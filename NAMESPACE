@@ -131,11 +131,6 @@ import(stringr)
 import(tidyr)
 import(utils)
 importClassesFrom(data.table,data.table)
-importFrom(crayon,
-  bgBlack,
-  make_style,
-  yellow
-)
 importFrom(data.table,
   as.data.table,
   data.table,

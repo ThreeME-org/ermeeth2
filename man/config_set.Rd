@@ -13,7 +13,7 @@ config_set(lines, name, value_code, add = TRUE)
 
 \item{value_code}{the replacement, as R source text. May span lines.}
 
-\item{add}{`TRUE` appends the assignment when the file has none. `FALSE`
+\item{add}{\code{TRUE} appends the assignment when the file has none. \code{FALSE}
 returns the lines unchanged.}
 }
 \value{

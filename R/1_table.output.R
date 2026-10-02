@@ -60,7 +60,7 @@ table.output <- function(data = data,
   years <- c(rep(startyear, length(time.horizon))) + time.horizon
   # years
   if(name_baseline != "baseline"){
-    data <- data %>%  mutate(baseline = get(baseline_name))
+    data <- data |>  mutate(baseline = get(baseline_name))
   }
 
   # Variable in relative deviation
@@ -90,13 +90,13 @@ table.output <- function(data = data,
                      "Households disposable income (a)", "Nominal wages (a)", "Households saving rate (a)")
   }
 
-  data_table.1 <- data %>% dplyr::filter(year %in% years ,
-                                         variable %in% var_list.1) %>%
+  data_table.1 <- data |> dplyr::filter(year %in% years ,
+                                         variable %in% var_list.1) |>
     dplyr::mutate(variation = round(100 * (get(scenario)/baseline -1),decimal),
-                  variable = str_replace_all(variable, purrr::set_names(var_label.1, paste0("^",var_list.1,"$")))) %>%
-    dplyr::select(variable, year, variation) %>%
-    tidyr::pivot_wider(names_from = year, values_from = variation) %>%
-    dplyr::arrange(match(variable, var_label.1)) %>%
+                  variable = str_replace_all(variable, purrr::set_names(var_label.1, paste0("^",var_list.1,"$")))) |>
+    dplyr::select(variable, year, variation) |>
+    tidyr::pivot_wider(names_from = year, values_from = variation) |>
+    dplyr::arrange(match(variable, var_label.1)) |>
     `colnames<-`(years_label)
 
   if (full.table == TRUE){
@@ -110,13 +110,13 @@ table.output <- function(data = data,
       var_label.2 <- c("Employment in thousand (b)")
     }
 
-    data_table.2 <- data %>% dplyr::filter(year %in% years ,
-                                           variable %in% var_list.2) %>%
+    data_table.2 <- data |> dplyr::filter(year %in% years ,
+                                           variable %in% var_list.2) |>
       dplyr::mutate(variation = round((get(scenario) - baseline),decimal),
-                    variable = stringr::str_replace_all(variable, purrr::set_names(var_label.2, paste0("^",var_list.2,"$")))) %>%
-      dplyr::select(variable, year, variation) %>%
-      tidyr::pivot_wider(names_from = year, values_from = variation) %>%
-      dplyr::arrange(match(variable, var_label.2)) %>%
+                    variable = stringr::str_replace_all(variable, purrr::set_names(var_label.2, paste0("^",var_list.2,"$")))) |>
+      dplyr::select(variable, year, variation) |>
+      tidyr::pivot_wider(names_from = year, values_from = variation) |>
+      dplyr::arrange(match(variable, var_label.2)) |>
       `colnames<-`(years_label)
 
     #Variable en pt de PIB
@@ -130,13 +130,13 @@ table.output <- function(data = data,
                        "Mark-up rate (d)", "Unemployment rate (d)")
     }
 
-    data_table.3 <- data %>% filter(year %in% years ,
-                                    variable %in% var_list.3) %>%
+    data_table.3 <- data |> filter(year %in% years ,
+                                    variable %in% var_list.3) |>
       dplyr::mutate(variation = 100 * round(get(scenario),2 + decimal),
-                    variable = stringr::str_replace_all(variable, purrr::set_names(var_label.3, paste0("^",var_list.3,"$")))) %>%
-      dplyr::select(variable, year, variation) %>%
-      tidyr::pivot_wider(names_from = year, values_from = variation) %>%
-      dplyr::arrange(match(variable, var_label.3)) %>%
+                    variable = stringr::str_replace_all(variable, purrr::set_names(var_label.3, paste0("^",var_list.3,"$")))) |>
+      dplyr::select(variable, year, variation) |>
+      tidyr::pivot_wider(names_from = year, values_from = variation) |>
+      dplyr::arrange(match(variable, var_label.3)) |>
       `colnames<-`(years_label)
 
     # Binding the dataframes
@@ -168,7 +168,7 @@ table.output <- function(data = data,
     j.tab <- 1
   }
   ## Flextable
-  output <- flextable::flextable(data_table) %>%
+  output <- flextable::flextable(data_table) |>
     width(width = 2.75, j = 1)
 
 

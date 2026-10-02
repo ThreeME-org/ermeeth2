@@ -146,10 +146,10 @@ table_3me <- function(data,
 
   missing_vars <- setdiff(codes, unique(data$variable))
   if (length(missing_vars) == length(codes)) {
-    stop(paste("None of these variables are in the data:", paste(codes, collapse = ", ")))
+    cli::cli_abort("None of these variables are in the data: {.var {codes}}")
   }
   if (length(missing_vars) > 0) {
-    warning(paste("Variables not found in the data, dropped:", paste(missing_vars, collapse = ", ")))
+    cli::cli_warn("Variables not found in the data, dropped: {.var {missing_vars}}")
     spec_vars <- spec_vars[!spec_vars$variable %in% missing_vars, , drop = FALSE]
     codes <- spec_vars$variable
   }
@@ -162,7 +162,7 @@ table_3me <- function(data,
     out <- d |>
       dplyr::filter(.data$variable %in% codes, .data$scenario %in% c(scen, name_baseline))
     if (nrow(out) == 0) {
-      stop(paste0("No rows left for the model '", model, "'. Check `variables` and `scenarios`."))
+      cli::cli_abort("No rows left for the model {.val {model}}. Check {.arg variables} and {.arg scenarios}.")
     }
     out$model <- model
     out
@@ -196,7 +196,7 @@ table_3me <- function(data,
     dplyr::inner_join(spec_vars, by = "variable")
 
   if (nrow(body) == 0) {
-    stop("No rows left after selecting the horizons. Check `horizons`, `shock_year` and `end_year`.")
+    cli::cli_abort("No rows left after selecting the horizons. Check `horizons`, `shock_year` and `end_year`.")
   }
 
   label_map <- pretty_labels(codes, labels)

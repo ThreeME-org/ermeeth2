@@ -12,25 +12,25 @@ run_simulations(
 }
 \arguments{
 \item{configuration}{list. The configuration object, as returned by
-[readconfig()].}
+\code{\link[=readconfig]{readconfig()}}.}
 
 \item{export_scenarii_to_excel}{logical. Whether to also write the scenario
 results out to Excel.}
 
 \item{output_format}{character vector. Which formats the output databases are
-written in: `"rds"`, `"parquet"`, or both (the default). Parquet files are
-read back with column and row pushdown by [read_3me_output()], which is far
-cheaper than loading a whole `.rds` to filter it afterwards. Keep `"rds"` in
-the list for as long as anything still calls `readRDS()` on these files.}
+written in: \code{"rds"}, \code{"parquet"}, or both (the default). Parquet files are
+read back with column and row pushdown by \code{\link[=read_3me_output]{read_3me_output()}}, which is far
+cheaper than loading a whole \code{.rds} to filter it afterwards. Keep \code{"rds"} in
+the list for as long as anything still calls \code{readRDS()} on these files.}
 }
 \value{
 The main long-format results data.frame. The aggregate, commodity
-  and sector datasets are written to `data/output` as a side effect,
-  according to the `output_saved` configuration entry.
+and sector datasets are written to \code{data/output} as a side effect,
+according to the \code{output_saved} configuration entry.
 }
 \description{
 End-to-end driver: compiles the model with DynaMo, runs the
-  configuration checks, sources the scenario calibrations, solves each
-  scenario with the configured solver, and saves the output datasets to
-  `data/output`.
+configuration checks, sources the scenario calibrations, solves each
+scenario with the configured solver, and saves the output datasets to
+\code{data/output}.
 }

@@ -40,15 +40,15 @@ catmullrom_splines<- function(x_vector, y_vector, steps=1){
   xd <- NULL
   # . <- NULL
 
-  # cat("\n cubic\n")
+  # cli::cli_alert_info("cubic")
   # cat(paste(x_vector))
 
-  # x_vector = sample(1:20,4,FALSE) %>% sort()
+  # x_vector = sample(1:20,4,FALSE) |> sort()
   # y_vector = sample(1:30,4,TRUE)
 
   if(length(x_vector) != 4 | length(x_vector) != 4){
 
-  stop(message("x_vector and y_vector must be of length 4 each.\n"))}
+  cli::cli_abort("x_vector and y_vector must be of length 4 each.")}
 
 
   # normalize x_vector
@@ -65,9 +65,9 @@ catmullrom_splines<- function(x_vector, y_vector, steps=1){
                         )
 
   local <- environment()
-  coordonnees <- donnees %>% dplyr::select(dplyr::all_of(stringr::str_c("y",c("a","b","c","d"))),
-                                           dplyr::all_of(stringr::str_c("x",c("a","b","c","d")))) %>%
-   unique()%>% unlist %>% as.list() %>%  purrr::imap(~assign(.y,.x,envir = local))
+  coordonnees <- donnees |> dplyr::select(dplyr::all_of(stringr::str_c("y",c("a","b","c","d"))),
+                                           dplyr::all_of(stringr::str_c("x",c("a","b","c","d")))) |>
+   unique()|> unlist() |> as.list() |>  purrr::imap(~assign(.y,.x,envir = local))
 
  # ## Catmull conditions define the following system b = AX
 
@@ -89,17 +89,18 @@ catmullrom_splines<- function(x_vector, y_vector, steps=1){
              (yd-yb)/(xd-xb))
   x <- c("a3","a2","a1","a0")
 
- solution <- solve(A,b_vec) %>% purrr::set_names(x)
+ solution <- solve(A,b_vec) |> purrr::set_names(x)
 
  missing_points_x <- seq(from = (x_vector[2]), to = (x_vector[3]), by=steps )
- missing_points_y <- purrr::set_names(missing_points_x)  %>%
+ missing_points_y <- purrr::set_names(missing_points_x)  |>
    purrr::map_dbl(~solution["a3"]*.x^3 + solution["a2"]*.x^2 + solution["a1"]*.x + solution["a0"])
 
  input <- purrr::set_names(y_vector,x_vector)
 
- result <- c(missing_points_y,input) %>% data.frame(x = names(.),y = .) %>%
-   dplyr::mutate(x = as.numeric(x)+normy) %>%
-   unique() %>% dplyr::arrange(x)
+ points <- c(missing_points_y,input)
+ result <- data.frame(x = names(points),y = points) |>
+   dplyr::mutate(x = as.numeric(x)+normy) |>
+   unique() |> dplyr::arrange(x)
 
  result
 }

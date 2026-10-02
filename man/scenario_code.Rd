@@ -2,7 +2,7 @@
 % Please edit documentation in R/config_addin.R
 \name{scenario_code}
 \alias{scenario_code}
-\title{A named character vector as `c("a", "b") |> set_names(c("A", "B"))`}
+\title{A named character vector as \code{c("a", "b") |> set_names(c("A", "B"))}}
 \usage{
 scenario_code(x)
 }

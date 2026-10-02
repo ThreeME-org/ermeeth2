@@ -12,28 +12,28 @@ threeme_palette(
 )
 }
 \arguments{
-\item{n}{numeric(1) number of colours wanted. Ignored when `keys` is given.}
+\item{n}{numeric(1) number of colours wanted. Ignored when \code{keys} is given.}
 
 \item{keys}{character vector of names to attach to the colours (variable
 codes or scenario names). The palette is recycled if it is shorter.}
 
 \item{palette}{character vector of colours overriding the built-in choice,
-or `NULL` (default). May itself be named, in which case the names are
-honoured for the `keys` they match and the remaining keys fall back to
-`type`.}
+or \code{NULL} (default). May itself be named, in which case the names are
+honoured for the \code{keys} they match and the remaining keys fall back to
+\code{type}.}
 
-\item{type}{character(1) which built-in palette to use: `"distinct"` for
-qualitative series (variables), `"gradient"` for ordered ones (scenarios),
-or `"ofce"` for [ofce::ofce_palette()].}
+\item{type}{character(1) which built-in palette to use: \code{"distinct"} for
+qualitative series (variables), \code{"gradient"} for ordered ones (scenarios),
+or \code{"ofce"} for \code{\link[ofce:ofce_palette]{ofce::ofce_palette()}}.}
 }
 \value{
-A character vector of hex colours, named when `keys` is supplied.
+A character vector of hex colours, named when \code{keys} is supplied.
 }
 \description{
 Returns a vector of colours, optionally named, for use as the
-  `palette` argument of [simple_plot()] and [table_3me()]. The built-in
-  palettes are the ones used in the `basic_results.qmd` template of the
-  ThreeME v4 repository, plus the OFCE palette from the `ofce` package.
+\code{palette} argument of \code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}}. The built-in
+palettes are the ones used in the \code{basic_results.qmd} template of the
+ThreeME v4 repository, plus the OFCE palette from the \code{ofce} package.
 }
 \examples{
 threeme_palette(n = 4)

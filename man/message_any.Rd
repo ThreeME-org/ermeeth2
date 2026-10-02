@@ -2,18 +2,19 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_any}
 \alias{message_any}
-\title{Preprogrammed ThreeME formatting for normal messages, with possibility to customize the symbol}
+\title{Display an informative message}
 \usage{
 message_any(txt_message = "TEST", custom_symbol = "")
 }
 \arguments{
 \item{txt_message}{text to display}
 
-\item{custom_symbol}{custom unicode symbol to display, Default displays none}
+\item{custom_symbol}{symbol to display before the text. The default, \code{""},
+uses cli's info bullet.}
 }
 \value{
-cat messages
+Called for its side effect: a message.
 }
 \description{
-Preprogrammed ThreeME formatting for normal messages, with possibility to customize the symbol
+Display an informative message
 }

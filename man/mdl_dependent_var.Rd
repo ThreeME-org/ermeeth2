@@ -7,17 +7,17 @@
 mdl_dependent_var(eq)
 }
 \arguments{
-\item{eq}{an `mdl_eq` node, from [mdl_parse()].}
+\item{eq}{an \code{mdl_eq} node, from \code{\link[=mdl_parse]{mdl_parse()}}.}
 }
 \value{
-an `mdl_var` node, or `NULL` if the left-hand side holds no
-  variable at all.
+an \code{mdl_var} node, or \code{NULL} if the left-hand side holds no
+variable at all.
 }
 \description{
-The left-hand side stripped of its `d()` / `log()` wrappers.
-  The old implementation did this by deleting every `d`, `log`, `(` and
-  `)` character from the line, which turned `delta` into `elta`; this one
-  walks the parsed tree instead.
+The left-hand side stripped of its \code{d()} / \code{log()} wrappers.
+The old implementation did this by deleting every \code{d}, \code{log}, \code{(} and
+\verb{)} character from the line, which turned \code{delta} into \code{elta}; this one
+walks the parsed tree instead.
 }
 \examples{
 mdl_dependent_var(mdl_parse("d(log(F_n[f, s])) = d(log(Y[s]))"))$name

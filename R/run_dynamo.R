@@ -32,22 +32,20 @@ run_dynamo <- function(config_list = configuration){
   model_files <- file.path("model", model_folder, model_files)
 
 
-  readLines(file.path("src", last(lists_files))) %>%
-    str_replace_all("(^\\s*%baseyear\\s*:=\\s*).*$", str_c("\\1", baseyear)) %>%
-    # str_replace_all("(^include\\s+\\.\\\\R_lists).*$", str_c("\\1_", iso3)) %>%
+  readLines(file.path("src", last(lists_files))) |>
+    str_replace_all("(^\\s*%baseyear\\s*:=\\s*).*$", str_c("\\1", baseyear)) |>
+    # str_replace_all("(^include\\s+\\.\\\\R_lists).*$", str_c("\\1_", iso3)) |>
     writeLines(file.path("src", last(lists_files)))
 
   ## A if no compiler needed
   if(advanced_config$skip_compiler == TRUE & advanced_config$recompile_model == TRUE){
     if(sum(file.exists(file.path("src","compiler", dynamo_files_out)) ) == length(dynamo_files_out) ){
-      ("Found pre-existing dynamo output files") %>% message_ok()
+      cli::cli_alert_success("Found pre-existing DynaMo output files.")
 
     }else{
-      ("Some of the compiler output files were not found in the src/compiler folder.\nPlease add them manually or change skip_compiler option to FALSE in the config to generate those files and try again.") %>% message_not_ok()
-
-      ("Stopping now") %>% message_stopbomb()
-
-      stop(error ="Compiler files not found.")
+      cli::cli_abort(c("Compiler files not found.",
+                       "x" = "Some of the compiler output files are missing from {.path src/compiler}.",
+                       "i" = "Add them manually, or set {.code skip_compiler = FALSE} in the config to generate them."))
     }
 
   }else{
@@ -57,7 +55,7 @@ run_dynamo <- function(config_list = configuration){
     ### B1. Remove existing dynamo output
 
     if(sum(file.exists(file.path("src","compiler",dynamo_files_out)) ) >0 ){
-      ("Found pre-existing dynamo output files, deleting them.") %>% message_delete()
+      cli::cli_alert("Found pre-existing DynaMo output files, deleting them.")
     }
 
     purrr::quietly(map)(dynamo_files_out ,
@@ -88,20 +86,15 @@ run_dynamo <- function(config_list = configuration){
 
 
   ## C. Check if compiled successfully
-  missing_files <- file.path("src","compiler",dynamo_files_out)[file.exists(file.path("src","compiler",dynamo_files_out)) == FALSE ] %>% basename()
+  missing_files <- file.path("src","compiler",dynamo_files_out)[file.exists(file.path("src","compiler",dynamo_files_out)) == FALSE ] |> basename()
 
   if(length(missing_files) == 0){
 
-    ("DYNAMO succeeded, continuing...") %>% message_ok()
+    cli::cli_alert_success("DynaMo succeeded, continuing...")
 
   }else{
 
-    ("DYNAMO could not write the following files :")  %>% message_not_ok()
-    str_c(missing_files,sep = "\n")  %>% message_not_ok()
-    ("Stopping now") %>% message_stopbomb()
-
-    stop(error = "Dynamo Error")
+    cli::cli_abort(c("DynaMo error.",
+                     "x" = "DynaMo could not write {.file {missing_files}}."))
   }
-
-  cat("\n")
 }

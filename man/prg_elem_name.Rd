@@ -2,7 +2,7 @@
 % Please edit documentation in R/translate_model_to_tresthor.R
 \name{prg_elem_name}
 \alias{prg_elem_name}
-\title{Name the coefficient an `@elem()` becomes}
+\title{Name the coefficient an \verb{@elem()} becomes}
 \usage{
 prg_elem_name(expr, year)
 }
@@ -16,8 +16,8 @@ A valid lower-case variable name.
 }
 \description{
 Follows the convention already present in the translated
-  models: `@elem(chd_cind/chm_cind, 2015)` becomes
-  `elem_chd_cind_chm_cind_2015`, and a lag is folded into the year, so
-  `@elem(pk_sind(-1), 2019)` becomes `elem_pk_sind_2018`.
+models: \verb{@elem(chd_cind/chm_cind, 2015)} becomes
+\code{elem_chd_cind_chm_cind_2015}, and a lag is folded into the year, so
+\verb{@elem(pk_sind(-1), 2019)} becomes \code{elem_pk_sind_2018}.
 }
 \keyword{internal}

@@ -48,7 +48,7 @@ threeme_palette <- function(n = NULL,
   }
 
   if (is.null(keys)) {
-    if (is.null(n)) stop("Give either `n` or `keys`.")
+    if (is.null(n)) cli::cli_abort("Give either `n` or `keys`.")
     return(rep_len(base, n))
   }
 
@@ -75,7 +75,7 @@ pretty_labels <- function(codes, labels = NULL) {
   if (is.null(names(labels))) {
     ## positional labels, as the old simple_plot() accepted
     if (length(labels) != length(codes)) {
-      stop("Unnamed `labels` must have one entry per variable.")
+      cli::cli_abort("Unnamed `labels` must have one entry per variable.")
     }
     return(stats::setNames(as.character(labels), codes))
   }

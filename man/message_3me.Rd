@@ -2,7 +2,7 @@
 % Please edit documentation in R/0_display_messages.R
 \name{message_3me}
 \alias{message_3me}
-\title{Basic formattinf function for display messages}
+\title{Basic formatting function for display messages}
 \usage{
 message_3me(
   text_message,
@@ -21,8 +21,10 @@ message_3me(
 \item{symbol_u}{unicode symbol to display before the message}
 }
 \value{
-cat message with formatting
+Called for its side effect: a message.
 }
 \description{
-Basic formattinf function for display messages
+Prints \code{text_message} on a coloured background, preceded by
+\code{symbol_u}. Kept for backward compatibility: the \verb{message_*()} helpers
+below no longer go through it.
 }

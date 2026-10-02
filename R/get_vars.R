@@ -19,8 +19,8 @@ get_regex <- function(regex_list = c("*"),vector=c(""), negate = FALSE,case_sens
   # negate = FALSE
   # case_sensitive = FALSE
 
-  if(!is.character(regex_list)){stop(message("argument regex_list must be a character vector.\n")) }
-  if(!is.character(vector)){stop(message("argument vector must be a character vector.\n")) }
+  if(!is.character(regex_list)){cli::cli_abort("argument regex_list must be a character vector.") }
+  if(!is.character(vector)){cli::cli_abort("argument vector must be a character vector.") }
 
   vec <- unique(vector)
 if(results_as_list){

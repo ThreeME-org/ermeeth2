@@ -10,7 +10,7 @@ list_configs(path = "configuration")
 \item{path}{the configuration folder.}
 }
 \value{
-a data frame with `name`, `kind` (`input` or `output`) and `file`.
+a data frame with \code{name}, \code{kind} (\code{input} or \code{output}) and \code{file}.
 }
 \description{
 Find the configuration files of a project

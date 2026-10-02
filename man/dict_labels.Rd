@@ -2,25 +2,25 @@
 % Please edit documentation in R/dictionary.R
 \name{dict_labels}
 \alias{dict_labels}
-\title{Labels as a named vector, ready for `labels =`}
+\title{Labels as a named vector, ready for \verb{labels =}}
 \usage{
 dict_labels(codes, lang = "en", short = FALSE, dict = NULL)
 }
 \arguments{
 \item{codes}{character vector of variable codes.}
 
-\item{lang}{`"en"` or `"fr"`.}
+\item{lang}{\code{"en"} or \code{"fr"}.}
 
-\item{short}{`TRUE` uses the short label, falling back to the long one where
+\item{short}{\code{TRUE} uses the short label, falling back to the long one where
 there is no short form. Use it for table rows and axis text.}
 
-\item{dict}{passed to [threeme_dictionary()].}
+\item{dict}{passed to \code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
 }
 \value{
 a character vector named by code.
 }
 \description{
-[simple_plot()] and [table_3me()] both take `labels` as a vector named by
+\code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}} both take \code{labels} as a vector named by
 variable code. This builds that vector from the dictionary, so labelling a
 figure is one argument rather than a hand-written lookup.
 }

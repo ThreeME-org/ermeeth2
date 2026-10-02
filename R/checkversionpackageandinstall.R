@@ -19,9 +19,7 @@ install_local <- function(name_package){
       dplyr::filter(Package == name_package ) |>
       dplyr::select(Version) |> unlist()
 
-    cat(glue::glue("{name_package} is installed, version: {version_installed} \n
-
-             "))
+    cli::cli_alert_info("{.pkg {name_package}} is installed, version {version_installed}.")
 
     ## Checking for newer sources
     source_packages <- list.files("src",pattern = glue::glue("^{name_package}.+gz$")  )
@@ -36,11 +34,11 @@ install_local <- function(name_package){
 
       if(version_available>version_installed){
 
-        cat(glue::glue("A more recent version of {name_package} package has been found: {version_available},. Installing this new version...\n"))
+        cli::cli_alert_info("A more recent version of {.pkg {name_package}} has been found: {version_available}. Installing it...")
 
         install.packages(file.path("src",latest), repos = NULL, type = "source")
 
-        cat(glue::glue("Version {version_available} of {name_package} package has been installed.\n"))
+        cli::cli_alert_success("Version {version_available} of {.pkg {name_package}} has been installed.")
       }
     }
 
@@ -53,7 +51,7 @@ install_local <- function(name_package){
       latest <- max(source_package)
       install.packages(file.path("src",latest), repos = NULL, type = "source")
 
-    }else{cat(glue::glue(":( Could not find {name_package} source package to install. :( \n"))}
+    }else{cli::cli_alert_danger("Could not find a {.pkg {name_package}} source package to install.")}
 
   }
 }

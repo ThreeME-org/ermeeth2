@@ -25,18 +25,14 @@ calib_files_tests <-file.exists(file.path(dynamo_path,calib))
 model_files_tests <-file.exists(file.path(dynamo_path,model))
 
 if(prod(calib_files_tests) == 0){
-  cat("The following calib files were not found: \n ")
-  cat( file.path(dynamo_path,calib)[which(calib_files_tests==FALSE)],sep = "\n")
-  file.path(dynamo_path,calib)[which(calib_files_tests==FALSE)]
-  cat("\n")
+  cli::cli_alert_warning("The following calib files were not found:")
+  cli_vector(file.path(dynamo_path,calib)[which(calib_files_tests==FALSE)])
   Sys.sleep(3)
 }
 
 if(prod(model_files_tests) == 0){
-  cat("The following model files were not found: \n ")
-  cat( file.path(dynamo_path,model)[which(model_files_tests==FALSE)],sep = "\n")
-  file.path(dynamo_path,model)[which(model_files_tests==FALSE)]
-  cat("\n")
+  cli::cli_alert_warning("The following model files were not found:")
+  cli_vector(file.path(dynamo_path,model)[which(model_files_tests==FALSE)])
   Sys.sleep(3)
 }
   ## check that dynamo_path has dynamo installed
@@ -61,10 +57,10 @@ if(prod(model_files_tests) == 0){
     lastyear,
     "",
     "# Calib",
-    calib %>% sapply(function(s) file.path(dynamo_path, s)),
+    calib |> sapply(function(s) file.path(dynamo_path, s)),
     "",
     "# Model",
-    model %>% sapply(function(s) file.path(dynamo_path, s))), f)
+    model |> sapply(function(s) file.path(dynamo_path, s))), f)
   close(f)
 
   sys::exec_wait(file.path(dynamo_path,"compiler",dynamo_os),

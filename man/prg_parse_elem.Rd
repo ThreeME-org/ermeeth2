@@ -2,17 +2,17 @@
 % Please edit documentation in R/translate_model_to_tresthor.R
 \name{prg_parse_elem}
 \alias{prg_parse_elem}
-\title{Split an `@elem()` occurrence into its expression and its year}
+\title{Split an \verb{@elem()} occurrence into its expression and its year}
 \usage{
 prg_parse_elem(e)
 }
 \arguments{
-\item{e}{a single occurrence, as returned by [prg_find_elem()].}
+\item{e}{a single occurrence, as returned by \code{\link[=prg_find_elem]{prg_find_elem()}}.}
 }
 \value{
-A list with `expr` and `year`.
+A list with \code{expr} and \code{year}.
 }
 \description{
-Split an `@elem()` occurrence into its expression and its year
+Split an \verb{@elem()} occurrence into its expression and its year
 }
 \keyword{internal}
