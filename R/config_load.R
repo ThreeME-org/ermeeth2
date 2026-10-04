@@ -110,7 +110,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
     calib_scenario <- file.path(shock_scenario_folder,paste0("2_calib_shock_",project_name,".R")) ## One unique scenario file will be run
   }
 
-  ## Solver options: `rcpp_option` is the name `Rcpp` had before 1.4.0, and
+  ## Solver options: `rcpp_option` is the earlier name of `Rcpp`, and
   ## anything the file leaves out takes its default.
   if (is.null(Rcpp)) Rcpp <- rcpp_option
   solver_defaults <- config_solver_defaults()

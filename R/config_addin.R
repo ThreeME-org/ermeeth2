@@ -223,7 +223,7 @@ config_addin_app <- function(path = "configuration") {
         shiny::tagList(lapply(seq_len(nrow(rows)), function(i) {
           nm <- rows$name[i]
           val <- v[[nm]]
-          ## `rcpp_option` is what `Rcpp` was called before 1.4.0.
+          ## `rcpp_option` is the earlier name of `Rcpp`.
           if (is.null(val) && nm == "Rcpp") val <- v$rcpp_option
           control(rows[i, ], val %||% defaults[[nm]])
         }))
