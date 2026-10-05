@@ -1,3 +1,13 @@
+# ermeeth2 1.0.5
+
+* `runDynaMo()` runs on Linux (Nuvolos). It launched the macOS `dynamo` there,
+  which failed with `Syntax error: "(" unexpected`; it now launches
+  `dynamo_ubuntu`, taken from the package if `src/compiler` does not have it,
+  and makes it executable.
+* `runDynaMo()` finds a `.mdl` file whose name is not spelled in the config
+  with the case it has on disk (`Prices.mdl` for `prices.mdl`). macOS and
+  Windows ignore the difference; Linux reported the file as not found.
+
 # ermeeth2 1.0.4
 
 * `skip_compiler` is renamed `skip_dynamo`, which is what it skips: DynaMo,
