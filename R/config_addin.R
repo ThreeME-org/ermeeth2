@@ -35,8 +35,9 @@ scenario_code <- function(x) {
 #'   The solver takes three tabs. *Solver* chooses between R and EViews and
 #'   holds what applies to both; *R solver* and *EViews solver* hold the
 #'   options only one of them reads. An option the configuration file does not
-#'   set yet is shown at its default ([config_solver_defaults()]) and written
-#'   on save.
+#'   set yet is shown at its default ([config_defaults()]) and written on
+#'   save, so saving an incomplete file completes it. The addin offers every
+#'   option of [config_required()] and [config_defaults()].
 #'
 #'   Edits are **surgical**: only the assignments you change are rewritten, and
 #'   every comment, commented-out alternative and live code block in the file is
@@ -45,7 +46,13 @@ scenario_code <- function(x) {
 #'
 #'   In the Files tab, `ENDOFLINE.mdl` is left out of the calibration and model
 #'   file lists: it only closes them in the configuration file, and is added
-#'   back on save. A list that was not changed is not rewritten.
+#'   back on save. A list that was not changed is not rewritten. One that
+#'   was is edited in place, see [config_files()]: a file taken out is
+#'   commented out, a file added is uncommented when the list holds it as a
+#'   commented-out alternative, and the other comments are left alone.
+#'   The lists follow the Basics tab: a configuration that names its files
+#'   after the country, the classification or the base year shows them under
+#'   the values currently entered there, not those of the file as loaded.
 #'
 #'   Naming a scenario the project has no calibration for offers to create it,
 #'   through the same template [create_shock()] uses. The Scenarios tab also
@@ -100,18 +107,21 @@ config_addin_app <- function(path = "configuration") {
   ## The configuration names its folders from the project root.
   root <- dirname(path)
 
-  defaults <- config_solver_defaults()
+  defaults <- config_defaults()
 
   ## `ENDOFLINE.mdl` closes the calibration and model file lists in a
   ## configuration file. It is there so that commenting a file in or out never
   ## raises the question of the trailing comma; it is not a file the user
   ## chooses. The addin hides it and puts it back on save.
   end_marker <- "ENDOFLINE.mdl"
+  list_fields <- c("lists_files", "calib_files", "model_files")
   closed_lists <- c("calib_files", "model_files")
   without_marker <- function(x) x[tolower(x) != tolower(end_marker)]
 
-  ## What a `choice` field shows for each value it can take.
+  ## What a `choice` or `multi` field shows for each value it can take.
   choice_labels <- c(eviews_algorithms(),
+                     "By commodity" = "com", "By sector" = "sec",
+                     "By commodity and sector" = "sec_com",
                      "Automatic (on with Rcpp, off in pure R)" = "auto",
                      "Always" = "TRUE", "Never (plain Newton)" = "FALSE")
 
@@ -120,6 +130,13 @@ config_addin_app <- function(path = "configuration") {
     id <- paste0("f_", row$name)
     switch(row$type,
            bool   = shiny::checkboxInput(id, row$label, isTRUE(value), width = "100%"),
+           multi = {
+             allowed <- strsplit(row$choices, "|", fixed = TRUE)[[1]]
+             labels <- names(choice_labels)[match(allowed, choice_labels)]
+             shiny::checkboxGroupInput(id, row$label,
+                                       choices = stats::setNames(allowed, ifelse(is.na(labels), allowed, labels)),
+                                       selected = intersect(as.character(value), allowed))
+           },
            choice = {
              allowed <- strsplit(row$choices, "|", fixed = TRUE)[[1]]
              labels <- names(choice_labels)[match(allowed, choice_labels)]
@@ -170,9 +187,19 @@ config_addin_app <- function(path = "configuration") {
 
   server <- function(input, output, session) {
 
+    stop_on_close(session)
+
+    lines_of <- function(x) {
+      if (is.null(x) || !nzchar(x)) return(character(0))
+      v <- trimws(strsplit(x, "\n", fixed = TRUE)[[1]])
+      v[nzchar(v)]
+    }
+
     configs <- shiny::reactiveVal(list_configs(path))
     values  <- shiny::reactiveVal(list())
     out_values <- shiny::reactiveVal(list())
+    ## The input file the values were read from.
+    loaded_file <- shiny::reactiveVal(NULL)
     ## The folder the baseline or the shocks are read from: the control once
     ## the Scenarios tab has been opened, the file until then.
     folder_of <- function(type) {
@@ -199,7 +226,7 @@ config_addin_app <- function(path = "configuration") {
     ## Loading an existing configuration prefills every control.
     shiny::observeEvent(input$existing, {
       if (!nzchar(input$existing %||% "")) {
-        values(list()); out_values(list()); return()
+        values(list()); out_values(list()); loaded_file(NULL); return()
       }
       cf <- configs()
       f <- cf$file[cf$kind == "input" & cf$name == input$existing]
@@ -209,6 +236,7 @@ config_addin_app <- function(path = "configuration") {
                                       conditionMessage(e)), type = "error")
         list()
       })
+      loaded_file(f[[1]])
       values(v)
       shiny::updateTextInput(session, "name", value = input$existing)
 
@@ -232,8 +260,9 @@ config_addin_app <- function(path = "configuration") {
         shiny::tagList(lapply(seq_len(nrow(rows)), function(i) {
           nm <- rows$name[i]
           val <- v[[nm]]
-          ## `rcpp_option` is the earlier name of `Rcpp`.
-          if (is.null(val) && nm == "Rcpp") val <- v$rcpp_option
+          ## a file may still carry the option under its earlier name
+          old <- config_legacy_names()
+          if (is.null(val) && nm %in% names(old)) val <- v[[old[[nm]]]]
           control(rows[i, ], val %||% defaults[[nm]])
         }))
       })
@@ -357,17 +386,79 @@ config_addin_app <- function(path = "configuration") {
       }
     })
 
-    output$tab_files <- shiny::renderUI({
+    ## The file lists as the configuration builds them once the Basics tab is
+    ## taken into account. A ThreeME configuration names its lists and its
+    ## calibration after `iso3`, `classification` and `baseyear`, so the lists
+    ## read when the file was loaded go stale as soon as one of those is
+    ## changed here. The file is sourced again with the Basics as they now
+    ## stand; a list written as plain names comes back unchanged.
+    file_lists <- shiny::reactive({
       v <- values()
+      loaded <- v[list_fields]
+      f <- loaded_file()
+      if (is.null(f)) return(loaded)
+      over <- list()
+      for (i in which(fields$section == "Basics" & fields$type != "bool")) {
+        nm <- fields$name[i]
+        val <- input[[paste0("f_", nm)]]
+        if (is.null(val) || is.na(val)) next
+        val <- if (fields$type[i] == "text") as.character(val) else as.numeric(val)
+        was <- v[[nm]] %||% defaults[[nm]]
+        if (length(was) == 1 && isTRUE(as.character(val) == as.character(was))) next
+        over[[nm]] <- I(config_code(val))
+      }
+      if (!length(over)) return(loaded)
+      tmp <- tempfile(fileext = ".R")
+      on.exit(unlink(tmp), add = TRUE)
+      tryCatch({
+        config_edit(f, over, out = tmp)
+        read_config_values(tmp, fields = list_fields)
+      }, error = function(e) loaded)
+    })
+    as_shown <- function(nm, files) {
+      files <- as.character(files %||% character(0))
+      if (nm %in% closed_lists) without_marker(files) else files
+    }
+
+    ## Carries a change of the Basics into the boxes of the Files tab. A box
+    ## still as the addin filled it is refilled; one edited by hand keeps its
+    ## edits, and only the names that changed are swapped in it.
+    lists_shown <- shiny::reactiveVal(list())
+    shiny::observe({
+      new <- file_lists()
+      old <- shiny::isolate(lists_shown())
+      for (nm in list_fields) {
+        id <- paste0("f_", nm)
+        box <- shiny::isolate(input[[id]])
+        to <- as_shown(nm, new[[nm]])
+        from <- as_shown(nm, old[[nm]])
+        if (is.null(box) || identical(to, from)) next
+        cur <- lines_of(box)
+        if (!identical(cur, from)) {
+          if (length(to) != length(from)) next
+          swap <- match(cur, from)
+          to <- ifelse(is.na(swap), cur, to[swap])
+        }
+        shiny::updateTextAreaInput(session, id, value = paste(to, collapse = "\n"))
+      }
+      lists_shown(new)
+    })
+
+    output$tab_files <- shiny::renderUI({
+      values()
+      ## not a dependency: the observer above updates the boxes in place, a
+      ## redraw would lose what was typed in them
+      v <- shiny::isolate(file_lists())
       box <- function(id, label, val) {
         shiny::textAreaInput(id, label,
                              value = paste(val %||% character(0), collapse = "\n"),
                              width = "100%", height = "200px")
       }
       shiny::tagList(
-        shiny::p("One file per line. These are rewritten as plain vectors, so ",
-                 "the commented-out alternatives in the original file are lost ",
-                 "for any list you edit here. Lists you leave alone keep them."),
+        shiny::p("One file per line. The comments of the configuration file are ",
+                 "kept: a file you remove here is commented out in it, and a file ",
+                 "you add is uncommented if the list already holds it as a ",
+                 "commented-out alternative."),
         shiny::p(shiny::tags$code(end_marker), " is not shown: it is added at ",
                  "the end of the calibration and model files on save."),
         box("f_lists_files", "Lists files", v$lists_files),
@@ -410,21 +501,27 @@ config_addin_app <- function(path = "configuration") {
       )
     })
 
-    lines_of <- function(x) {
-      if (is.null(x) || !nzchar(x)) return(character(0))
-      v <- trimws(strsplit(x, "\n", fixed = TRUE)[[1]])
-      v[nzchar(v)]
-    }
-
     ## Everything the user touched, as R source text, ready for config_edit().
     edits <- shiny::reactive({
       out <- list()
       for (i in seq_len(nrow(fields))) {
         nm <- fields$name[i]
         val <- input[[paste0("f_", nm)]]
+        if (fields$type[i] == "multi") {
+          ## Nothing ticked and "tab never opened" both give NULL: tell them
+          ## apart by whether the other fields of the section are there.
+          others <- fields$name[fields$section == fields$section[i] & fields$type != "multi"]
+          shown <- any(!vapply(others, function(o) is.null(input[[paste0("f_", o)]]), logical(1)))
+          if (!shown) next
+          out[[nm]] <- I(if (length(val)) config_code(as.character(val)) else "c()")
+          next
+        }
         if (is.null(val)) next
         if (fields$type[i] == "number" && is.na(val)) next
         if (fields$type[i] %in% c("text", "choice")) val <- as.character(val)
+        ## a whole number comes back from the browser as an integer; written
+        ## as `0L` it breaks the callers that want a double (sys::exec_wait)
+        if (fields$type[i] == "number") val <- as.numeric(val)
         ## a choice of TRUE / FALSE goes into the file as a logical
         if (fields$type[i] == "choice" && val %in% c("TRUE", "FALSE")) val <- as.logical(val)
         out[[nm]] <- I(config_code(val))
@@ -446,14 +543,15 @@ config_addin_app <- function(path = "configuration") {
         vk <- lines_of(input$f_variables_to_keep)
         out$variables_to_keep <- I(if (length(vk)) config_code(vk) else "c()")
       }
-      for (nm in c("lists_files", "calib_files", "model_files")) {
+      for (nm in list_fields) {
         val <- input[[paste0("f_", nm)]]
         if (is.null(val)) next
         files <- lines_of(val)
         if (nm %in% closed_lists) files <- c(without_marker(files), end_marker)
-        ## A list left as it was is not rewritten, so it keeps its comments.
-        if (identical(files, as.character(values()[[nm]]))) next
-        out[[nm]] <- I(config_code(files))
+        ## A list left as it was is not touched. An edited one is edited in
+        ## place, see config_files(): the comments stay.
+        if (identical(files, as.character(file_lists()[[nm]]))) next
+        out[[nm]] <- config_files(files)
       }
       out
     })

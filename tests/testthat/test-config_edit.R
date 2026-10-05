@@ -116,13 +116,19 @@ test_that("read_config_values evaluates the file as the pipeline would", {
 test_that("config_fields is the list the addin builds its controls from", {
   f <- config_fields()
   expect_true(all(c("name", "section", "type", "label", "choices") %in% names(f)))
-  expect_true(all(f$type %in% c("text", "number", "bool", "choice")))
+  expect_true(all(f$type %in% c("text", "number", "bool", "choice", "multi")))
   expect_false(anyDuplicated(f$name) > 0)
   expect_setequal(unique(f$section),
                   c("Basics", "Solver", "R solver", "EViews solver"))
   # every solver option with a default is editable, and nothing else is offered
   expect_true(all(names(config_solver_defaults()) %in% f$name))
-  expect_false(any(c("rcpp_option", "sequential", "max_tresthor_capability") %in% f$name))
+  # the addin is in step with the configuration: every option readconfig()
+  # knows is offered, and it offers no option readconfig() does not know
+  options <- c(config_required(), names(config_defaults()))
+  offered <- c(f$name, config_fields_custom())
+  expect_setequal(offered, options)
+  expect_false(anyDuplicated(offered) > 0)
+  expect_false(any(c("rcpp_option", "skip_compiler", "sequential", "max_tresthor_capability") %in% f$name))
 })
 
 test_that("list_configs pairs input and output configurations by name", {
@@ -143,4 +149,87 @@ test_that("project_output_files finds what a run would overwrite", {
   expect_setequal(hit, c("nofit.rds", "nofit_com.parquet", "nofit_sec.rds"))
   expect_equal(project_output_files("fresh", dir = d), character(0))
   expect_equal(project_output_files("", dir = d), character(0))
+})
+
+files_config <- function() {
+  c("iso3 = \"FRA\"",
+    "lists_files = c(",
+    "  str_c(\"R_lists_\", iso3, \".mdl\"),   # ALL VERSIONS",
+    "  \"lists.mdl\"                          # ALL VERSIONS",
+    ")",
+    "calib_files = c(lists_files,",
+    "                \"data/parameters.mdl\",     # ALL VERSIONS",
+    "                # \"data/nested.mdl\",       # NESTED CES VERSION",
+    "                \"data/round0.mdl\",         # ALL VERSIONS",
+    "",
+    "                ## Optional blocks",
+    "                # \"data/ets.mdl\",          # ETS",
+    "                \"ENDOFLINE.mdl\")",
+    "model_files = c(lists_files, \"SU.mdl\", # a comment",
+    "                # \"Exception_ETS.mdl\",",
+    "                \"ENDOFLINE.mdl\")")
+}
+
+textfile <- function(lines) {
+  f <- tempfile(fileext = ".R")
+  writeLines(lines, f)
+  f
+}
+
+edit_files <- function(lines, values) {
+  f <- withr::local_tempfile(fileext = ".R")
+  writeLines(lines, f)
+  config_edit(f, lapply(values, config_files))
+  list(lines = readLines(f), values = read_config_values(f))
+}
+
+test_that("a file list is edited in place and keeps its comments", {
+  l <- files_config()
+  want <- c("R_lists_FRA.mdl", "lists.mdl", "data/parameters.mdl", "data/new.mdl",
+            "data/ets.mdl", "ENDOFLINE.mdl")
+  res <- edit_files(l, list(calib_files = want))
+  out <- res$lines
+  expect_equal(res$values$calib_files, want)
+
+  # the entry that is code is still code, on the first line
+  expect_true("calib_files = c(lists_files," %in% out)
+  # removed: commented out, with its comment
+  expect_true(any(grepl("^\\s*# \"data/round0.mdl\",\\s+# ALL VERSIONS$", out)))
+  # added from a commented-out alternative: uncommented, with its comment
+  expect_true(any(grepl("^\\s*\"data/ets.mdl\",\\s+# ETS$", out)))
+  # added from nothing: a new line, after the file before it
+  expect_equal(grep("data/new.mdl", out), grep("data/parameters.mdl", out) + 1L)
+  # every other comment is still there, and the other lists are untouched
+  for (keep in c("NESTED CES VERSION", "## Optional blocks", "# a comment")) {
+    expect_true(any(grepl(keep, out, fixed = TRUE)))
+  }
+  expect_equal(out[1:5], l[1:5])
+  expect_equal(out[grep("^model_files", out) + 0:2], l[14:16])
+
+  # and back: the same files as at the start
+  back <- edit_files(out, list(calib_files = read_config_values(textfile(l))$calib_files))
+  expect_equal(back$values$calib_files,
+               c("R_lists_FRA.mdl", "lists.mdl", "data/parameters.mdl", "data/round0.mdl", "ENDOFLINE.mdl"))
+})
+
+test_that("a file list follows the order asked for and the commas stay right", {
+  l <- files_config()
+  # last entry removed, a file put first, half of an entry that is code
+  res <- edit_files(l, list(lists_files = "R_lists_FRA.mdl",
+                            calib_files = c("data/first.mdl", "R_lists_FRA.mdl",
+                                            "data/round0.mdl", "data/parameters.mdl")))
+  expect_equal(res$values$lists_files, "R_lists_FRA.mdl")
+  expect_equal(res$values$calib_files, c("data/first.mdl", "R_lists_FRA.mdl",
+                                         "data/round0.mdl", "data/parameters.mdl"))
+  expect_true(any(grepl("str_c(\"R_lists_\", iso3", res$lines, fixed = TRUE)))
+  expect_true(any(grepl("^\\s*# \"lists.mdl\",", res$lines)))
+  expect_true(any(grepl("^\\s*# \"ENDOFLINE.mdl\",", res$lines)))
+})
+
+test_that("a file list not written one entry per line is written afresh, comments kept", {
+  l <- files_config()
+  res <- edit_files(l, list(model_files = c("lists.mdl", "Prices.mdl", "ENDOFLINE.mdl")))
+  expect_equal(res$values$model_files, c("lists.mdl", "Prices.mdl", "ENDOFLINE.mdl"))
+  expect_true(any(grepl("# \"Exception_ETS.mdl\",", res$lines, fixed = TRUE)))
+  expect_equal(res$lines[1:13], l[1:13])
 })

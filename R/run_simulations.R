@@ -10,10 +10,11 @@
 #' @param export_scenarii_to_excel logical. Whether to also write the scenario
 #'   results out to Excel.
 #' @param output_format character vector. Which formats the output databases are
-#'   written in: `"rds"`, `"parquet"`, or both (the default). Parquet files are
+#'   written in: `"parquet"` (the default), `"rds"`, or both. Parquet files are
 #'   read back with column and row pushdown by [read_3me_output()], which is far
-#'   cheaper than loading a whole `.rds` to filter it afterwards. Keep `"rds"` in
-#'   the list for as long as anything still calls `readRDS()` on these files.
+#'   cheaper than loading a whole `.rds` to filter it afterwards. Add `"rds"`
+#'   only if something still calls `readRDS()` on these files;
+#'   [read_3me_output()] reads either format.
 #'
 #' @returns The main long-format results data.frame. The aggregate, commodity
 #'   and sector datasets are written to `data/output` as a side effect,
@@ -21,7 +22,7 @@
 #' @export
 run_simulations <- function(configuration = config,
                             export_scenarii_to_excel = FALSE,
-                            output_format = c("rds", "parquet")){
+                            output_format = "parquet"){
 
   output_format <- match.arg(output_format, c("rds", "parquet"), several.ok = TRUE)
 

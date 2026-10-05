@@ -49,4 +49,27 @@ commodity suffix.
   the model
 - `run_simulations()` to run a set of scenarios
 
+## Naming variables in the model: avoid `elem_<...>_<year>`
+
+**Do not give a variable of the model a name of the form
+`elem_<name>_<year>`**, such as `elem_gdp_2019`.
+
+The R solver has no `@elem()`. Before solving, each `@elem()` of the model is
+replaced by a constant holding its value, and that constant is named after
+what it stands for:
+
+| in the `.mdl` | becomes |
+|---|---|
+| `@elem(GDP, 2019)` | `elem_gdp_2019` |
+| `@elem(PK_SIND(-1), 2019)` | `elem_pk_sind_2018` (the lag is folded into the year) |
+| `@elem(CHD_CIND/CHM_CIND, 2015)` | `elem_chd_cind_chm_cind_2015` |
+
+A variable of the model that already has one of these names is silently
+overwritten by the constant, in the calibration and in every scenario, and no
+message says so. Names are compared without regard to case.
+
+These constants are not written to the results (name one in
+`variables_to_keep` to keep it). Names that only contain `ELEM`, such as
+`TELEM_X` or `ELEMENT_Y`, are not concerned.
+
 <!-- TODO: expand with a worked example on the sample data. -->

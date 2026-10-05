@@ -20,11 +20,13 @@
 get_sec_com <- function(list.mdl = file.path("src","model","threeme",paste0("R_lists_",config$input$iso3,"_",config$input$classification,".mdl")),
                         sectors = TRUE, commodities = TRUE, energy_commodities = TRUE){
 
+  # readconfig() lowers iso3 and the classification, the file is R_lists_FRA_...
+  list.mdl <- match_file_case(list.mdl)
   if(!file.exists(list.mdl)){cli::cli_abort("Could not find the specified mdl list: {.file {list.mdl}}")}
 
   list_sec <- NULL
   list_com <- NULL
-  list_ce <- NULL
+  list_com_E <- NULL
 
   mdl <- readLines(list.mdl)
 

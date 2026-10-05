@@ -1,0 +1,149 @@
+---
+title: "ermeeth2 functions"
+subtitle: "Every function of the package, with its documentation"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    page-layout: full
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+library(reactable)
+library(htmltools)
+
+## The page is built from the package sources next to it: man/ for the
+## documentation, NAMESPACE for what is exported, R/ for where it is defined.
+pkg <- ".."
+
+## Themes, by source file. A file that is not listed goes under "Other".
+themes <- list(
+  "Running a model" = c("run_simulations.R", "config_load.R", "run_dynamo.R", "4a_dynamo_install.R",
+                        "4b_runDynamo.R", "Rmodelsolver.R", "eviewsmodelsolver.R",
+                        "post_config_check.R", "translate_model_to_tresthor.R"),
+  "Configuration and scenarios" = c("config_edit.R", "config_addin.R", "calib_addin.R", "run_addin.R",
+                                    "create_calib.R", "calibration_env.R", "calibration_table.R",
+                                    "load_excel_calibration.R", "update_data_merge.R",
+                                    "3_interpolation.R", "3b_catmull.R", "3b_quadratic_splines.R"),
+  "Reading and reshaping results" = c("output_io.R", "new_data_load.R", "0_loadResults.R", "2_wide_data.R",
+                                      "2b_long_data.R", "long_data2.R", "wide_data2.R",
+                                      "new_aggregate_data.R", "get_sec_com.R", "0_small_functions.R",
+                                      "get_vars.R", "transformations.R", "1_contrib.R", "1_contrib.sub.R",
+                                      "contrib_longformat.R"),
+  "Plots and tables" = c("simple_plot.R", "table_3me.R", "palettes.R", "threeme_viewer.R",
+                         "1_contrib.plot.R", "1_contrib.sub.plot.R", "1_sector_plots.R",
+                         "1_table.output.R", "1_custom_palette.R", "confetti.R"),
+  "Dictionary and labels" = c("dictionary.R", "label.R", "trad.R"),
+  "Model documentation" = c("model_doc.R", "mdl_parse.R", "mdl_latex.R", "texdoc-deprecated.R"),
+  "Reports" = c("produce_quartos.R", "render_from_template.R", "cleanup.R", "redirect.R", "make_copy.R"),
+  "Shared data and installation" = c("get_from_shared_3me.R", "checkversionpackageandinstall.R"),
+  "Console messages" = c("0_display_messages.R")
+)
+theme_of_file <- stats::setNames(rep(names(themes), lengths(themes)), unlist(themes))
+
+## What is exported
+ns <- readLines(file.path(pkg, "NAMESPACE"))
+exported <- sub("^export\\((.*)\\)$", "\\1", grep("^export\\(", ns, value = TRUE))
+exported <- gsub("^\"|\"$", "", exported)
+
+## Where each function is defined
+r_files <- list.files(file.path(pkg, "R"), pattern = "\\.R$", full.names = TRUE)
+defined_in <- unlist(lapply(r_files, function(f) {
+  l <- readLines(f, warn = FALSE)
+  m <- regmatches(l, regexpr("^[A-Za-z.][A-Za-z0-9._]*(?=\\s*(<-|=)\\s*function)", l, perl = TRUE))
+  stats::setNames(rep(basename(f), length(m)), m)
+}))
+
+## The documentation pages
+rd_text <- function(x) trimws(gsub("\\s+", " ", paste(unlist(x), collapse = "")))
+pages <- lapply(list.files(file.path(pkg, "man"), pattern = "\\.Rd$", full.names = TRUE), function(f) {
+  rd <- tools::parse_Rd(f)
+  tags <- vapply(rd, function(x) attr(x, "Rd_tag"), character(1))
+  aliases <- vapply(rd[tags == "\\alias"], function(x) paste(unlist(x), collapse = ""), character(1))
+  html <- paste(utils::capture.output(tools::Rd2HTML(rd)), collapse = "\n")
+  ## the page without its frame: from the first section to the end of the body
+  html <- sub("(?s)^.*?(<h3>)", "\\1", html, perl = TRUE)
+  html <- sub("(?s)(<hr\\s*/?>\\s*)?(<div[^>]*>\\s*)?\\[Package.*$|</main>.*$|</body>.*$", "", html, perl = TRUE)
+  ## the links of a help page lead nowhere from here
+  html <- gsub("<a [^>]*>|</a>", "", html)
+  html <- gsub("<h3>", "<h5>", gsub("</h3>", "</h5>", html))
+  list(aliases = aliases,
+       title = if (any(tags == "\\title")) rd_text(rd[tags == "\\title"][[1]]) else NA_character_,
+       description = if (any(tags == "\\description")) rd_text(rd[tags == "\\description"][[1]]) else NA_character_,
+       internal = any(vapply(rd[tags == "\\keyword"], function(x) trimws(paste(unlist(x), collapse = "")), character(1)) == "internal"),
+       html = html)
+})
+page_of <- unlist(lapply(seq_along(pages), function(i) stats::setNames(rep(i, length(pages[[i]]$aliases)), pages[[i]]$aliases)))
+
+functions <- data.frame(name = sort(exported), stringsAsFactors = FALSE)
+at <- page_of[functions$name]
+functions$title <- vapply(at, function(i) if (is.na(i)) NA_character_ else pages[[i]]$title, character(1))
+functions$description <- vapply(at, function(i) if (is.na(i)) NA_character_ else pages[[i]]$description, character(1))
+functions$file <- unname(defined_in[functions$name])
+functions$theme <- unname(theme_of_file[functions$file])
+functions$theme[is.na(functions$theme)] <- "Other"
+functions$html <- vapply(at, function(i) if (is.na(i)) "<p>No documentation page.</p>" else pages[[i]]$html, character(1))
+## a title roxygen left as "Title", or the name of the function, says nothing
+functions$title[!is.na(functions$title) & functions$title %in% c("Title", functions$name)] <- NA_character_
+
+version <- sub("^Version:\\s*", "", grep("^Version:", readLines(file.path(pkg, "DESCRIPTION")), value = TRUE))
+
+functions_table <- function(data, id, show_theme = TRUE) {
+  reactable(
+    data[, c("name", "title", "theme", "file")],
+    elementId = id,
+    searchable = TRUE, filterable = show_theme, highlight = TRUE, compact = TRUE,
+    pagination = FALSE,
+    style = list(fontSize = "0.9rem"),
+    columns = list(
+      name = colDef(name = "Function", minWidth = 200,
+                    cell = function(v) paste0(v, "()"),
+                    style = list(fontFamily = "monospace", fontWeight = 600)),
+      title = colDef(name = "What it does", minWidth = 380, na = "—"),
+      theme = colDef(name = "Theme", minWidth = 190, show = show_theme),
+      file = colDef(name = "File", minWidth = 170, cell = function(v) paste0("R/", v))
+    ),
+    details = function(i) {
+      div(style = "padding: 8px 32px 16px 48px; font-size: 0.92em; max-width: 1000px;",
+          HTML(data$html[i]))
+    }
+  )
+}
+```
+
+The `r nrow(functions)` functions exported by ermeeth2 `r version`. Click the
+arrow at the start of a line to read the help page of the function: what it
+does, its arguments, what it returns and its examples. In R, the same page is
+`?name`.
+
+This page is built from the `man/` folder of the package, so it says what the
+help pages say. `r sum(is.na(functions$title))` functions have no real title
+yet and show a dash.
+
+## By theme
+
+```{r}
+#| label: by-theme
+#| results: asis
+for (th in c(names(themes), "Other")) {
+  sub <- functions[functions$theme == th, ]
+  if (!nrow(sub)) next
+  cat("\n\n### ", th, "\n\n", sep = "")
+  print(tagList(functions_table(sub, paste0("theme-", gsub("[^a-z]", "", tolower(th))), show_theme = FALSE)))
+}
+```
+
+## All functions
+
+Search every column with the box, or filter one under its title.
+
+```{r}
+#| label: all
+functions_table(functions, "all-functions")
+```

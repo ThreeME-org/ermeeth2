@@ -120,6 +120,8 @@ calib_addin_app <- function(path = calib_folder_default()) {
 
   server <- function(input, output, session) {
 
+    stop_on_close(session)
+
     ## Where the script goes: `path`, or the subfolder picked.
     folder <- shiny::reactive({
       f <- input$folder

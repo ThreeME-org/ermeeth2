@@ -139,7 +139,7 @@ run_addin_app <- function(path = "configuration",
         shiny::checkboxInput("to_excel", "Also export the scenarios to Excel", FALSE),
         shiny::checkboxGroupInput("formats", "Output formats",
                                   choices = c("rds", "parquet"),
-                                  selected = c("rds", "parquet"), inline = TRUE),
+                                  selected = "parquet", inline = TRUE),
         shiny::actionButton("run", "Run simulations", class = "btn-primary"),
         shiny::actionButton("cancel", "Cancel", class = "btn-outline-secondary"),
         shiny::hr(),
@@ -149,6 +149,8 @@ run_addin_app <- function(path = "configuration",
   )
 
   server <- function(input, output, session) {
+
+    stop_on_close(session)
 
     configs <- list_configs(path)
     ## The calibrations of the chosen configuration: its baseline folder and
@@ -333,7 +335,7 @@ run_addin_app <- function(path = "configuration",
       res <- tryCatch(
         run_simulations(configuration = cfg,
                         export_scenarii_to_excel = isTRUE(input$to_excel),
-                        output_format = input$formats %||% c("rds", "parquet")),
+                        output_format = input$formats %||% "parquet"),
         error = function(e) e)
 
       if (inherits(res, "error")) {

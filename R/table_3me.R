@@ -93,8 +93,19 @@ resolve_horizons <- function(horizons, shock_year, end_year, long_term_label = "
 #' @param end_year numeric(1) last year shown. Defaults to the last year of the
 #'   data.
 #' @param labels named character vector mapping variable codes to display
-#'   labels. Codes it does not cover keep their code. This is where the ThreeME
-#'   variable dictionary will plug in once it exists.
+#'   labels. `NULL` (the default) takes the short labels of the ThreeME
+#'   dictionary, see [threeme_dictionary()], or the full label where a
+#'   variable has no short one; a named vector replaces those of the codes it
+#'   names. A variable the dictionary does not know keeps its code. `FALSE`
+#'   shows the codes.
+#' @param lang character(1) language of the dictionary labels, `"en"` or
+#'   `"fr"`. Defaults to the `ermeeth2.lang` option, else English.
+#' @param dict a dictionary layered over the packaged one, passed to
+#'   [threeme_dictionary()].
+#' @param force_short numeric(1) the longest dictionary label allowed, in
+#'   characters: a variable whose label is longer shows its code instead.
+#'   Defaults to 25. `0` sets no limit and shows the label whatever its
+#'   length. Labels given through `labels` are never cut back.
 #' @param name_baseline character(1) name of the baseline scenario.
 #' @param base_year numeric(1) base year of the `"index100"` transformation.
 #' @param digits numeric(1) decimals shown. Two by default, for both percentages
@@ -103,8 +114,9 @@ resolve_horizons <- function(horizons, shock_year, end_year, long_term_label = "
 #' @param caption character(1) table caption, for cross-referencing.
 #' @param footnote character(1) footnote. `NULL` (default) builds one describing
 #'   the transformations used.
-#' @param theme character(1) `"ofce"` to apply [ofce::theme.gt_ofce()],
-#'   `"none"` to return a plain `gt` table.
+#' @param theme character(1) the look of the table. `"none"` (the default)
+#'   returns a plain `gt` table, which takes the style of the document it is
+#'   printed in; `"ofce"` applies [ofce::theme.gt_ofce()].
 #'
 #' @returns A `gt_tbl`.
 #' @importFrom rlang .data
@@ -136,7 +148,10 @@ table_3me <- function(data,
                       subtitle = NULL,
                       caption = NULL,
                       footnote = NULL,
-                      theme = c("ofce", "none")) {
+                      theme = c("none", "ofce"),
+                      lang = getOption("ermeeth2.lang", "en"),
+                      dict = NULL,
+                      force_short = 25) {
 
   theme <- match.arg(theme)
   two_models <- !is.null(data_secondary)
@@ -199,7 +214,8 @@ table_3me <- function(data,
     cli::cli_abort("No rows left after selecting the horizons. Check `horizons`, `shock_year` and `end_year`.")
   }
 
-  label_map <- pretty_labels(codes, labels)
+  label_map <- pretty_labels(codes, labels, data = body, lang = lang, short = TRUE, dict = dict,
+                             force_short = force_short)
   body$label <- unname(label_map[body$variable])
   body <- with_sector_labels(body)
 

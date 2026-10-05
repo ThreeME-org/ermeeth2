@@ -13,10 +13,10 @@
 #'
 #' @details The model is built by `thortwo::thor_model()` on every call.
 #'   thortwo caches what it builds, so a model whose equations have not changed
-#'   is loaded rather than rebuilt; `recompile_model = TRUE` in the
+#'   is loaded rather than rebuilt; `recompile_model_R = TRUE` in the
 #'   configuration forces the rebuild. The remaining solver options
 #'   (`Rsolver_decompose`, `Rsolver_sequential`, `Rsolver_reuse_jacobian`,
-#'   `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
+#'   `Rsolver_timings`, `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
 #'   `Rsolver_damping`, `Rsolver_verbose`) are read from the configuration; see
 #'   [config_solver_defaults()].
 #'
@@ -28,8 +28,12 @@ R_model_solver <- function(config_file = configuration,
                             overwrite_rcpp = Rcpp,
                            cnb = calib_new_base){
 
+  ## no "Source Cpp" tab in RStudio for the warnings of the C++ compiler
+  restore_hooks <- mute_sourcecpp_hooks()
+  on.exit(restore_hooks(), add = TRUE)
+
   # configuration <- NULL
-  recompile_model <- NULL
+  recompile_model_R <- NULL
   baseyear <- NULL
   lastyear <- NULL
   themodel <- NULL
@@ -44,6 +48,7 @@ R_model_solver <- function(config_file = configuration,
   Rsolver_max_iter <- NULL
   Rsolver_damping <- NULL
   Rsolver_verbose <- NULL
+  Rsolver_timings <- NULL
 
   list2env(config_file,envir = environment())
   list2env(config_file$input,envir = environment())
@@ -61,7 +66,10 @@ R_model_solver <- function(config_file = configuration,
 
   ### A.1 Transform model.prg file into solver syntax
   ("Translating model.prg file for the solver") |> message_sub_step()
-  model_to_build <- prg_to_thor(base.year = baseyear, last.year = lastyear)
+  ## thortwo never sees the translation, so it is timed here.
+  time_translation <- system.time(
+    model_to_build <- prg_to_thor(base.year = baseyear, last.year = lastyear)
+  )[["elapsed"]]
   if (length(model_to_build$warnings)) {
     translate_report(model_to_build)
     cli::cli_abort("The model translation reported problems; see the report above.",
@@ -73,19 +81,25 @@ R_model_solver <- function(config_file = configuration,
   ## Called every time: thortwo keys its cache on the model itself (variables,
   ## equations, backend, decomposition), so an unchanged model is loaded in a
   ## fraction of a second and an edited one is rebuilt, without this function
-  ## having to keep track. `recompile_model` forces the rebuild.
+  ## having to keep track. `recompile_model_R` forces the rebuild.
   ("Creating the model for simulations") |> message_sub_step()
-  themodel <- thortwo::thor_model(
-    name         = "themodel",
-    endogenous   = model_to_build$endo,
-    exogenous    = model_to_build$exo,
-    coefficients = model_to_build$coef,
-    equations    = model_to_build$equations,
-    backend      = backend,
-    decompose    = isTRUE(Rsolver_decompose),
-    sequential   = isTRUE(Rsolver_sequential),
-    recompile    = isTRUE(recompile_model),
-    verbose      = isTRUE(Rsolver_verbose))
+  ## The timings are printed once, at the end, by this function: thortwo's own
+  ## lines are switched off, where the installed thortwo has the argument.
+  quiet_timings <- function(fn) if ("timings" %in% names(formals(fn))) list(timings = FALSE) else list()
+  time_model <- system.time(
+    themodel <- do.call(thortwo::thor_model, c(list(
+      name         = "themodel",
+      endogenous   = model_to_build$endo,
+      exogenous    = model_to_build$exo,
+      coefficients = model_to_build$coef,
+      equations    = model_to_build$equations,
+      backend      = backend,
+      decompose    = isTRUE(Rsolver_decompose),
+      sequential   = isTRUE(Rsolver_sequential),
+      recompile    = isTRUE(recompile_model_R),
+      verbose      = isTRUE(Rsolver_verbose)),
+      quiet_timings(thortwo::thor_model)))
+  )[["elapsed"]]
 
   thortwo::export_model(themodel, filename = file.path(solver_dir, "model_thor.txt"))
 
@@ -146,12 +160,24 @@ R_model_solver <- function(config_file = configuration,
   "Solving each scenario, please wait... \U23F1" |>   message_main_step()
   scenar_order <- c("baseline", setdiff(names(data_for_solver), "baseline"))
   tot_scen <- length(scenar_order)
+  time_solve <- stats::setNames(numeric(tot_scen), scenar_order)
 
 
   for (item_scen in 1:tot_scen){
 
+    ## Everything is kept, except the columns the translation added for the
+    ## solver (the `elem_*` coefficients standing for the `@elem` of the
+    ## model): they are constants the model does not define, an EViews run has
+    ## none of them, and nothing reads them back. The solve above still gets
+    ## them: they are only left out of what is returned. Naming one in
+    ## `variables_to_keep` keeps it.
     if(length(variables_to_keep)==0){
-      variables_to_keep <- setdiff(names(data_for_solver[["baseline"]]), "year") |> tolower()
+      ## Taken from the translation's own list, not guessed from the name: a
+      ## model variable that merely has ELEM in its name is not in it. And a
+      ## name that was already in the calibration is kept in any case.
+      solver_only <- intersect(model_to_build$elem$name, newly_created_variables)
+      variables_to_keep <- setdiff(names(data_for_solver[["baseline"]]),
+                                   c("year", solver_only)) |> tolower()
     }
 
     scenar_solved <- scenar_order[item_scen]
@@ -160,22 +186,32 @@ R_model_solver <- function(config_file = configuration,
     ## No `skip_tests`: thortwo's checks are vectorised over the data matrix
     ## and cost nothing, and they name the missing variable instead of letting
     ## the solve fail twenty periods later.
-    solved_data[[scenar_solved]] <- withCallingHandlers(
-      thortwo::thor_solve(
-        themodel,
-        from = baseyear, to = lastyear,
-        data = data_for_solver[[scenar_solved]],
-        index_time = "year",
-        rtol = Rsolver_rtol, atol = Rsolver_atol,
-        max_iter = Rsolver_max_iter, damping = isTRUE(Rsolver_damping),
-        ## "auto" leaves the choice to thortwo: on when compiled, off in pure R
-        reuse_jacobian = if (is.logical(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian else NULL,
-        verbose = isTRUE(Rsolver_verbose)),
-      ## The equations are passed to thortwo without names, so its messages
-      ## refer to them by its own ids (`eq_2528`). Show the equations meant.
-      error = function(e) show_thor_equations(conditionMessage(e), themodel)) |>
+    time_solve[[scenar_solved]] <- system.time(
+      solved <- withCallingHandlers(
+        do.call(thortwo::thor_solve, c(list(
+          themodel,
+          from = baseyear, to = lastyear,
+          data = data_for_solver[[scenar_solved]],
+          index_time = "year",
+          rtol = Rsolver_rtol, atol = Rsolver_atol,
+          max_iter = Rsolver_max_iter, damping = isTRUE(Rsolver_damping),
+          ## "auto" leaves the choice to thortwo: on when compiled, off in pure R
+          reuse_jacobian = if (is.logical(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian else NULL,
+          verbose = isTRUE(Rsolver_verbose)),
+          quiet_timings(thortwo::thor_solve))),
+        ## The equations are passed to thortwo without names, so its messages
+        ## refer to them by its own ids (`eq_2528`). Show the equations meant.
+        error = function(e) show_thor_equations(conditionMessage(e), themodel))
+    )[["elapsed"]]
+    solved_data[[scenar_solved]] <- solved |>
       select(year, any_of(tolower(variables_to_keep)) )
 
+  }
+
+  if (!isFALSE(Rsolver_timings)) {
+    show_solver_timings(translation = time_translation, model = time_model,
+                        build = tryCatch(themodel@meta$timings, error = function(e) NULL),
+                        solve = time_solve)
   }
 
   ### Generate long format datafull
@@ -213,4 +249,62 @@ show_thor_equations <- function(msg, model) {
     cli::cli_verbatim(paste0("    ", found[[id]]))
   }
   invisible(found)
+}
+
+#' A duration, in the unit that reads best
+#'
+#' @param seconds a number of seconds.
+#'
+#' @returns a string: `"0.52 s"`, `"38.4 s"`, `"1 min 14 s"`.
+#' @keywords internal
+format_duration <- function(seconds) {
+  vapply(seconds, function(x) {
+    if (is.na(x)) return("n/a")
+    if (x < 1) return(paste0(format(round(x, 2), nsmall = 2), " s"))
+    if (round(x, 1) < 60) return(paste0(format(round(x, 1), nsmall = 1), " s"))
+    paste0(round(x) %/% 60, " min ", round(x) %% 60, " s")
+  }, character(1))
+}
+
+#' Print how long each stage of the R solver took
+#'
+#' @param translation seconds spent in [prg_to_thor()].
+#' @param model seconds spent in `thortwo::thor_model()`, timed from outside.
+#' @param build what thortwo reports for that call (`model@meta$timings`): a
+#'   named vector with `build` and `compile`, and an attribute `from_cache`.
+#'   `NULL` with a thortwo that does not report it; `model` is then shown as
+#'   one figure.
+#' @param solve seconds spent solving each scenario, named by scenario.
+#'
+#' @returns invisibly, the two lines printed.
+#' @keywords internal
+show_solver_timings <- function(translation, model, build = NULL, solve = numeric(0)) {
+  stages <- paste("translation", format_duration(translation))
+  if (is.numeric(build) && all(c("build", "compile") %in% names(build))) {
+    cached <- isTRUE(attr(build, "from_cache"))
+    stages <- c(stages,
+                paste0("build ", format_duration(build[["build"]]), if (cached) " (from the cache)"),
+                if (!is.na(build[["compile"]])) paste("compile", format_duration(build[["compile"]])))
+  } else {
+    stages <- c(stages, paste("build and compile", format_duration(model)))
+  }
+  lines <- c(paste(stages, collapse = " | "),
+             if (length(solve)) paste0("solve: ", paste(names(solve), format_duration(solve), collapse = " | ")))
+  cli::cli_alert_info("Timings: {cli_escape(lines[1])}")
+  if (length(lines) > 1L) cli::cli_verbatim(paste0("  ", lines[-1]))
+  invisible(lines)
+}
+
+
+# RStudio listens to Rcpp::sourceCpp() through two hooks, and opens a
+# "Source Cpp" tab listing what the compiler said, warnings included. The code
+# compiled here is generated by thortwo: its warnings are of no use to the user
+# and the tab comes up at the end of every simulation that compiled. The hooks
+# are emptied for the time of a solve; the function returned puts them back.
+# A compilation that fails is still reported, by thortwo's own error.
+mute_sourcecpp_hooks <- function() {
+  hooks <- c("sourceCpp.onBuild", "sourceCpp.onBuildComplete")
+  old <- lapply(hooks, getHook)
+  for (h in hooks) setHook(h, list(), "replace")
+  function() for (i in seq_along(hooks)) setHook(hooks[i], old[[i]], "replace")
 }

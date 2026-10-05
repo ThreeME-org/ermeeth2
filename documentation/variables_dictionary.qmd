@@ -1,0 +1,170 @@
+---
+title: "ThreeME variables"
+subtitle: "Survey of the variables found in the `.mdl` sources"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    page-layout: full
+    embed-resources: true
+execute:
+  echo: false
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+library(reactable)
+library(htmltools)
+
+survey <- utils::read.csv("../data-raw/dictionary_survey.csv", stringsAsFactors = FALSE,
+                          encoding = "UTF-8", na.strings = "NA")
+survey$model <- ifelse(survey$core, "basic model", "other files")
+
+## A drop-down holding the values of the column, in place of the text filter
+select_filter <- function(table_id) {
+  function(values, name) {
+    tags$select(
+      onchange = sprintf("Reactable.setFilter('%s', '%s', event.target.value || undefined)",
+                         table_id, name),
+      `aria-label` = paste("Filter", name),
+      style = "width: 100%;",
+      tags$option(value = "", "All"),
+      lapply(sort(unique(values)), function(v) tags$option(value = v, v))
+    )
+  }
+}
+exact_match <- JS("function(rows, columnId, filterValue) {
+  return rows.filter(function(row) { return row.values[columnId] === filterValue })
+}")
+shown <- function(x) ifelse(is.na(x), "—", x)
+
+## The table of the page, on any subset of the variables
+variables_table <- function(data, id) {
+  reactable(
+    data[, c("variable", "label_long_fr", "label_long_en", "index", "kind", "model")],
+    elementId = id,
+    searchable = TRUE, filterable = TRUE, highlight = TRUE, compact = TRUE,
+    defaultPageSize = 25, showPageSizeOptions = TRUE, pageSizeOptions = c(25, 50, 100, 1000),
+    style = list(fontSize = "0.85rem"),
+    columns = list(
+      variable = colDef(name = "Variable", minWidth = 210,
+                        style = list(fontFamily = "monospace", fontWeight = 600)),
+      label_long_fr = colDef(name = "Libellé", minWidth = 280, na = "—"),
+      label_long_en = colDef(name = "Label", minWidth = 280, na = "—"),
+      index = colDef(name = "Index", minWidth = 150,
+                     filterInput = select_filter(id), filterMethod = exact_match),
+      kind = colDef(name = "Kind", minWidth = 110,
+                    filterInput = select_filter(id), filterMethod = exact_match),
+      model = colDef(name = "Model", minWidth = 110,
+                     filterInput = select_filter(id), filterMethod = exact_match)
+    ),
+    details = function(i) {
+      r <- data[i, ]
+      line <- function(what, value) tags$tr(tags$td(style = "padding: 2px 16px 2px 0; color: #666;", what),
+                                            tags$td(shown(value)))
+      div(style = "padding: 8px 24px 12px 48px; font-size: 0.9em;",
+          tags$table(
+            line("Short label (fr)", r$label_fr),
+            line("Short label (en)", r$label_en),
+            line("Forms in the equations", r$index_forms),
+            line("Name in the .mdl files", r$mdl_name),
+            line("Files", r$files)))
+    }
+  )
+}
+```
+
+This page lists the `r nrow(survey)` variables found in the equation files of
+ThreeME and in `exogenous.mdl`, with what is known about each. It is built
+from `data-raw/dictionary_survey.csv`, itself written by
+`data-raw/dictionary_survey.R`.
+
+::: {.callout-note}
+## Where the labels come from
+
+The English label of a variable is the `##!` line above the equation that
+defines it, unless the dictionary of the package already has one. The French
+label is a translation of it, not yet reviewed. A dash means that nothing is
+known: `r sum(is.na(survey$label_long_en))` variables have no label, and only
+`r sum(!is.na(survey$label_en))` have a short one.
+:::
+
+## All variables
+
+Type in the search box to look through every column, or under a column title
+to filter that column. Click the arrow at the start of a line for the short
+labels, the forms the variable takes in the equations and the files that
+define it.
+
+```{r}
+#| label: all
+#| column: screen-inset
+variables_table(survey, "all-variables")
+```
+
+## Reading the columns
+
+**Index** says what the variable is indexed by, all forms together: `CID`
+exists as `CID`, `CID[c]`, `CID[s]` and `CID[c, s]`, so its index is
+`commodity,sector`. The forms are listed in the details of the line. A `?`
+there is an index name that `lists.mdl` does not declare.
+
+**Kind** is how the variable gets its value:
+
+| Kind | Meaning |
+|---|---|
+| endogenous | an equation defines it |
+| exogenous | declared in `exogenous.mdl` |
+| calibrated | given a value by `:=` in an equation file |
+| undeclared | only met inside equations: neither defined nor declared |
+
+**Model** is *basic model* when the variable is met in the files listed in
+`config_input_threeme.R`, *other files* when it only appears in the optional
+blocks (`Exception_*.mdl`).
+
+## Counts
+
+::: {.panel-tabset}
+
+### By kind
+
+```{r}
+#| label: by-kind
+counts <- as.data.frame.matrix(table(survey$kind, survey$model))
+counts <- cbind(Kind = rownames(counts), counts, Total = rowSums(counts))
+knitr::kable(counts, row.names = FALSE)
+```
+
+### By index
+
+```{r}
+#| label: by-index
+by_index <- as.data.frame(sort(table(survey$index), decreasing = TRUE), stringsAsFactors = FALSE)
+names(by_index) <- c("Index", "Variables")
+knitr::kable(by_index)
+```
+
+### By file
+
+```{r}
+#| label: by-file
+files <- strsplit(survey$files, "; ", fixed = TRUE)
+by_file <- as.data.frame(sort(table(unlist(files)), decreasing = TRUE), stringsAsFactors = FALSE)
+names(by_file) <- c("File", "Variables")
+knitr::kable(by_file)
+```
+
+:::
+
+## Still to label
+
+The variables of the basic model with no label at all: their equation has no
+`##!` line, or nothing defines or declares them.
+
+```{r}
+#| label: to-label
+#| column: screen-inset
+variables_table(survey[survey$core & is.na(survey$label_long_en), ], "to-label")
+```

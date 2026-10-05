@@ -28,8 +28,9 @@ quartos to render.
 The solver takes three tabs. \emph{Solver} chooses between R and EViews and
 holds what applies to both; \emph{R solver} and \emph{EViews solver} hold the
 options only one of them reads. An option the configuration file does not
-set yet is shown at its default (\code{\link[=config_solver_defaults]{config_solver_defaults()}}) and written
-on save.
+set yet is shown at its default (\code{\link[=config_defaults]{config_defaults()}}) and written on
+save, so saving an incomplete file completes it. The addin offers every
+option of \code{\link[=config_required]{config_required()}} and \code{\link[=config_defaults]{config_defaults()}}.
 
 Edits are \strong{surgical}: only the assignments you change are rewritten, and
 every comment, commented-out alternative and live code block in the file is
@@ -38,7 +39,13 @@ so regenerating it from a template would throw that away.
 
 In the Files tab, \code{ENDOFLINE.mdl} is left out of the calibration and model
 file lists: it only closes them in the configuration file, and is added
-back on save. A list that was not changed is not rewritten.
+back on save. A list that was not changed is not rewritten. One that
+was is edited in place, see \code{\link[=config_files]{config_files()}}: a file taken out is
+commented out, a file added is uncommented when the list holds it as a
+commented-out alternative, and the other comments are left alone.
+The lists follow the Basics tab: a configuration that names its files
+after the country, the classification or the base year shows them under
+the values currently entered there, not those of the file as loaded.
 
 Naming a scenario the project has no calibration for offers to create it,
 through the same template \code{\link[=create_shock]{create_shock()}} uses. The Scenarios tab also

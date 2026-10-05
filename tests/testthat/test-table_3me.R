@@ -9,7 +9,12 @@ test_that("table_3me returns a gt table with the expected shape", {
 
   body <- as.data.frame(tb)
   expect_equal(nrow(body), 3)
-  expect_equal(body$label, c("Y", "CH", "I"))
+  ## the short labels of the dictionary
+  expect_equal(body$label, c("Output", "Consumption", "Investment"))
+  expect_equal(as.data.frame(table_3me(d, c("Y", "CH", "I"), theme = "none", lang = "fr"))$label,
+               c("Production", "Consommation", "Investissement"))
+  expect_equal(as.data.frame(table_3me(d, c("Y", "CH", "I"), theme = "none", labels = FALSE))$label,
+               c("Y", "CH", "I"))
   ## unit column, plus one column per horizon (t, t+1, t+2, t+5, t+10, long term)
   expect_equal(ncol(body), 1 + 1 + 6)
 })
@@ -45,7 +50,7 @@ test_that("variables given as a named list become row groups", {
 test_that("transformations can be mixed, and the unit column records them", {
   d <- mini()
   tb <- table_3me(d, c("Y", "MU"), transformation = c(MU = "ppdiff", "reldiff"),
-                  theme = "none")
+                  theme = "none", labels = FALSE)
   body <- as.data.frame(tb)
   expect_equal(body$unit[body$label == "Y"], "%")
   expect_equal(body$unit[body$label == "MU"], "pp")
@@ -79,7 +84,7 @@ test_that("a second database adds a spanner level rather than more rows", {
 test_that("labels rename rows, and missing variables are reported", {
   d <- mini()
   tb <- table_3me(d, c("Y", "CH"), labels = c(Y = "GDP"), theme = "none")
-  expect_equal(as.data.frame(tb)$label, c("GDP", "CH"))
+  expect_equal(as.data.frame(tb)$label, c("GDP", "Consumption"))
 
   expect_warning(table_3me(d, c("Y", "NOT_A_VAR"), theme = "none"), "not found")
   expect_error(table_3me(d, "NOT_A_VAR", theme = "none"), "None of these variables")

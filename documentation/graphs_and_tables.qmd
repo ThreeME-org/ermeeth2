@@ -325,14 +325,21 @@ table_3me(
 )
 ```
 
-### Without the OFCE theme
+### The look of the table
 
-`theme = "none"` returns a plain `gt` table, ready for your own styling.
+A table is a plain `gt` table, so any `gt` styling can be added to it:
 
 ```{r}
 #| label: tbl-plain
-table_3me(data_full, c("Y", "CH", "I"), theme = "none") |>
+table_3me(data_full, c("Y", "CH", "I")) |>
   gt::opt_stylize(style = 3, color = "gray")
+```
+
+`theme = "ofce"` gives it the OFCE look:
+
+```{r}
+#| label: tbl-ofce
+table_3me(data_full, c("Y", "CH", "I"), theme = "ofce")
 ```
 
 ## Clicking instead of typing

@@ -21,7 +21,10 @@ simple_plot(
   caption = NULL,
   digits = 2,
   x_breaks = NULL,
-  interactive = FALSE
+  interactive = FALSE,
+  lang = getOption("ermeeth2.lang", "en"),
+  dict = NULL,
+  force_short = 25
 )
 }
 \arguments{
@@ -39,8 +42,11 @@ scenario in \code{data}.}
 transformations in one call is not allowed - use \code{\link[=table_3me]{table_3me()}} for that.}
 
 \item{labels}{named character vector mapping variable codes to display
-labels, or an unnamed vector with one entry per variable. Codes it does not
-cover keep their code. Defaults to the codes themselves.}
+labels, or an unnamed vector with one entry per variable. \code{NULL} (the
+default) takes the labels from the ThreeME dictionary, see
+\code{\link[=threeme_dictionary]{threeme_dictionary()}}; a named vector replaces those of the codes it
+names. A variable the dictionary does not know keeps its code. \code{FALSE}
+shows the codes.}
 
 \item{startyear, endyear}{numeric(1) first and last year plotted. Default to
 the range of \code{data}.}
@@ -65,6 +71,17 @@ picks a spacing from the length of the period.}
 
 \item{interactive}{boolean(1) return an interactive \code{girafe} object instead
 of a plain ggplot.}
+
+\item{lang}{character(1) language of the dictionary labels, \code{"en"} or
+\code{"fr"}. Defaults to the \code{ermeeth2.lang} option, else English.}
+
+\item{dict}{a dictionary layered over the packaged one, passed to
+\code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
+
+\item{force_short}{numeric(1) the longest dictionary label allowed, in
+characters: a variable whose label is longer shows its code instead.
+Defaults to 25. \code{0} sets no limit and shows the label whatever its
+length. Labels given through \code{labels} are never cut back.}
 }
 \value{
 A \code{ggplot}, or a \code{girafe} object when \code{interactive = TRUE}.

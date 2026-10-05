@@ -52,6 +52,14 @@ The result feeds \code{thortwo::thor_model()} by way of \code{out_file}, or
 
 Supersedes \code{\link[=translate_modelprg]{translate_modelprg()}}; see the file header for what differs.
 }
+\section{Reserved names}{
+
+Each \verb{@elem()} becomes a coefficient named \verb{elem_<expression>_<year>}:
+\code{elem_gdp_2019} for \verb{@elem(GDP, 2019)}. A variable of the model must not
+be named that way: one that has the name of a coefficient is overwritten
+by it in the data, without a message.
+}
+
 \examples{
 \dontrun{
 tr <- prg_to_thor("src/compiler/model.prg", "src/compiler/calib.csv",

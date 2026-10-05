@@ -23,7 +23,10 @@ table_3me(
   subtitle = NULL,
   caption = NULL,
   footnote = NULL,
-  theme = c("ofce", "none")
+  theme = c("none", "ofce"),
+  lang = getOption("ermeeth2.lang", "en"),
+  dict = NULL,
+  force_short = 25
 )
 }
 \arguments{
@@ -61,8 +64,11 @@ it as the first year a scenario departs from its reference.}
 data.}
 
 \item{labels}{named character vector mapping variable codes to display
-labels. Codes it does not cover keep their code. This is where the ThreeME
-variable dictionary will plug in once it exists.}
+labels. \code{NULL} (the default) takes the short labels of the ThreeME
+dictionary, see \code{\link[=threeme_dictionary]{threeme_dictionary()}}, or the full label where a
+variable has no short one; a named vector replaces those of the codes it
+names. A variable the dictionary does not know keeps its code. \code{FALSE}
+shows the codes.}
 
 \item{name_baseline}{character(1) name of the baseline scenario.}
 
@@ -78,8 +84,20 @@ and levels.}
 \item{footnote}{character(1) footnote. \code{NULL} (default) builds one describing
 the transformations used.}
 
-\item{theme}{character(1) \code{"ofce"} to apply \code{\link[ofce:theme.gt_ofce]{ofce::theme.gt_ofce()}},
-\code{"none"} to return a plain \code{gt} table.}
+\item{theme}{character(1) the look of the table. \code{"none"} (the default)
+returns a plain \code{gt} table, which takes the style of the document it is
+printed in; \code{"ofce"} applies \code{\link[ofce:theme.gt_ofce]{ofce::theme.gt_ofce()}}.}
+
+\item{lang}{character(1) language of the dictionary labels, \code{"en"} or
+\code{"fr"}. Defaults to the \code{ermeeth2.lang} option, else English.}
+
+\item{dict}{a dictionary layered over the packaged one, passed to
+\code{\link[=threeme_dictionary]{threeme_dictionary()}}.}
+
+\item{force_short}{numeric(1) the longest dictionary label allowed, in
+characters: a variable whose label is longer shows its code instead.
+Defaults to 25. \code{0} sets no limit and shows the label whatever its
+length. Labels given through \code{labels} are never cut back.}
 }
 \value{
 A \code{gt_tbl}.

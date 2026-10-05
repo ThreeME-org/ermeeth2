@@ -1,0 +1,237 @@
+---
+title: "Improving the ThreeME dictionary"
+subtitle: "Which file to change, and how to rebuild"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(ermeeth2)
+library(dplyr)
+```
+
+The dictionary of `ermeeth2` names the variables of ThreeME in plots and tables. It is far from finished: most variables have a long description and no short label, and the French has not been reviewed. This guide says **which file to change** for each kind of improvement, and how to rebuild the dictionary afterwards.
+
+It is about the dictionary shipped with the package, shared by everyone. To name variables for one project only, no change to the package is needed: see [Labels and dictionaries](https://www.ofce.fr/threeme/reference/qmd_simulations/labels_dictionary.html).
+
+## Where things stand
+
+```{r}
+#| label: status
+#| echo: false
+d <- threeme_dictionary()
+status <- data.frame(
+  What = c("Variables in the dictionary",
+           "with a short label in English",
+           "with a short label in French",
+           "whose full English label fits in 25 characters",
+           "with a unit",
+           "with a group"),
+  Variables = c(nrow(d), sum(!is.na(d$label_short_en)), sum(!is.na(d$label_short_fr)),
+                sum(nchar(d$label_en) <= 25, na.rm = TRUE), sum(!is.na(d$unit)), sum(!is.na(d$group)))
+)
+knitr::kable(status)
+```
+
+A table shows the short label of a variable. Without one, it falls back on the full label, and on the code when that label is longer than 25 characters. So the most useful thing to add is **short labels**.
+
+## The three files
+
+Everything is in the `data-raw/` folder of the `ermeeth2` repository.
+
+| File | What it holds | Edit it? |
+|---|---|---|
+| `dictionary.csv` | What people wrote: short labels, units, groups, corrected labels. One line per variable. | **Yes. This is the main one.** |
+| `dictionary_survey_fr.csv` | The French translation of each description found in the model, one pair per line. | Yes, to correct a translation. |
+| `dictionary_survey.csv` | What the `.mdl` files of the model say about each variable. | **No**: it is written by a script, and a change made by hand is lost at the next run. |
+
+The dictionary of the package is built from them, in this order: the survey first, then `dictionary.csv` on top of it, **cell by cell**. A line of `dictionary.csv` only has to hold what it adds or corrects; whatever it leaves empty comes from the survey.
+
+```{mermaid}
+flowchart LR
+  mdl["<b>.mdl files</b> of ThreeME_V4<br/>the ##! line above an equation"] -->|dictionary_survey.R| survey["dictionary_survey.csv<br/><i>generated</i>"]
+  fr["<b>dictionary_survey_fr.csv</b><br/>French translations"] -->|dictionary_survey.R| survey
+  survey -->|dictionary.R| pkg["dictionary of the package"]
+  csv["<b>dictionary.csv</b><br/>written by hand, wins"] -->|dictionary.R| pkg
+```
+
+The three places in bold are where a person writes.
+
+## Which file for which change
+
+| I want to | Change |
+|---|---|
+| give a variable a short label | `dictionary.csv` |
+| set its unit, its group, how it is usually read | `dictionary.csv` |
+| replace a full label that reads badly | `dictionary.csv` |
+| describe a variable that is not in the model (an indicator computed in a report) | `dictionary.csv` |
+| correct a French translation | `dictionary_survey_fr.csv` |
+| describe a variable that has no description at all | the `##!` line of its equation, in the `.mdl` file |
+| correct the English description of an equation | the `##!` line of its equation, in the `.mdl` file |
+
+## Editing `dictionary.csv`
+
+### The columns
+
+| Column | Content | Example |
+|---|---|---|
+| `code` | root code of the variable, in upper case, without sector or commodity | `PCH` |
+| `label_en`, `label_fr` | full label | `Consumption price` |
+| `label_short_en`, `label_short_fr` | short label, for table rows: aim for 15 characters or fewer | `Cons. price` |
+| `unit` | unit of the level | `M€`, `index`, `%` |
+| `default_transformation` | how the variable is usually read | `reldiff` |
+| `group` | group of the variable in a table | `Prices` |
+| `indexed_by` | `sector`, `commodity`, `sector,commodity`, or empty | `commodity` |
+| `definition_en`, `definition_fr` | one sentence of definition | |
+
+Only `code` is compulsory. Leave a cell empty when you have nothing to say: the survey fills in the full labels and `indexed_by` on its own.
+
+`default_transformation` must be one of these:
+
+```{r}
+#| label: transformations
+#| echo: false
+tr <- threeme_transformations()
+knitr::kable(data.frame(Value = names(tr),
+                        Meaning = vapply(tr, function(x) x$label, character(1)),
+                        row.names = NULL))
+```
+
+Use `ppdiff` for rates and shares (unemployment rate, saving rate), `diff` for head counts read in absolute terms, `reldiff` for the rest.
+
+### Adding a short label
+
+The variable `YQ` has a full label from the model, "Domestic production, expressed at basic price", and no short one. Add a line holding its code and the two short labels, and nothing else:
+
+```csv
+"code","label_en","label_fr","label_short_en","label_short_fr","unit","default_transformation","group","indexed_by","definition_en","definition_fr"
+"YQ",,,"Dom. production","Production dom.",,,,,,
+```
+
+Its full labels still come from the model. If the line already exists, fill in the two cells.
+
+### Describing a variable fully
+
+```csv
+"UNR","Unemployment rate (in %)","Taux de chômage (en %)","Unempl. rate","Taux de chômage","%","ppdiff","Labour market",,"Unemployed as a share of the labour force.","Chômeurs rapportés à la population active."
+```
+
+### Rules of the file
+
+- One line per code, in upper case. The build stops if a code appears twice.
+- The code is the **root**: `CH`, not `CH_CIND`. A sectoral variable takes the label of its root.
+- Keep the quotes around the text, and the commas: a label that contains a comma must be inside quotes.
+- Save as UTF-8, so that accents survive. A spreadsheet is fine for editing if it exports a plain CSV with commas; check the result in a text editor before committing.
+
+## Correcting a French translation
+
+`dictionary_survey_fr.csv` pairs each English description with its French version:
+
+```csv
+"label_long_en","label_long_fr"
+"Capacity utilization ratio of the sector s","Taux d'utilisation des capacités du secteur s"
+```
+
+Change the second column. **Do not touch the first**: it is the key that ties the translation to the description of the model, character for character.
+
+The translations use a fixed vocabulary, worth keeping consistent:
+
+| English | French |
+|---|---|
+| commodity c | produit c |
+| sector s | secteur s |
+| notional | notionnel |
+| domestically produced / imported | domestique / importé |
+| market price / basic price | prix de marché / prix de base |
+| households / Government | ménages / administrations publiques |
+| intermediate consumption | consommation intermédiaire |
+| change in inventories | variation de stocks |
+| toe | tep |
+
+To correct the label of one of the few dozen variables described by hand, change `label_fr` in `dictionary.csv` instead: that file wins.
+
+## Describing a variable in the model
+
+The description of a variable is the `##!` line written just above its equation, in the `.mdl` files of `ThreeME_V4` (`src/model/threeme/`). An exogenous variable is described the same way in `exogenous.mdl`.
+
+```
+##! Market price of the intermediate consumption of commodity $c$
+PCI[c] * CI[c]   = PCID[c] * CID[c] + PCIM[c] * CIM[c]                if CI[c]  <> 0
+```
+
+This is the best place to describe a variable, because the same line also feeds the documentation of the equations. Write it in English, as a noun phrase, starting with a capital letter and without a final full stop.
+
+Two things follow from a change there:
+
+- the survey has to be run again (next section), with `ThreeME_V4` up to date next to `ermeeth2`;
+- a description that is new or reworded has no French yet. Add a line for it in `dictionary_survey_fr.csv`, with the English text exactly as the survey reports it in `dictionary_survey.csv` (column `label_long_en`).
+
+## Rebuilding the dictionary
+
+In the `ermeeth2` project, with the package loaded:
+
+```r
+pkgload::load_all()
+
+## only if a .mdl file or dictionary_survey_fr.csv changed
+source("data-raw/dictionary_survey.R")
+
+## always
+source("data-raw/dictionary.R")
+```
+
+The first script reads the `.mdl` files in `../ThreeME_V4/src/model/threeme`: the two repositories must sit side by side. It ends by saying how many variables have an English and a French label; if the French count is lower, some descriptions are missing from `dictionary_survey_fr.csv`.
+
+The second writes `data/threeme_dictionary_data.rda`, the dictionary the package ships. It stops if a code is duplicated, or if a `default_transformation` or an `indexed_by` is not one of the values allowed.
+
+### Checking the result
+
+```r
+pkgload::load_all()
+
+dict_label(c("YQ", "UNR"))                              # the labels you changed
+dict_label(c("YQ", "UNR"), lang = "fr", short = TRUE)
+
+devtools::test(filter = "dictionary|simple_plot|table_3me")
+```
+
+Then look at a real table: a label that reads well in a list can still be too wide in a table.
+
+```r
+table_3me(data_full, c("GDP", "YQ", "UNR"), lang = "fr")
+```
+
+### Sharing it
+
+1. Bump the version in `DESCRIPTION` and add a line to `NEWS.md`.
+2. Commit the files you edited **and** the files the scripts rewrote: `data-raw/dictionary_survey.csv` and `data/threeme_dictionary_data.rda`.
+3. Open a pull request on [ThreeME-org/ermeeth2](https://github.com/ThreeME-org/ermeeth2). A CSV shows line by line what changed, which is what makes a label easy to review.
+
+Not set up to do this? Open an [issue](https://github.com/ThreeME-org/ermeeth2/issues) with the code of the variable and the label you propose, or send the lines to the ThreeME team.
+
+## Where to start
+
+The variables below are in the standard tables and reports, or in the basic model, and have a full label too long to show in a table and no short one. Each needs one line in `dictionary.csv`.
+
+```{r}
+#| label: todo
+#| echo: false
+todo <- d |>
+  filter(is.na(label_short_en), nchar(label_en) > 25) |>
+  mutate(length = nchar(label_en)) |>
+  arrange(nchar(code), code) |>
+  select(Code = code, `Full label` = label_en) |>
+  head(40)
+knitr::kable(todo)
+```
+
+These are the 40 shortest codes, which tend to be the most used; `r sum(is.na(d$label_short_en) & nchar(d$label_en) > 25, na.rm = TRUE)` variables are in this situation in all. The complete list, with a search box, is on the [ThreeME variables](variables_dictionary.html) page.

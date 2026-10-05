@@ -8,7 +8,7 @@ save_3me_output(
   data,
   project_name,
   suffix = NULL,
-  formats = c("rds", "parquet"),
+  formats = "parquet",
   dir = file.path("data", "output")
 )
 }
@@ -20,7 +20,7 @@ save_3me_output(
 \item{suffix}{character or \code{NULL}. Aggregation level suffix, e.g. \code{"com"},
 \code{"sec"}, \code{"sec_com"}. \code{NULL} for the main database.}
 
-\item{formats}{character vector. \code{"rds"}, \code{"parquet"} or both.}
+\item{formats}{character vector. \code{"parquet"} (default), \code{"rds"} or both.}
 
 \item{dir}{character. Output directory.}
 }
@@ -29,7 +29,13 @@ The paths written, invisibly.
 }
 \description{
 Writes one of the simulation output databases to \code{data/output},
-in any combination of RDS and Parquet. Parquet is written with zstd
+as Parquet (the default), RDS, or both. Parquet is written with zstd
 compression; it is about as small as a compressed \code{.rds}, roughly twice as
 fast to write, and can be read back selectively by \code{\link[=read_3me_output]{read_3me_output()}}.
+
+Parquet needs the \code{arrow} package. Without it the database is written as
+\code{.rds} instead, with a warning, so that a run never ends with no output.
+
+A file of the other format left by an earlier run is not touched, and is
+pointed out: it no longer matches the results just written.
 }

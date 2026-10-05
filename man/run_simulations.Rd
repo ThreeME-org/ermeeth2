@@ -7,7 +7,7 @@
 run_simulations(
   configuration = config,
   export_scenarii_to_excel = FALSE,
-  output_format = c("rds", "parquet")
+  output_format = "parquet"
 )
 }
 \arguments{
@@ -18,10 +18,11 @@ run_simulations(
 results out to Excel.}
 
 \item{output_format}{character vector. Which formats the output databases are
-written in: \code{"rds"}, \code{"parquet"}, or both (the default). Parquet files are
+written in: \code{"parquet"} (the default), \code{"rds"}, or both. Parquet files are
 read back with column and row pushdown by \code{\link[=read_3me_output]{read_3me_output()}}, which is far
-cheaper than loading a whole \code{.rds} to filter it afterwards. Keep \code{"rds"} in
-the list for as long as anything still calls \code{readRDS()} on these files.}
+cheaper than loading a whole \code{.rds} to filter it afterwards. Add \code{"rds"}
+only if something still calls \code{readRDS()} on these files;
+\code{\link[=read_3me_output]{read_3me_output()}} reads either format.}
 }
 \value{
 The main long-format results data.frame. The aggregate, commodity

@@ -22,8 +22,7 @@ calibration_table <- function(params_calib,
 
   ## Loading and filtering the data
   # Prendre à la place csv calib dans src/compiler/calib.csv
-  data <- readRDS(file.path("data","output",paste0(project_name,".rds"))) |>
-    dplyr::filter(year == startyear, scenario == "baseline") |>
+  data <- read_3me_output(project_name, scenarios = "baseline", years = startyear) |>
     dplyr::select(-year, -scenario, - index_scen, - values_ref) |>
     dplyr::filter(stringr::str_detect(variable, "^ES")) |>
     dplyr::mutate(root = stringr::str_remove_all(variable, "(_C[A-Za-z0-9]{3})?(_S[A-Za-z0-9]{3})?$"),

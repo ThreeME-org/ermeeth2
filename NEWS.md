@@ -1,169 +1,147 @@
-# ermeeth2 1.0.0
+# ermeeth2 1.0.21
 
-First version of `ermeeth2`, seeded from `ermeeth` 0.4.00.0 (branch
-`anissa-dev`). What follows is what differs from `ermeeth`.
+- `table_3me()`: the default look is a plain `gt` table (`theme = "none"`),
+  as the tables of the `basic_results` report were before. The OFCE look is
+  no longer the default; ask for it with `theme = "ofce"`.
 
-## Running the model in R: thortwo replaces tresthor
+# ermeeth2 1.0.20
 
-* `R_model_solver()` solves through `thortwo`. The model is built by
-  `thortwo::thor_model()` on every run and thortwo's cache decides whether
-  that means a rebuild: an unchanged model is loaded, an edited one is
-  rebuilt. `recompile_model = TRUE` forces the rebuild.
-* **No limit on the size of the model.** `eviews_checks()` no longer refuses
-  the R solver to a large `model.prg`, and `max_tresthor_capability` is gone.
-  Asking for EViews anywhere but on Windows switches to the R solver.
-* When thortwo reports an error on an equation by its own id (`eq_2528`),
-  the equation itself is printed. With `Rsolver_sequential = TRUE` that
-  names the equation and the variable that cannot be determined.
-* The variables the translation creates (`@elem` values, coefficients) are
-  added to every scenario's database before solving.
-* `aggregate_com_sec()` returns early when no aggregation is requested, so a
-  model without a bridge file (the training model) runs.
+- `simple_plot()` and `table_3me()`: new argument `force_short`, 25 by
+  default. A variable whose dictionary label is longer than that many
+  characters shows its code instead of the label; `force_short = 0` sets no
+  limit. Labels given through `labels` are not concerned.
 
-## Model translation
+# ermeeth2 1.0.19
 
-* `prg_to_thor()` turns a compiled `model.prg` and its calibration csv into a
-  solver-ready model. `translate_modelprg()` is kept as a wrapper around it.
-  `translate_report()` prints what a translation did and could not do.
-* `@elem()` is found by scanning balanced parentheses and valued by evaluating
-  its expression against the calibration, so nested and multi-operator forms
-  such as `@elem(pk_sind(-1), 2019)` are handled. Two `@elem` of the same
-  variable at different years no longer collide.
-* Every EViews logical test goes through one rewrite; none is pinned to a
-  constant any more.
-* `base.year` is a required argument. `first.year` and `out_file` (write the
-  model as a `.txt`) are optional.
-* `calib.csv` is read with `data.table::fread()`: under a second on FRA 29x33
-  (85,302 columns), where `read.csv()` took 169 s.
+- `simple_plot()` and `table_3me()` take their labels from the ThreeME
+  dictionary when `labels` is not given: the full label on a plot, the short
+  one in a table (the full one where there is no short one). New arguments
+  `lang` (`"en"` or `"fr"`, default from the `ermeeth2.lang` option) and
+  `dict` (a project dictionary on top of the packaged one). A named `labels`
+  still replaces the label of the codes it names; `labels = FALSE` shows the
+  codes, as before this version.
+- The code of an indexed variable is cut back to the root the dictionary
+  knows: `CH_CIND` takes the label of `CH`, `F_K_SSER` that of `F` followed by
+  `(K)`.
+- The packaged dictionary goes from 34 to 591 variables: the 557 added come
+  from the survey of the `.mdl` sources (`data-raw/dictionary_survey.csv`),
+  with a full label in English and in French and no short one. The French is
+  a translation that has not been reviewed.
 
-## Configuration
+# ermeeth2 1.0.18
 
-Every `configuration/config_input_*.R` in ThreeME_V4 carries the options
-below. A file that leaves one out gets its default.
+- `R_model_solver()`: RStudio no longer opens a "Source Cpp" tab at the end of
+  a simulation when the C++ compiler gave warnings on the model. The hooks
+  RStudio sets on `Rcpp::sourceCpp()` are emptied during the solve and put
+  back after it. A compilation that fails is reported as before.
 
-* **R solver options:** `Rcpp` (`TRUE`, the default, for the compiled solver;
-  `FALSE` for the pure R one, which needs no compiler), `Rsolver_decompose`,
-  `Rsolver_sequential`, `Rsolver_reuse_jacobian`, `Rsolver_rtol`,
-  `Rsolver_atol`, `Rsolver_max_iter`, `Rsolver_damping`, `Rsolver_verbose`. `Rcpp` was `rcpp_option` in `ermeeth`; the old name is
-  still read. `use.superlu` is removed.
-* **EViews solver options:** `eviews_algorithm` (`"broyden"`, `"newton"` or
-  `"gauss-seidel"`), `eviews_digits`, `eviews_max_iter`.
-  `eviews_solve_options()` writes them into the `solve()` call of
-  `src/EViews/solve.prg` (its `o`, `g` and `m` arguments) before an EViews
-  run.
-* **Scenario folders:** `baseline_scenario_folder` and
-  `shock_scenario_folder`, the folders the calibration scripts are read from.
-  Both default to `configuration/scenarii_calib` and are meant to name a
-  subfolder of it. The csv files written for EViews stay in
-  `configuration/scenarii_calib`.
-* `config_solver_defaults()` gives the default of every solver option;
-  `calib_folder_default()` and `list_calib_folders()` the calibration folder
-  and its subfolders.
-* `config_edit()` changes one assignment of a configuration file at a time
-  and leaves the comments and the rest of the file alone.
-  `read_config_values()`, `list_configs()` and `config_fields()` read
-  configurations and describe their fields.
+# ermeeth2 1.0.17
 
-## Aggregation rules
+- Configuration addin, Files tab: editing `lists_files`, `calib_files` or
+  `model_files` no longer loses the comments of the list. It was rewritten as
+  a plain vector; it is now edited line by line. A file taken out is commented
+  out, a file added is uncommented when the list holds it as a commented-out
+  alternative and written on a new line otherwise, and every other line is
+  left as it is. Entries that are code (`lists_files`,
+  `str_c("R_lists_", iso3, ...)`) stay code.
+- New `config_files()`, to ask the same of `config_edit()`. A list that is not
+  a `c()` call with one entry per line is still written afresh, with its
+  commented lines kept below the files.
 
-* The aggregation rules are a csv file shipped with the package,
-  `aggregation_rules.csv`, in place of the Excel workbook. One table holds
-  both dimensions, told apart by a `sec_com` column (`sectors` or
-  `commodities`), with the columns `var_root`, `sum`, `mean`,
-  `weighted_mean` and `weight_var`. `read_aggregation_rules()` reads it.
-* **The package table is the only copy.** ThreeME_V4 no longer carries one,
-  and a `src/bridges/aggregation_rules.csv` or `.xlsx` left in a project is
-  not read; a message says so. A set of rules under another name can still
-  be passed to `aggregate_com_sec()`.
-* Every variable root of the model has a rule. The 207 that had none, and
-  were averaged with a warning, now have one. Two columns say where a rule
-  stands: `manual_add` is 1 for a rule specified by a user and 0 for one
-  filled in by default; `checked` is 0 until the rule has been reviewed.
-* Twelve price rules asked for a weight that is never in the database
-  (`PMGPD` by `MGPD`, for instance) and fell back to a mean on every run.
-  They are now weighted by a volume that exists (`PMGPD` by `QD`) and
-  marked `manual_add = 0`.
-* The packaged rules also gain six sector rules that only the ThreeME_V4
-  workbook had (`EMS`, `EMS_CI_HFC`, `EMS_CI_PFC`, `EMS_CI_SF6`, `EMS_MAT`,
-  `EMS_Y`).
+# ermeeth2 1.0.16
 
-## Checks during a run
+- `get_sec_com()`: finds the lists file on Linux. `readconfig()` stores `iso3`
+  in lower case, so the default path was `R_lists_fra_c29_s33.mdl` for a file
+  named `R_lists_FRA_c29_s33.mdl`: found on macOS and Windows, not on a
+  case-sensitive file system, where every shock script calling it stopped.
+- `get_sec_com(energy_commodities = FALSE)` no longer errors.
 
-* `run_simulations()` warns when a calibration script changes an exogenous
-  variable at the base year, or any variable in the years before it, naming
-  the scenario and the variables. The base year is the calibration, and the
-  earlier years are only read as lags. The run goes on.
+# ermeeth2 1.0.15
 
-## Addins
+- `simple_plot()`: the y axis of a percentage (relative difference, growth
+  rate) now shows the `digits` decimals asked for. It showed none with the
+  default of 2, so that a deviation of a few tenths of a point was labelled
+  `0%, 0%, 1%, 1%`.
+- New folder `shiny_trial/`, outside the package build: a trial Shiny app that
+  solves ThreeME v4 (FRA 8x8, 13x13 or 29x33, picked in the app) through thortwo for a carbon tax and
+  a world demand shock set with sliders, with macroeconomic, sector and
+  commodity results. Run it with `shiny::runApp("shiny_trial")`.
 
-* **New ThreeME calibration** (`calib_addin()`): writes a baseline or shock
-  script from a template, in `scenarii_calib` or a subfolder.
-  `create_baseline()` and `create_shock()` do the same from the console.
-* **ThreeME configuration** (`config_addin()`): one tab per section,
-  including an *R solver* and an *EViews solver* tab, and the scenario
-  folders. `ENDOFLINE.mdl` is not shown in the file lists and is added on
-  save. A file list left unchanged is not rewritten.
-* **Run ThreeME simulations** (`run_addin()`): asks for the project name
-  first, lists the output files it would overwrite, and checks that every
-  scenario has its calibration script.
-* **ThreeME viewer** (`threeme_viewer()`): plots and tables of a result
-  database, with the code to reproduce them.
+# ermeeth2 1.0.14
 
-## Graphs, tables and the variable dictionary
+- R solver: the `ELEM_*` variables are no longer written to the results. They
+  are the constants the translation creates for the `@elem()` of the model
+  (3 128 of the 88 428 variables of a 28x32 run), not variables of ThreeME,
+  and an EViews run never had them. The solver still uses them. To keep one,
+  name it in `variables_to_keep`.
+- The vignette and the help of `prg_to_thor()` now warn that a model variable
+  must not be named `elem_<name>_<year>`: it would be overwritten by the
+  constant of the same name.
 
-* `simple_plot()` and `table_3me()` replace the earlier plot and table
-  functions (`simpleplot()`, `table_macro()`, `table_macro2()`,
-  `table_macro_double()`, `table_reference()`, `table_reference2()`). Both
-  read their transformations from `threeme_transformations()`.
-* `threeme_dictionary()` holds the labels, units and default transformations
-  of the variables; `dict_labels()`, `dict_transformations()` and
-  `dict_groups()` feed them to the plots and tables. `label()` is deprecated.
+# ermeeth2 1.0.13
 
-## Model documentation
+- **The simulation results are now written as `.parquet` only.** The `.rds` is
+  no longer written unless asked for: `run_simulations(output_format =
+  c("rds", "parquet"))`, or the *rds* box of the run addin, which is now
+  unticked. `save_3me_output()` follows the same default.
+  Code that reads `data/output/<project>.rds` with `readRDS()` has to move to
+  `read_3me_output(project_name)`, which reads whichever format is there.
+- Without the `arrow` package the results are written as `.rds` instead, with
+  a warning, rather than not at all.
+- A run warns when it leaves behind an `.rds` (or `.parquet`) of an earlier
+  run that it did not rewrite.
+- `read_3me_output()` reads the most recent of the two files when both exist;
+  it used to take the parquet even when only the `.rds` had been rewritten.
+- `calibration_table()` reads the results through `read_3me_output()`.
 
-* `model_doc()` writes the equations of the `.mdl` sources as Quarto or
-  LaTeX, from its own parser. It replaces `teXdoc()` and `make_eq_qmd()`;
-  `pegr` is no longer needed.
+# ermeeth2 1.0.12
 
-## Console output
+- The four addins (viewer, calibration, configuration, run) now stop when their
+  window is closed. Closing the window with its cross rather than with the
+  addin's *Done* / *Cancel* button left the app running behind it: R stayed
+  busy and had to be interrupted or restarted.
 
-* All console output goes through `cli`. It is a message (stderr), not
-  stdout: `suppressMessages()` silences it, `capture.output()` does not.
-  `crayon` is dropped from Imports.
-* Diagnostic lists (uncalibrated variables, unidentified codes) are printed
-  in full.
-* Errors written as `stop(message("..."))` were raised empty. They now say
-  what is wrong (`get_sec_com()`, `get_vars()`, the spline functions,
-  `loadResults()`, `get_remote_file()`).
+# ermeeth2 1.0.11
 
-## Packaging
+- `threeme_viewer()` opens on `GDP` alone. `Y` is selected only when the model
+  has no `GDP`; before, both were selected.
 
-* Package renamed to `ermeeth2`; `system.file()` calls and cross-references
-  repointed.
-* Documentation generated with roxygen2 8.1.0, with markdown on. The team
-  should stay on 8.1.0.
-* `Depends: R (>= 4.1.0)`: the package code uses the native pipe (`|>`)
-  throughout, in place of `%>%`.
-* `dtplyr` is dropped from Imports; `tibble` and `cli` are added.
-* `tests/` holds a `testthat` (3rd edition) suite. The scratch scripts that
-  used to live there moved to `dev/`, which is excluded from the build, as
-  are `data-raw/`, `documentation/`, `plop/` and the project notes.
-* Startup message moved from `.onLoad()` to `.onAttach()`.
+# ermeeth2 1.0.10
 
-## Fixes carried from `ermeeth`
+- `threeme_viewer()` opens a full-size result at once. It now accepts a
+  `.parquet` file and queries it instead of reading it: the list of variables
+  comes from one small query, and only the rows of the variables selected are
+  ever fetched. Pointed at an `.rds`, it uses the `.parquet` that
+  `run_simulations()` wrote next to it, when there is one and it is not older
+  than the `.rds`. On a 28x32 result (31 million rows, 88 000 variables) the
+  data is ready in about 1 s, against 25 s to read the `.rds`. Needs the
+  `arrow` package; without it, or without a parquet file, the `.rds` is read
+  as before.
+- `threeme_viewer(path)` no longer reads the file twice when it starts.
 
-* `install_dynamo()` unzipped `dynamo.zip`, which does not exist in `inst/`
-  (the file is `dynamo_inst.zip`), so it silently unzipped nothing.
-* 15 functions were called without being imported or namespaced and failed
-  with "could not find function" unless the caller had the package attached.
-  This affected `run_simulations()`, `loadResults()`, `run_dynamo()`,
-  `translate_modelprg()`, the sector plots and `get_from_shared_3me()`.
-* Unescaped `%` in roxygen comments left several help pages malformed.
+# ermeeth2 1.0.9
 
-## Known issues carried over from `ermeeth`
+- EViews solver: a run no longer stops with `REAL() can only be applied to a
+  'numeric', not a 'integer'` when the configuration sets `eviews_timeout` as
+  an integer (`0L`). The timeout is now passed to EViews as a double.
+- `config_addin()` writes whole numbers as `0`, `2019`, not `0L`, `2019L`. It
+  was the addin that put the integer timeout in the file.
 
-See `ermeeth2_handoff.md` and the open items in `PLAN.md`. In short: heavy
-reliance on globals in the legacy functions (`time_waypoints`, `endyear`,
-`shockyear`, `language`, `reference`, `scenario_to_analyse`), `color_scale`
-used as a default but defined nowhere, and `confetti()` writing palette
-objects into the global environment.
+# ermeeth2 1.0.8
+
+- `config_addin()`: the file lists of the Files tab now follow the Basics tab.
+  After loading a configuration and changing its classification (or its
+  country, or its base year), the lists and calibration files kept the names
+  of the configuration as loaded -- `R_lists_FRA_c4_s4.mdl` after moving to
+  `c28_s32` -- and editing any list then wrote those stale names into the
+  file. The lists are now rebuilt from the configuration with the Basics as
+  they stand, lines added by hand are kept, and a list that is not edited
+  still keeps its code and comments.
+
+# ermeeth2 1.0.7
+
+- `threeme_viewer()` no longer freezes on a full-size model. The variable picker
+  now searches server-side instead of sending every variable name to the browser
+  (88 000 of them for a 28x32 result), and the plot and table are built from the
+  rows of the selected variables only, so changing an option no longer rescans
+  the whole result.

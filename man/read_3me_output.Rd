@@ -34,8 +34,13 @@ otherwise \code{"com"}, \code{"sec"} or \code{"sec_com"}.}
 A data.frame.
 }
 \description{
-Reads back a database written by \code{\link[=save_3me_output]{save_3me_output()}}. When a
-parquet file is available, \code{variables}, \code{scenarios} and \code{years} are pushed
-down into the read, so only the rows and columns asked for are ever
-materialised; filtering a whole \code{.rds} afterwards costs the full load.
+Reads back a database written by \code{\link[=save_3me_output]{save_3me_output()}}, whichever
+format it was written in. When a parquet file is available, \code{variables},
+\code{scenarios} and \code{years} are pushed down into the read, so only the rows
+and columns asked for are ever materialised; filtering a whole \code{.rds}
+afterwards costs the full load.
+
+When both a \code{.parquet} and an \code{.rds} are there, the parquet is read unless
+the \code{.rds} is more recent, that is, unless the last run only wrote the
+\code{.rds}.
 }

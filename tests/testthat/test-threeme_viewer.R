@@ -139,3 +139,65 @@ test_that("the generated code runs and reproduces the viewer's output", {
   expect_s3_class(results[[2]], "ggplot")
   expect_s3_class(results[[3]], "gt_tbl")
 })
+
+test_that("the plot and table work off the selected variables only", {
+  skip_if_not_installed("shiny")
+
+  shiny::testServer(threeme_viewer_app(mini_path()), {
+    session$setInputs(
+      source = "file", path = mini_path(),
+      baseline = "baseline", scenarios = "g",
+      variables = c("Y", "MU"), base_year = NA
+    )
+    ## A full model is millions of rows; only the selection is handed on.
+    expect_setequal(unique(dat_sel()$variable), c("Y", "MU"))
+    expect_lt(nrow(dat_sel()), nrow(dat()))
+    expect_null(dat2_sel())
+
+    ## The slice must not move the default base year: it stays the first year
+    ## of the full data, as the generated code would resolve it.
+    expect_equal(base_year_arg(), min(dat()$year))
+    session$setInputs(base_year = 2020)
+    expect_equal(base_year_arg(), 2020)
+
+    expect_equal(meta()$variables, sort(unique(dat()$variable)))
+  })
+})
+
+test_that("the viewer queries a parquet file instead of reading it", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("arrow")
+  d <- withr::local_tempdir()
+  rds <- file.path(d, "mini.rds")
+  pq <- file.path(d, "mini.parquet")
+  file.copy(mini_path(), rds)
+  full <- readRDS(rds)
+
+  ## an .rds with no parquet next to it is read whole
+  expect_null(viewer_parquet_for(rds))
+  expect_s3_class(viewer_open(rds), "data.frame")
+
+  arrow::write_parquet(full, pq)
+  expect_equal(viewer_parquet_for(rds), pq)
+  ## a parquet older than its .rds belongs to an earlier run
+  Sys.setFileTime(pq, file.mtime(rds) - 60)
+  expect_null(viewer_parquet_for(rds))
+  Sys.setFileTime(pq, file.mtime(rds) + 60)
+
+  for (path in c(rds, pq)) {
+    shiny::testServer(threeme_viewer_app(path), {
+      var <- sort(unique(full$variable))[1]
+      session$setInputs(source = "file", path = path, variables = var)
+      expect_false(is.data.frame(dat()))
+      expect_equal(meta()$variables, sort(unique(full$variable)))
+      expect_setequal(meta()$scenarios, unique(full$scenario))
+      expect_equal(meta()$years, range(full$year))
+      ## only the selected variable is ever materialised
+      expect_s3_class(dat_sel(), "data.frame")
+      expect_equal(nrow(dat_sel()), sum(full$variable == var))
+      expect_type(dat_sel()$scenario, "character")
+    })
+  }
+  expect_equal(viewer_read_code(pq), paste0('arrow::read_parquet("', pq, '")'))
+  expect_equal(viewer_read_code(rds), paste0('readRDS("', rds, '")'))
+})

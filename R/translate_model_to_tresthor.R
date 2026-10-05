@@ -323,6 +323,12 @@ prg_eval_elem <- function(expr, year, calib) {
 #'
 #'   Supersedes [translate_modelprg()]; see the file header for what differs.
 #'
+#' @section Reserved names:
+#'   Each `@elem()` becomes a coefficient named `elem_<expression>_<year>`:
+#'   `elem_gdp_2019` for `@elem(GDP, 2019)`. A variable of the model must not
+#'   be named that way: one that has the name of a coefficient is overwritten
+#'   by it in the data, without a message.
+#'
 #' @param modfile character. Path to the compiled model program.
 #' @param calibfile character. Path to the calibration csv, whose `year` column
 #'   is relative to `base.year`.

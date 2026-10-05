@@ -1,0 +1,404 @@
+---
+title: "Working with `data_full`"
+subtitle: "The output of a simulation, and how to handle it"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    fig-width: 8
+    fig-height: 4.5
+    df-print: kable
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(ermeeth2)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+```
+
+This page describes what a simulation returns and shows the usual ways of
+handling it. Every example runs on a small database shipped with the package,
+so the page reproduces without running a model.
+
+## Getting the results
+
+### From a simulation
+
+`run_simulations()` returns the results and stores them in `data/output`,
+under the `project_name` of the input configuration.
+
+```{r}
+#| eval: false
+config <- readconfig(input_config_file  = file.path("configuration", "config_input_threeme.R"),
+                     output_config_file = file.path("configuration", "config_output_threeme.R"))
+
+data_full <- run_simulations(configuration = config)
+```
+
+### From a simulation already run
+
+`read_3me_output()` reads a database back from `data/output`. The results are
+stored as a parquet file by default, which lets the function read only what is
+asked for: on a full model this is the difference between a few seconds and a
+few minutes.
+
+```{r}
+#| eval: false
+## everything
+data_full <- read_3me_output("my_project")
+
+## only what is needed: much faster on a large model
+macro <- read_3me_output("my_project",
+                         variables = c("GDP", "CH", "I", "X", "M"),
+                         scenarios = c("baseline", "ct1"),
+                         years     = 2020:2050)
+```
+
+When the input configuration sets `output_saved`, the results are also stored
+with their sectors and commodities aggregated as the bridge of the
+classification says. Those versions are read with `suffix`:
+
+| `suffix` | Database |
+|---|---|
+| `NULL` (default) | the classification of the simulation |
+| `"sec"` | sectors aggregated |
+| `"com"` | commodities aggregated |
+| `"sec_com"` | sectors and commodities aggregated |
+
+```{r}
+#| eval: false
+data_agg <- read_3me_output("my_project", suffix = "sec_com")
+```
+
+### The database of this page
+
+```{r}
+#| label: load
+data_full <- readRDS(system.file("extdata", "minimodel.rds", package = "ermeeth2"))
+```
+
+It comes from a small training model: five variables, a baseline and one
+scenario, `g`, an increase in government spending.
+
+## What `data_full` looks like
+
+`data_full` is a plain `data.frame` in **long format**: one line per
+variable, year and scenario.
+
+```{r}
+#| label: head
+head(data_full)
+```
+
+| Column | Type | Content |
+|---|---|---|
+| `variable` | character | Code of the variable, in upper case. |
+| `year` | numeric | Period of the observation. |
+| `scenario` | character | Name of the scenario, as in the input configuration. |
+| `values` | numeric | Value in the scenario. |
+| `values_ref` | numeric | Value in the baseline, for the same variable and year. |
+| `index_scen` | numeric | 1 on the lines of the baseline, 0 on the others. |
+| `sector` | character | Sector of the variable, `NA` if it has none. |
+| `commodity` | character | Commodity of the variable, `NA` if it has none. |
+
+A line is identified by `variable`, `year` and `scenario`. On the lines of the
+baseline, `values` and `values_ref` are equal.
+
+Because `values_ref` sits next to `values` on every line, comparing a scenario
+with the baseline never needs a join.
+
+### What is in it
+
+```{r}
+#| label: contents
+unique(data_full$scenario)
+unique(data_full$variable)
+range(data_full$year)
+```
+
+On a full model there are thousands of variables. `variables_like()` finds
+those whose code matches a regular expression:
+
+```{r}
+#| label: variables-like
+variables_like(data_full, "^C", view = FALSE)
+```
+
+The dictionary says what a code means:
+
+```{r}
+#| label: dict
+dict_labels(unique(data_full$variable))
+dict_labels(unique(data_full$variable), lang = "fr")
+```
+
+## Selecting
+
+Everything here is `dplyr::filter()`.
+
+### One scenario
+
+```{r}
+#| label: one-scenario
+shock <- data_full |> filter(scenario == "g")
+head(shock, 3)
+```
+
+`index_scen` is a shortcut to leave the baseline out, whatever the scenarios
+are called:
+
+```{r}
+#| label: no-baseline
+data_full |> filter(index_scen == 0) |> distinct(scenario)
+```
+
+### A set of variables
+
+```{r}
+#| label: some-variables
+activity <- data_full |> filter(variable %in% c("Y", "CH", "I"))
+distinct(activity, variable)
+```
+
+### A period
+
+```{r}
+#| label: period
+data_full |>
+  filter(variable == "Y", scenario == "g", year %in% 2020:2024)
+```
+
+### A sector or a commodity
+
+On a ThreeME database a sectoral variable has one code per sector, and the
+`sector` column holds the name of the sector. Both can be used:
+
+```{r}
+#| eval: false
+## the output of every sector
+data_full |> filter(grepl("^Y_S", variable))
+
+## everything about one sector
+data_full |> filter(sector == "Construction")
+```
+
+## Computing
+
+### Deviation from the baseline
+
+By hand, since the baseline is on the same line:
+
+```{r}
+#| label: by-hand
+data_full |>
+  filter(scenario == "g", variable == "Y", year %in% 2020:2024) |>
+  mutate(rel_diff = values / values_ref - 1,
+         abs_diff = values - values_ref)
+```
+
+`threeme_transform()` does the same and knows the usual transformations. It
+adds a `value` column, with the `transformation` used and its `unit`:
+
+```{r}
+#| label: transform
+data_full |>
+  filter(variable == "Y", year %in% 2020:2024) |>
+  threeme_transform("reldiff") |>
+  select(variable, year, scenario, values, values_ref, value, unit)
+```
+
+```{r}
+#| label: transformations
+#| echo: false
+tr <- threeme_transformations()
+data.frame(
+  id = names(tr),
+  meaning = vapply(tr, function(x) x$label, character(1)),
+  row.names = NULL
+)
+```
+
+One call can mix them, with a vector named by variable. The element without a
+name is used for the variables that are not named:
+
+```{r}
+#| label: mixed
+data_full |>
+  filter(variable %in% c("Y", "MU"), year == 2025) |>
+  threeme_transform(c(MU = "ppdiff", "reldiff")) |>
+  select(variable, scenario, value, unit)
+```
+
+### Growth rates
+
+```{r}
+#| label: growth
+data_full |>
+  filter(variable == "Y", year %in% 2019:2023) |>
+  threeme_transform("gr") |>
+  select(variable, year, scenario, value)
+```
+
+By hand, the series has to be grouped and sorted first:
+
+```{r}
+#| label: growth-by-hand
+data_full |>
+  filter(variable == "Y") |>
+  group_by(variable, scenario) |>
+  arrange(year, .by_group = TRUE) |>
+  mutate(growth = values / lag(values) - 1) |>
+  ungroup() |>
+  filter(year %in% 2020:2022)
+```
+
+### A new variable from existing ones
+
+A ratio, a sum or a share needs the variables side by side. The steps are
+always the same: keep the variables, put them in columns, compute, and put the
+result back in lines so that it stacks under `data_full`.
+
+`values` and `values_ref` are both carried along, so the new variable has its
+own baseline and works with everything on this page.
+
+```{r}
+#| label: composite
+share <- data_full |>
+  filter(variable %in% c("CH", "Y")) |>
+  select(variable, year, scenario, index_scen, values, values_ref) |>
+  ## one column per variable, for the scenario and for the baseline
+  pivot_wider(names_from = variable, values_from = c(values, values_ref)) |>
+  ## the share of consumption in output
+  mutate(values     = values_CH / values_Y,
+         values_ref = values_ref_CH / values_ref_Y,
+         variable   = "CH_SHARE") |>
+  select(variable, year, scenario, index_scen, values, values_ref)
+
+data_plus <- bind_rows(data_full, share)
+
+data_plus |> filter(variable == "CH_SHARE", year == 2025)
+```
+
+The new variable is a share: its deviation is read in points. `value` is in
+the unit of the variable, so -0.0077 on a share is -0.77 point.
+
+```{r}
+#| label: composite-use
+data_plus |>
+  filter(variable == "CH_SHARE", year %in% c(2021, 2025, 2030)) |>
+  threeme_transform("ppdiff") |>
+  select(variable, year, scenario, value, unit)
+```
+
+### A sum over sectors or commodities
+
+On a ThreeME database, the lines of the sectors are summed after a `group_by()`
+that leaves the sector out:
+
+```{r}
+#| eval: false
+data_full |>
+  filter(grepl("^EMS_S", variable)) |>
+  group_by(year, scenario, index_scen) |>
+  summarise(values = sum(values), values_ref = sum(values_ref), .groups = "drop") |>
+  mutate(variable = "EMS_SECTORS")
+```
+
+A sum is only right for quantities. Prices and rates need a weighted mean:
+this is what the aggregation rules of the package hold, and what the `sec`,
+`com` and `sec_com` databases apply.
+
+## From long to wide, and back
+
+A table with one column per variable is easier to read, to export, and to
+compute on.
+
+```{r}
+#| label: wide
+wide <- data_full |>
+  filter(scenario == "g") |>
+  select(year, variable, values) |>
+  pivot_wider(names_from = variable, values_from = values)
+
+head(wide, 4)
+```
+
+One column per scenario, to compare them:
+
+```{r}
+#| label: wide-scenarios
+data_full |>
+  filter(variable == "Y", year %in% 2020:2023) |>
+  select(year, scenario, values) |>
+  pivot_wider(names_from = scenario, values_from = values)
+```
+
+And back to one line per variable:
+
+```{r}
+#| label: long
+wide |>
+  pivot_longer(-year, names_to = "variable", values_to = "values") |>
+  head(4)
+```
+
+## Showing
+
+### A plot
+
+`simple_plot()` takes `data_full` as it is. The labels come from the
+dictionary.
+
+```{r}
+#| label: fig-simple
+#| fig-cap: "Deviation from the baseline"
+simple_plot(data_full, c("Y", "CH", "I"))
+```
+
+The long format is also what `ggplot2` expects, for a plot of your own:
+
+```{r}
+#| label: fig-ggplot
+#| fig-cap: "The same data, with ggplot2"
+data_full |>
+  filter(variable %in% c("Y", "CH", "I"), scenario == "g") |>
+  ggplot(aes(x = year, y = values / values_ref - 1, colour = variable)) +
+  geom_line() +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = NULL, y = NULL, colour = NULL)
+```
+
+### A table
+
+```{r}
+#| label: tbl-simple
+table_3me(data_full,
+          variables = list(Activity = c("Y", "CH", "I"), Margins = "MU"),
+          transformation = c(MU = "ppdiff", "reldiff"))
+```
+
+See [Graphs and tables with ermeeth2](graphs_and_tables.html) for what these
+two functions can do.
+
+## Saving
+
+```{r}
+#| eval: false
+## as the simulations do: data/output/my_project.parquet
+save_3me_output(data_plus, "my_project")
+
+## a spreadsheet, one column per variable
+data_full |>
+  filter(scenario == "g") |>
+  select(year, variable, values) |>
+  pivot_wider(names_from = variable, values_from = values) |>
+  write.csv("results_g.csv", row.names = FALSE)
+```

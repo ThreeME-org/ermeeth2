@@ -35,8 +35,9 @@ local_project <- function(env = parent.frame()) {
     "Rsolver = FALSE",
     "warning = FALSE",
     "tolerance_calib_check = 10^-3",
-    "skip_compiler = FALSE",
-    "recompile_model = TRUE",
+    "skip_dynamo = FALSE",
+    "recompile_model_R = FALSE",
+    "recompile_model_eviews = TRUE",
     "save_files_res = TRUE",
     "output_saved = c(\"com\")",
     "path_eviews_exe = \"C:/EViews.exe\"",
@@ -217,6 +218,53 @@ test_that("the configuration addin saves under a new name, preserving comments",
   })
 })
 
+test_that("the configuration addin rebuilds the file lists when the classification changes", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+  config_edit(f, list(
+    lists_files = I('c(str_c("R_lists_", iso3, "_", classification, ".mdl"), "lists.mdl")'),
+    calib_files = I(paste0('c(lists_files,  # ALL VERSIONS\n',
+                           '  str_c("data/R_Calibration_", iso3, "_", classification, "_", baseyear, ".mdl"),\n',
+                           '  "ENDOFLINE.mdl")')),
+    model_files = I('c(lists_files, "SU.mdl", "ENDOFLINE.mdl")')))
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme")
+    expect_equal(file_lists()$lists_files, c("R_lists_FRA_c8_s8.mdl", "lists.mdl"))
+    # the Files tab is open, the model files were edited by hand
+    session$setInputs(
+      name = "threeme",
+      f_lists_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl",
+      f_calib_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl\ndata/R_Calibration_FRA_c8_s8_2019.mdl",
+      f_model_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl\nSU.mdl\nPrices.mdl")
+
+    session$setInputs(f_classification = "c28_s32", f_baseyear = 2020)
+    expect_equal(file_lists()$lists_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl"))
+    expect_equal(file_lists()$calib_files[3], "data/R_Calibration_FRA_c28_s32_2020.mdl")
+
+    # what the browser sends back once the boxes have been updated
+    session$setInputs(
+      f_lists_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl",
+      f_calib_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl\ndata/R_Calibration_FRA_c28_s32_2020.mdl",
+      f_model_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl\nSU.mdl\nPrices.mdl")
+    session$setInputs(save = 1)
+
+    out <- readLines(f)
+    v <- read_config_values(f)
+    expect_equal(v$classification, "c28_s32")
+    expect_equal(v$lists_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl"))
+    expect_equal(v$calib_files[3], "data/R_Calibration_FRA_c28_s32_2020.mdl")
+    # the lists left alone still build their names from the classification
+    expect_true(any(grepl('str_c("R_lists_", iso3', out, fixed = TRUE)))
+    expect_true(any(grepl("ALL VERSIONS", out)))
+    # the edited one is written out, in the new classification
+    expect_equal(v$model_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl", "SU.mdl",
+                                  "Prices.mdl", "ENDOFLINE.mdl"))
+  })
+})
+
 test_that("the configuration addin writes the solver options under their config names", {
   skip_if_no_shiny()
   d <- local_project()
@@ -233,7 +281,7 @@ test_that("the configuration addin writes the solver options under their config 
                       f_Rsolver_damping = FALSE,
                       f_Rsolver_sequential = TRUE, f_Rsolver_reuse_jacobian = "FALSE",
                       f_eviews_algorithm = "newton", f_eviews_digits = 8,
-                      f_eviews_max_iter = 9000)
+                      f_eviews_max_iter = 9000L)
     session$setInputs(save = 1)
 
     f <- file.path(cfg, "config_input_threeme.R")
@@ -248,6 +296,9 @@ test_that("the configuration addin writes the solver options under their config 
     expect_equal(v$eviews_algorithm, "newton")
     expect_equal(v$eviews_digits, 8)
     expect_equal(v$eviews_max_iter, 9000)
+    # whole numbers are written as doubles, as the browser sends integers
+    expect_type(v$eviews_max_iter, "double")
+    expect_false(any(grepl("[0-9]L\\b", readLines(f))))
     # `Rcpp` was replaced where it stood, not appended a second time
     expect_equal(sum(grepl("^Rcpp\\s*=", readLines(f))), 1)
   })
@@ -322,6 +373,42 @@ test_that("the configuration addin adds ENDOFLINE.mdl itself", {
     expect_equal(v$model_files, c("SU.mdl", "Prices.mdl", "ENDOFLINE.mdl"))
     # the lists file list is not a closed one
     expect_equal(v$lists_files, "lists.mdl")
+  })
+})
+
+test_that("the configuration addin edits the aggregated outputs, down to none", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme", name = "threeme")
+    # the Solver tab was never opened: output_saved is left alone
+    expect_false("output_saved" %in% names(edits()))
+
+    session$setInputs(f_Rsolver = TRUE, f_output_saved = c("com", "sec_com"))
+    expect_equal(as.character(edits()$output_saved), 'c("com", "sec_com")')
+    # nothing ticked, with the tab open, means none
+    session$setInputs(f_output_saved = NULL)
+    expect_equal(as.character(edits()$output_saved), "c()")
+    session$setInputs(save = 1)
+    expect_null(read_config_values(f)$output_saved)
+  })
+})
+
+test_that("the configuration addin shows the default of an option the file lacks", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+  # an incomplete file: no max_lags, though firstyear is computed from it
+  writeLines(grep("^max_lags", readLines(f), invert = TRUE, value = TRUE), f)
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme")
+    expect_null(values()$max_lags)
+    expect_equal(values()$firstyear, 2019 - config_defaults()$max_lags)
   })
 })
 

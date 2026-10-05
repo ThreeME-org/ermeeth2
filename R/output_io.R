@@ -1,15 +1,21 @@
 #' Write a ThreeME output database
 #'
 #' @description Writes one of the simulation output databases to `data/output`,
-#'   in any combination of RDS and Parquet. Parquet is written with zstd
+#'   as Parquet (the default), RDS, or both. Parquet is written with zstd
 #'   compression; it is about as small as a compressed `.rds`, roughly twice as
 #'   fast to write, and can be read back selectively by [read_3me_output()].
+#'
+#'   Parquet needs the `arrow` package. Without it the database is written as
+#'   `.rds` instead, with a warning, so that a run never ends with no output.
+#'
+#'   A file of the other format left by an earlier run is not touched, and is
+#'   pointed out: it no longer matches the results just written.
 #'
 #' @param data data.frame. The database to write.
 #' @param project_name character. Project name, used as the file stem.
 #' @param suffix character or `NULL`. Aggregation level suffix, e.g. `"com"`,
 #'   `"sec"`, `"sec_com"`. `NULL` for the main database.
-#' @param formats character vector. `"rds"`, `"parquet"` or both.
+#' @param formats character vector. `"parquet"` (default), `"rds"` or both.
 #' @param dir character. Output directory.
 #'
 #' @returns The paths written, invisibly.
@@ -17,11 +23,16 @@
 save_3me_output <- function(data,
                             project_name,
                             suffix = NULL,
-                            formats = c("rds", "parquet"),
+                            formats = "parquet",
                             dir = file.path("data", "output")) {
 
   formats <- match.arg(formats, c("rds", "parquet"), several.ok = TRUE)
   if (!dir.exists(dir)) dir.create(dir, recursive = TRUE)
+
+  if ("parquet" %in% formats && !requireNamespace("arrow", quietly = TRUE)) {
+    cli::cli_alert_warning("Package {.pkg arrow} is not installed: the output is written as {.file .rds} instead of {.file .parquet}. Install it with {.code pak::pak(\"arrow\")}.")
+    formats <- "rds"
+  }
 
   stem <- if (is.null(suffix) || !nzchar(suffix)) project_name else paste0(project_name, "_", suffix)
   written <- character(0)
@@ -33,13 +44,17 @@ save_3me_output <- function(data,
   }
 
   if ("parquet" %in% formats) {
-    if (!requireNamespace("arrow", quietly = TRUE)) {
-      cli::cli_alert_warning("Package {.pkg arrow} is not installed, the parquet output was skipped. Install it with {.code pak::pak(\"arrow\")}.")
-    } else {
-      f <- file.path(dir, paste0(stem, ".parquet"))
-      arrow::write_parquet(data, f, compression = "zstd")
-      written <- c(written, f)
-    }
+    f <- file.path(dir, paste0(stem, ".parquet"))
+    arrow::write_parquet(data, f, compression = "zstd")
+    written <- c(written, f)
+  }
+
+  ## The same database in the format not written this time is now out of date,
+  ## and readRDS() on it would quietly return the previous run.
+  stale <- file.path(dir, paste0(stem, ".", setdiff(c("rds", "parquet"), formats)))
+  stale <- stale[file.exists(stale)]
+  if (length(stale)) {
+    cli::cli_alert_warning("{.file {stale}} is from an earlier run and was not updated. Read the results with {.fn read_3me_output}, which takes the most recent file.")
   }
 
   invisible(written)
@@ -48,10 +63,15 @@ save_3me_output <- function(data,
 
 #' Read a ThreeME output database
 #'
-#' @description Reads back a database written by [save_3me_output()]. When a
-#'   parquet file is available, `variables`, `scenarios` and `years` are pushed
-#'   down into the read, so only the rows and columns asked for are ever
-#'   materialised; filtering a whole `.rds` afterwards costs the full load.
+#' @description Reads back a database written by [save_3me_output()], whichever
+#'   format it was written in. When a parquet file is available, `variables`,
+#'   `scenarios` and `years` are pushed down into the read, so only the rows
+#'   and columns asked for are ever materialised; filtering a whole `.rds`
+#'   afterwards costs the full load.
+#'
+#'   When both a `.parquet` and an `.rds` are there, the parquet is read unless
+#'   the `.rds` is more recent, that is, unless the last run only wrote the
+#'   `.rds`.
 #'
 #' @param project_name character. Project name.
 #' @param suffix character or `NULL`. `NULL` (default) for the main database,
@@ -80,7 +100,8 @@ read_3me_output <- function(project_name,
   pq  <- file.path(dir, paste0(stem, ".parquet"))
   rds <- file.path(dir, paste0(stem, ".rds"))
 
-  use_parquet <- file.exists(pq) && requireNamespace("arrow", quietly = TRUE)
+  use_parquet <- file.exists(pq) && requireNamespace("arrow", quietly = TRUE) &&
+    !(file.exists(rds) && file.mtime(rds) > file.mtime(pq))
 
   if (use_parquet) {
     out <- arrow::open_dataset(pq)

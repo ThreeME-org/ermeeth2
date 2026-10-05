@@ -9,6 +9,9 @@
 ^dev$
 ^documentation$
 ^plop$
+^shiny_trial$
+^_extensions$
+^wwww$
 ^ermeeth2_handoff\.md$
 ^CLAUDE\.md$
 ^PLAN\.md$

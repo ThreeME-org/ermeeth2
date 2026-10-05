@@ -69,8 +69,22 @@ threeme_variable_palette <- function() {
 ## Turn variable codes into display labels. `labels` is a named vector
 ## (code -> label); codes it does not name keep their code. The dictionary of
 ## ThreeME variables is not built yet - when it is, it plugs in here.
-pretty_labels <- function(codes, labels = NULL) {
+pretty_labels <- function(codes, labels = NULL, data = NULL, lang = "en",
+                          short = FALSE, dict = NULL, force_short = 25) {
   out <- stats::setNames(as.character(codes), codes)
+  if (isFALSE(labels)) return(out)
+  ## the dictionary first: what `labels` says comes on top of it
+  out[] <- dictionary_labels_resolved(codes, n_index = index_count(data, codes),
+                                      lang = lang, short = short, dict = dict)
+  ## a dictionary label too long to sit in a legend or a table row gives way
+  ## to the code; the labels the caller wrote are left as they are
+  if (!is.numeric(force_short) || length(force_short) != 1 || is.na(force_short) || force_short < 0) {
+    cli::cli_abort("{.arg force_short} must be a single number: 0 for no limit, or the longest label allowed.")
+  }
+  if (force_short > 0) {
+    too_long <- nchar(out) > force_short
+    out[too_long] <- names(out)[too_long]
+  }
   if (is.null(labels)) return(out)
   if (is.null(names(labels))) {
     ## positional labels, as the old simple_plot() accepted
@@ -82,6 +96,18 @@ pretty_labels <- function(codes, labels = NULL) {
   common <- intersect(names(labels), codes)
   out[common] <- labels[common]
   out
+}
+
+## How many of the index columns (sector, commodity) each variable fills in
+## the data: `CID_CIND_SIND` fills both, so its last two parts are its indices.
+index_count <- function(data, codes) {
+  n <- stats::setNames(integer(length(codes)), codes)
+  if (is.null(data)) return(n)
+  for (col in intersect(c("sector", "commodity"), names(data))) {
+    has <- unique(data$variable[!is.na(data[[col]]) & nzchar(as.character(data[[col]]))])
+    n[intersect(codes, has)] <- n[intersect(codes, has)] + 1L
+  }
+  n
 }
 
 ## Append the sector / commodity to a label when the data carries one.

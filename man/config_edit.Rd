@@ -11,7 +11,8 @@ config_edit(file, values, out = file)
 
 \item{values}{a named list of replacements. Each element is either R source
 text (wrap it in \code{\link[=I]{I()}} to say "this is already code") or a value to be
-deparsed.}
+deparsed. A list of files wrapped in \code{\link[=config_files]{config_files()}} is edited in place
+instead, so that its comments and commented-out alternatives survive.}
 
 \item{out}{where to write. Defaults to \code{file}, editing in place.}
 }

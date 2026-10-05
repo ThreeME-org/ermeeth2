@@ -272,6 +272,51 @@ dict_labels <- function(codes, lang = "en", short = FALSE, dict = NULL) {
   stats::setNames(dict_label(codes, lang = lang, short = short, dict = dict), codes)
 }
 
+#' Labels of the variables of a dataset, indexed ones included
+#'
+#' The dictionary is keyed on the root code (`CH`), the results carry one
+#' variable per element (`CH_CIND`, `F_K_SSER`, `CID_CIND_SIND`). A code the
+#' dictionary does not hold is cut back, one `_` part at a time, to the longest
+#' root it knows. The parts cut off that are not the sector or the commodity
+#' (those are shown from their own columns) are kept in brackets:
+#' `F_K_SSER` reads as the label of `F`, followed by `(K)`.
+#'
+#' @param codes character vector of variable codes.
+#' @param n_index how many trailing parts of each code are its sector and
+#'   commodity. One value, or one per code.
+#' @inheritParams dict_label
+#'
+#' @returns a character vector as long as `codes`; the code itself where no
+#'   root is known.
+#' @keywords internal
+dictionary_labels_resolved <- function(codes, n_index = 0L, lang = "en",
+                                       short = FALSE, dict = NULL) {
+  codes <- as.character(codes)
+  lang <- match.arg(lang, dictionary_languages())
+  d <- threeme_dictionary(dict)
+  n_index <- rep_len(as.integer(n_index), length(codes))
+  out <- dict_label(codes, lang = lang, short = short, dict = d, fallback = "na")
+  for (i in which(is.na(out))) {
+    parts <- strsplit(codes[i], "_", fixed = TRUE)[[1]]
+    for (k in rev(seq_len(length(parts) - 1L))) {
+      root <- paste(parts[seq_len(k)], collapse = "_")
+      lab <- dict_label(root, lang = lang, short = short, dict = d, fallback = "na")
+      if (is.na(lab)) next
+      rest <- parts[-seq_len(k)]
+      ## at most `n_index` parts, and only parts that read as a sector or a
+      ## commodity (`SSER`, `C001`): the results sometimes fill both columns
+      ## for a variable that has one index
+      is_element <- grepl("^[SC][A-Z0-9]{3}$", rest)
+      trailing <- if (all(is_element)) length(rest) else length(rest) - max(which(!is_element))
+      rest <- rest[seq_len(length(rest) - min(n_index[i], trailing))]
+      out[i] <- if (length(rest)) paste0(lab, " (", paste(rest, collapse = "_"), ")") else lab
+      break
+    }
+  }
+  out[is.na(out)] <- codes[is.na(out)]
+  out
+}
+
 #' Default transformations as a named vector, ready for `transformation =`
 #'
 #' [table_3me()] accepts a `transformation` named by variable, which is how one
