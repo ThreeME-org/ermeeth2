@@ -16,7 +16,7 @@ loadResults(
   names_s = NULL,
   names_c = NULL,
   csv_folder = "csv",
-  aggregation_rules_path = file.path("bridges", "aggregation_rules.xlsx")
+  aggregation_rules_path = file.path("bridges", "aggregation_rules.csv")
 )
 }
 \arguments{
@@ -36,7 +36,8 @@ loadResults(
 
 \item{csv_folder}{path where to source the csv from simulations}
 
-\item{aggregation_rules_path}{path where to find the aggregation rules table}
+\item{aggregation_rules_path}{path to the csv file of aggregation rules; see
+\code{\link[=read_aggregation_rules]{read_aggregation_rules()}}}
 }
 \value{
 A data.frame with the following columns:

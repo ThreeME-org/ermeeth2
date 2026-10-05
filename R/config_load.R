@@ -65,6 +65,8 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   Rcpp = NULL
   rcpp_option = NULL
   Rsolver_decompose = NULL
+  Rsolver_sequential = NULL
+  Rsolver_reuse_jacobian = NULL
   Rsolver_rtol = NULL
   Rsolver_atol = NULL
   Rsolver_max_iter = NULL
@@ -117,6 +119,17 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   for (nm in names(solver_defaults)) {
     if (is.null(get(nm))) assign(nm, solver_defaults[[nm]])
   }
+  ## "auto", TRUE or FALSE; a file may also write it as "true" / "false".
+  if (is.character(Rsolver_reuse_jacobian) && length(Rsolver_reuse_jacobian) == 1L &&
+      tolower(Rsolver_reuse_jacobian) %in% c("true", "false")) {
+    Rsolver_reuse_jacobian <- tolower(Rsolver_reuse_jacobian) == "true"
+  }
+  if (!(isTRUE(Rsolver_reuse_jacobian) || isFALSE(Rsolver_reuse_jacobian) ||
+        identical(tolower(Rsolver_reuse_jacobian), "auto"))) {
+    cli::cli_abort(c("Unknown {.code Rsolver_reuse_jacobian} in {.file {input_config_file}}: {.val {Rsolver_reuse_jacobian}}.",
+                     "i" = "Use {.val auto}, {.code TRUE} or {.code FALSE}."))
+  }
+  if (is.character(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian <- "auto"
   eviews_algorithm <- tolower(eviews_algorithm)
   if (!eviews_algorithm %in% eviews_algorithms()) {
     cli::cli_abort(c("Unknown {.code eviews_algorithm} in {.file {input_config_file}}: {.val {eviews_algorithm}}.",
@@ -161,6 +174,8 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
         recompile_model = recompile_model,
         Rcpp = Rcpp,
         Rsolver_decompose = Rsolver_decompose,
+        Rsolver_sequential = Rsolver_sequential,
+        Rsolver_reuse_jacobian = Rsolver_reuse_jacobian,
         Rsolver_rtol = Rsolver_rtol,
         Rsolver_atol = Rsolver_atol,
         Rsolver_max_iter = Rsolver_max_iter,
@@ -194,6 +209,15 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 #'   * `Rcpp`: `TRUE` for the compiled solver (thortwo's `sparse` backend),
 #'     `FALSE` for the pure R one (`sparse-r`), which needs no compiler.
 #'   * `Rsolver_decompose`: split the model into prologue, heart and epilogue.
+#'   * `Rsolver_sequential`: solve the prologue and the epilogue one equation
+#'     at a time, in dependency order, instead of by Newton. Same solution and
+#'     about the same speed; its use is the error message, which names the
+#'     equation and the variable that cannot be determined.
+#'   * `Rsolver_reuse_jacobian`: keep the factorised jacobian from one Newton
+#'     iteration to the next within a period. `"auto"` lets thortwo decide (on
+#'     with `Rcpp = TRUE`, where it makes a large model about three times
+#'     faster to solve; off in pure R), `TRUE` / `FALSE` force it. `FALSE` is
+#'     plain Newton.
 #'   * `Rsolver_rtol`, `Rsolver_atol`: relative and absolute tolerance.
 #'   * `Rsolver_max_iter`: maximum number of Newton iterations per period.
 #'   * `Rsolver_damping`: damp the Newton steps.
@@ -215,6 +239,8 @@ config_solver_defaults <- function() {
   list(
     Rcpp              = TRUE,
     Rsolver_decompose = TRUE,
+    Rsolver_sequential = FALSE,
+    Rsolver_reuse_jacobian = "auto",
     Rsolver_rtol      = 1e-10,
     Rsolver_atol      = 1e-8,
     Rsolver_max_iter  = 100,

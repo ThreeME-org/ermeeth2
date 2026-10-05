@@ -15,7 +15,8 @@
 #'   thortwo caches what it builds, so a model whose equations have not changed
 #'   is loaded rather than rebuilt; `recompile_model = TRUE` in the
 #'   configuration forces the rebuild. The remaining solver options
-#'   (`Rsolver_decompose`, `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
+#'   (`Rsolver_decompose`, `Rsolver_sequential`, `Rsolver_reuse_jacobian`,
+#'   `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
 #'   `Rsolver_damping`, `Rsolver_verbose`) are read from the configuration; see
 #'   [config_solver_defaults()].
 #'
@@ -36,6 +37,8 @@ R_model_solver <- function(config_file = configuration,
   calib_test <- NULL
   tolerance_calib_check <- NULL
   Rsolver_decompose <- NULL
+  Rsolver_sequential <- NULL
+  Rsolver_reuse_jacobian <- NULL
   Rsolver_rtol <- NULL
   Rsolver_atol <- NULL
   Rsolver_max_iter <- NULL
@@ -80,6 +83,7 @@ R_model_solver <- function(config_file = configuration,
     equations    = model_to_build$equations,
     backend      = backend,
     decompose    = isTRUE(Rsolver_decompose),
+    sequential   = isTRUE(Rsolver_sequential),
     recompile    = isTRUE(recompile_model),
     verbose      = isTRUE(Rsolver_verbose))
 
@@ -156,14 +160,20 @@ R_model_solver <- function(config_file = configuration,
     ## No `skip_tests`: thortwo's checks are vectorised over the data matrix
     ## and cost nothing, and they name the missing variable instead of letting
     ## the solve fail twenty periods later.
-    solved_data[[scenar_solved]] <- thortwo::thor_solve(
-      themodel,
-      from = baseyear, to = lastyear,
-      data = data_for_solver[[scenar_solved]],
-      index_time = "year",
-      rtol = Rsolver_rtol, atol = Rsolver_atol,
-      max_iter = Rsolver_max_iter, damping = isTRUE(Rsolver_damping),
-      verbose = isTRUE(Rsolver_verbose)) |>
+    solved_data[[scenar_solved]] <- withCallingHandlers(
+      thortwo::thor_solve(
+        themodel,
+        from = baseyear, to = lastyear,
+        data = data_for_solver[[scenar_solved]],
+        index_time = "year",
+        rtol = Rsolver_rtol, atol = Rsolver_atol,
+        max_iter = Rsolver_max_iter, damping = isTRUE(Rsolver_damping),
+        ## "auto" leaves the choice to thortwo: on when compiled, off in pure R
+        reuse_jacobian = if (is.logical(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian else NULL,
+        verbose = isTRUE(Rsolver_verbose)),
+      ## The equations are passed to thortwo without names, so its messages
+      ## refer to them by its own ids (`eq_2528`). Show the equations meant.
+      error = function(e) show_thor_equations(conditionMessage(e), themodel)) |>
       select(year, any_of(tolower(variables_to_keep)) )
 
   }
@@ -177,4 +187,30 @@ R_model_solver <- function(config_file = configuration,
 
 
 
+}
+
+#' Print the equations a thortwo error message refers to
+#'
+#' @description ermeeth2 passes the equations to thortwo without names, so
+#'   thortwo names them itself (`eq_1`, `eq_2`, ...) and its error messages use
+#'   those ids. This prints the text of each equation a message mentions, so
+#'   that "equation 'eq_2528' could not be solved for 'pk_sgzx'" can be read.
+#'   The error itself is left to propagate.
+#'
+#' @param msg the error message.
+#' @param model the `thor_model`.
+#'
+#' @returns invisibly, the equations found, named by id.
+#' @keywords internal
+show_thor_equations <- function(msg, model) {
+  ids <- unique(regmatches(msg, gregexpr("\\beq_[0-9]+\\b", msg))[[1]])
+  eq <- tryCatch(model@equations, error = function(e) NULL)
+  if (!length(ids) || is.null(eq)) return(invisible(character(0)))
+  found <- stats::setNames(eq$equation[match(ids, eq$name)], ids)
+  found <- found[!is.na(found)]
+  for (id in names(found)) {
+    cli::cli_alert_danger("Equation {.field {id}}:")
+    cli::cli_verbatim(paste0("    ", found[[id]]))
+  }
+  invisible(found)
 }

@@ -19,8 +19,12 @@
 #'
 #' @param data ThreeME result database, in wide form (one column per scenario).
 #' @param scenarios scenarios existing
-#' @param agg_s_table which aggregation rules to use for sectors. Default is "aggregation_rules" to use the ones from aggregation_rules.xlsx
-#' @param agg_c_table which aggregation rules to use for commodities. Default is "aggregation_rules" to use the ones from aggregation_rules.xlsx
+#' @param agg_s_table which aggregation rules to use for sectors. The default,
+#'   `"aggregation_rules"`, is the table shipped with the package, which is
+#'   the only copy of the ThreeME rules. Any other name is a csv file of that
+#'   name, without its extension, looked for in `src/bridges` and then on the
+#'   shared ThreeME data. See [read_aggregation_rules()] for the format.
+#' @param agg_c_table same, for commodities.
 #' @param by_com Boolean. Whether to aggregate by commodities. Default is TRUE
 #' @param by_sec Boolean. Whether to aggregate by commodities. Default is TRUE
 #' @param bridge_com Commodities bridge file  indicating how to aggregate by commodities
@@ -35,8 +39,6 @@
 #'
 #' @keywords internal
 #'
-#' @importFrom readxl read_excel
-#' @importFrom readr read_csv2
 #' @importFrom purrr safely
 #' @importFrom data.table as.data.table data.table rbindlist set setnames fifelse
 #' @import dplyr stringr
@@ -92,58 +94,8 @@ aggregate_com_sec <- function(data = data_full,
   }
 
   # Retrieve right version of aggregation rules
-
-  if(agg_s_table == "aggregation_rules" & agg_s_table == "aggregation_rules"){
-
-    if(file.exists(file.path("src","bridges", paste0(agg_s_table, ".xlsx")))){
-      agg_s_table <- readxl::read_excel(file.path("src","bridges", paste0(agg_s_table, ".xlsx")), sheet = "sectors")
-      agg_c_table <- readxl::read_excel(file.path("src","bridges", paste0(agg_c_table, ".xlsx")), sheet = "commodities")
-    }else{
-      # If the aggregation rules are not changed, the program will not pass by get_remote_file()
-      agg_s_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "sectors")
-      agg_c_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "commodities")
-    }
-
-  }else{
-    if(file.exists(file.path("src","bridges", paste0(agg_s_table, ".csv")))){
-      agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) |>
-        dplyr::filter(sec_com == "sectors") |> dplyr::select(-sec_com)
-    }else{
-      safe_get_remote_file <- purrr::safely(get_remote_file)
-      downloader <- safe_get_remote_file(object = paste0(agg_s_table, ".csv"),
-                                         destination.folder = file.path("src","bridges"))
-      if(!is.null(downloader$error)){ # If the file cannot be downloaded
-        cli::cli_alert_warning("Aggregation rule cannot be downloaded, using the default rule instead.")
-        agg_s_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "sectors")
-      }else if(downloader$result){
-        agg_s_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_s_table, ".csv"))) |>
-          dplyr::filter(sec_com == "sectors") |> dplyr::select(-sec_com)
-      }else{ # If the file does not exist on the remote
-        cli::cli_alert_warning("Aggregation rule does not exist, using the default rule instead.")
-        agg_s_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "sectors")
-      }
-    }
-
-    if(file.exists(file.path("src","bridges", paste0(agg_c_table, ".csv")))){
-      agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) |>
-        dplyr::filter(sec_com == "commodities") |> dplyr::select(-sec_com)
-    }else{
-      safe_get_remote_file <- purrr::safely(get_remote_file)
-      downloader <- safe_get_remote_file(object = paste0(agg_c_table, ".csv"),
-                                         destination.folder = file.path("src","bridges"))
-
-      if(!is.null(downloader$error)){ # If the file cannot be downloaded
-        cli::cli_alert_warning("Aggregation rule cannot be downloaded, using the default rule instead.")
-        agg_c_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "commodities")
-      }else if(downloader$result){
-        agg_c_table <- readr::read_csv2(file.path("src","bridges", paste0(agg_c_table, ".csv"))) |>
-          dplyr::filter(sec_com == "commodities") |> dplyr::select(-sec_com)
-      }else{ # If the file does not exist on the remote
-        cli::cli_alert_warning("Aggregation rule does not exist, using the default rule instead.")
-        agg_c_table = readxl::read_excel(path = system.file("aggregation_rules.xlsx",package = "ermeeth2"), sheet = "commodities")
-      }
-    }
-  }
+  agg_s_table <- aggregation_rules(agg_s_table, "sectors")
+  agg_c_table <- aggregation_rules(agg_c_table, "commodities")
 
   ## ------------------------------------------------------------------
   ## 1. Codes are taken from the bridge, not guessed from a name pattern.
@@ -308,4 +260,94 @@ aggregate_com_sec <- function(data = data_full,
   }
 
   list(og_data, com_agg_data, sec_agg_data, com_sec_agg_data)
+}
+
+#' Read a table of aggregation rules
+#'
+#' @description The rules say how a variable is aggregated when sectors or
+#'   commodities are grouped. They are kept in one csv file with the columns:
+#'
+#'   * `sec_com`: `sectors` or `commodities`, the dimension the rule is for;
+#'   * `var_root`: the variable, without its sector or commodity codes;
+#'   * `sum`, `mean`, `weighted_mean`: 1 for the rule that applies, 0 for the
+#'     others;
+#'   * `weight_var`: the weighting variable, for a weighted mean. One at most.
+#'
+#'   The table shipped with the package carries two more columns, which the
+#'   aggregation does not read:
+#'
+#'   * `manual_add`: 1 for a rule specified by a user, 0 for one filled in by
+#'     default and never looked at by anyone;
+#'   * `checked`: 1 once the rule has been reviewed, 0 until then.
+#'
+#'   The separator is detected, so a file written with `;` reads too.
+#'
+#' @param file path to the csv file.
+#' @param which `"sectors"` or `"commodities"`.
+#'
+#' @returns a data frame with `var_root`, `sum`, `mean`, `weighted_mean` and
+#'   `weight_var`, for the dimension asked.
+#' @export
+#'
+#' @examples
+#' rules <- system.file("aggregation_rules.csv", package = "ermeeth2")
+#' head(read_aggregation_rules(rules, "sectors"))
+read_aggregation_rules <- function(file, which = c("sectors", "commodities")) {
+  which <- match.arg(which)
+  if (!file.exists(file)) cli::cli_abort("no such file: {.file {file}}")
+  rules <- data.table::fread(file, data.table = FALSE, na.strings = c("", "NA"),
+                             encoding = "UTF-8")
+  needed <- c("sec_com", "var_root", "sum", "mean", "weighted_mean", "weight_var")
+  if (!all(needed %in% names(rules))) {
+    cli::cli_abort(c("{.file {file}} is not a table of aggregation rules.",
+                     "x" = "Missing column{?s}: {.val {setdiff(needed, names(rules))}}."))
+  }
+  rules <- rules[rules$sec_com == which, setdiff(needed, "sec_com"), drop = FALSE]
+  for (v in c("sum", "mean", "weighted_mean")) rules[[v]] <- as.numeric(rules[[v]])
+  rules$weight_var <- as.character(rules$weight_var)
+  rownames(rules) <- NULL
+  rules
+}
+
+#' Find and read the aggregation rules a run asks for
+#'
+#' @description The default rules are the table shipped with the package: it
+#'   is the only copy, so that a project cannot run on rules that have drifted
+#'   from it. Any other name is looked for as `<name>.csv` in the project's
+#'   `src/bridges`, then on the shared ThreeME data, and falls back to the
+#'   default rules when it cannot be found.
+#'
+#' @param name the name of the rules, without extension.
+#' @param which `"sectors"` or `"commodities"`.
+#'
+#' @returns a data frame, as [read_aggregation_rules()] returns it.
+#' @keywords internal
+aggregation_rules <- function(name = "aggregation_rules",
+                              which = c("sectors", "commodities")) {
+  which <- match.arg(which)
+  local <- function(nm) file.path("src", "bridges", paste0(nm, ".csv"))
+  default <- function() {
+    ## A copy left in the project would otherwise look like it is in use.
+    stray <- file.path("src", "bridges", paste0("aggregation_rules", c(".csv", ".xlsx")))
+    stray <- stray[file.exists(stray)]
+    if (length(stray)) {
+      cli::cli_alert_warning("{.file {stray}} {?is/are} not read: the aggregation rules are those shipped with ermeeth2. Delete {?it/them}, or rename {?it/them} and pass the new name to use {?it/them}.")
+    }
+    read_aggregation_rules(system.file("aggregation_rules.csv", package = "ermeeth2"), which)
+  }
+
+  if (identical(name, "aggregation_rules")) return(default())
+  if (file.exists(local(name))) return(read_aggregation_rules(local(name), which))
+
+  downloader <- purrr::safely(get_remote_file)(object = paste0(name, ".csv"),
+                                               destination.folder = file.path("src", "bridges"))
+  if (!is.null(downloader$error)) {
+    cli::cli_alert_warning("Aggregation rule cannot be downloaded, using the default rule instead.")
+    default()
+  } else if (isTRUE(downloader$result)) {
+    read_aggregation_rules(local(name), which)
+  } else {
+    cli::cli_alert_warning("Aggregation rule does not exist, using the default rule instead.")
+    default()
+  }
 }

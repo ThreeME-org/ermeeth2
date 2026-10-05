@@ -19,6 +19,15 @@ The R solver options are those of \code{thortwo::thor_model()} and
 \item \code{Rcpp}: \code{TRUE} for the compiled solver (thortwo's \code{sparse} backend),
 \code{FALSE} for the pure R one (\code{sparse-r}), which needs no compiler.
 \item \code{Rsolver_decompose}: split the model into prologue, heart and epilogue.
+\item \code{Rsolver_sequential}: solve the prologue and the epilogue one equation
+at a time, in dependency order, instead of by Newton. Same solution and
+about the same speed; its use is the error message, which names the
+equation and the variable that cannot be determined.
+\item \code{Rsolver_reuse_jacobian}: keep the factorised jacobian from one Newton
+iteration to the next within a period. \code{"auto"} lets thortwo decide (on
+with \code{Rcpp = TRUE}, where it makes a large model about three times
+faster to solve; off in pure R), \code{TRUE} / \code{FALSE} force it. \code{FALSE} is
+plain Newton.
 \item \code{Rsolver_rtol}, \code{Rsolver_atol}: relative and absolute tolerance.
 \item \code{Rsolver_max_iter}: maximum number of Newton iterations per period.
 \item \code{Rsolver_damping}: damp the Newton steps.

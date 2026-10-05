@@ -30,7 +30,8 @@
 #' @param names_c a data.frame used only if no aggregation is requested for commodities. One column "code" should contain the codes used in the commodity variables and a column "name" contains the explicit name.
 #' @param names_s a data.frame used only if no aggregation is requested for sectors. One column "code" should contain the codes used in the sector variables and a column "name" contains the explicit name.
 #' @param csv_folder path where to source the csv from simulations
-#' @param aggregation_rules_path path where to find the aggregation rules table
+#' @param aggregation_rules_path path to the csv file of aggregation rules; see
+#'   [read_aggregation_rules()]
 #'
 #' @importFrom data.table dcast fread
 #' @importFrom stats na.omit
@@ -56,7 +57,7 @@ loadResults <- function(scenarios,
                         names_s = NULL,
                         names_c = NULL,
                         csv_folder = "csv",
-                        aggregation_rules_path = file.path("bridges","aggregation_rules.xlsx")) {
+                        aggregation_rules_path = file.path("bridges","aggregation_rules.csv")) {
 
   variable <- NULL
   subcommodity <- NULL
@@ -195,7 +196,7 @@ loadResults <- function(scenarios,
 
 
     ## Load aggregation rules
-    ag_rule_sector <- read_excel(aggregation_rules_path,sheet = "sectors") |>
+    ag_rule_sector <- read_aggregation_rules(aggregation_rules_path, "sectors") |>
       mutate(check1 = sum + mean + weighted_mean)
 
     # Checks
@@ -429,9 +430,8 @@ loadResults <- function(scenarios,
     ##data_commodity one commodity
     data_commodity_one <- data_commodity |> dplyr::filter(is.na(subcommodity2))
 
-    ag_rule_commodity <- read_excel(aggregation_rules_path,sheet = "commodities") |>
-      mutate(mean = as.numeric(gsub("\\s+","",mean)),
-             check1 = sum + mean + weighted_mean)
+    ag_rule_commodity <- read_aggregation_rules(aggregation_rules_path, "commodities") |>
+      mutate(check1 = sum + mean + weighted_mean)
 
     # Checks
     # View(ag_rule_commodity |> dplyr::filter(is.na(weight_var) & weighted_mean == 1) )

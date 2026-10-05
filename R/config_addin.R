@@ -110,6 +110,11 @@ config_addin_app <- function(path = "configuration") {
   closed_lists <- c("calib_files", "model_files")
   without_marker <- function(x) x[tolower(x) != tolower(end_marker)]
 
+  ## What a `choice` field shows for each value it can take.
+  choice_labels <- c(eviews_algorithms(),
+                     "Automatic (on with Rcpp, off in pure R)" = "auto",
+                     "Always" = "TRUE", "Never (plain Newton)" = "FALSE")
+
   ## One input control per known field, built from config_fields().
   control <- function(row, value) {
     id <- paste0("f_", row$name)
@@ -117,10 +122,14 @@ config_addin_app <- function(path = "configuration") {
            bool   = shiny::checkboxInput(id, row$label, isTRUE(value), width = "100%"),
            choice = {
              allowed <- strsplit(row$choices, "|", fixed = TRUE)[[1]]
-             labels <- names(eviews_algorithms())[match(allowed, eviews_algorithms())]
+             labels <- names(choice_labels)[match(allowed, choice_labels)]
+             ## matched without regard to case, so that a logical value in the
+             ## file finds its "TRUE" / "FALSE" entry
+             current <- if (length(value)) as.character(value[[1]]) else allowed[1]
+             selected <- allowed[match(tolower(current), tolower(allowed))]
              shiny::selectInput(id, row$label,
                                 choices = stats::setNames(allowed, ifelse(is.na(labels), allowed, labels)),
-                                selected = if (length(value)) tolower(value[[1]]) else allowed[1])
+                                selected = if (is.na(selected)) allowed[1] else selected)
            },
            number = shiny::numericInput(id, row$label,
                                         value = if (length(value)) value[[1]] else NA),
@@ -416,6 +425,8 @@ config_addin_app <- function(path = "configuration") {
         if (is.null(val)) next
         if (fields$type[i] == "number" && is.na(val)) next
         if (fields$type[i] %in% c("text", "choice")) val <- as.character(val)
+        ## a choice of TRUE / FALSE goes into the file as a logical
+        if (fields$type[i] == "choice" && val %in% c("TRUE", "FALSE")) val <- as.logical(val)
         out[[nm]] <- I(config_code(val))
       }
       sel <- input$f_scenario

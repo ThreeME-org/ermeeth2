@@ -94,6 +94,7 @@ export(pythagore)
 export(quadratric_splines)
 export(read_3me_eviews_csv)
 export(read_3me_output)
+export(read_aggregation_rules)
 export(read_config_values)
 export(readconfig)
 export(redirect)
@@ -167,7 +168,6 @@ importFrom(purrr,
   safely,
   set_names
 )
-importFrom(readr,read_csv2)
 importFrom(readxl,read_excel)
 importFrom(rlang,.data)
 importFrom(scales,

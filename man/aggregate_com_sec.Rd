@@ -22,9 +22,13 @@ aggregate_com_sec(
 
 \item{scenarios}{scenarios existing}
 
-\item{agg_s_table}{which aggregation rules to use for sectors. Default is "aggregation_rules" to use the ones from aggregation_rules.xlsx}
+\item{agg_s_table}{which aggregation rules to use for sectors. The default,
+\code{"aggregation_rules"}, is the table shipped with the package, which is
+the only copy of the ThreeME rules. Any other name is a csv file of that
+name, without its extension, looked for in \code{src/bridges} and then on the
+shared ThreeME data. See \code{\link[=read_aggregation_rules]{read_aggregation_rules()}} for the format.}
 
-\item{agg_c_table}{which aggregation rules to use for commodities. Default is "aggregation_rules" to use the ones from aggregation_rules.xlsx}
+\item{agg_c_table}{same, for commodities.}
 
 \item{by_com}{Boolean. Whether to aggregate by commodities. Default is TRUE}
 

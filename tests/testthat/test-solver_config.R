@@ -58,6 +58,35 @@ test_that("readconfig reads the solver options a file sets", {
   expect_equal(adv$Rsolver_atol, config_solver_defaults()$Rsolver_atol)
 })
 
+test_that("readconfig reads Rsolver_reuse_jacobian as auto or a logical", {
+  adv <- function(lines) {
+    f <- solver_config_files(lines)
+    readconfig(f$input, f$output)$input$advanced_config
+  }
+  expect_equal(adv(character(0))$Rsolver_reuse_jacobian, "auto")
+  expect_false(adv(character(0))$Rsolver_sequential)
+  expect_true(adv("Rsolver_reuse_jacobian = TRUE")$Rsolver_reuse_jacobian)
+  expect_false(adv("Rsolver_reuse_jacobian = \"false\"")$Rsolver_reuse_jacobian)
+  expect_equal(adv("Rsolver_reuse_jacobian = \"Auto\"")$Rsolver_reuse_jacobian, "auto")
+  expect_true(adv("Rsolver_sequential = TRUE")$Rsolver_sequential)
+  expect_error(adv("Rsolver_reuse_jacobian = \"sometimes\""), "Rsolver_reuse_jacobian")
+})
+
+test_that("show_thor_equations prints the equations an error message names", {
+  fake <- methods::setClass("fake_thor_model",
+                            methods::representation(equations = "data.frame"),
+                            where = environment())
+  model <- fake(equations = data.frame(name = c("eq_1", "eq_2", "eq_12"),
+                                       equation = c("a = b", "pk * f = v", "c = d"),
+                                       stringsAsFactors = FALSE))
+  msg <- "Sequential solve failed on block 'prologue' at row 3: equation 'eq_2' could not be solved for 'pk'"
+  expect_message(found <- show_thor_equations(msg, model), "eq_2")
+  expect_equal(found, c(eq_2 = "pk * f = v"))
+  # nothing to show, nothing said
+  expect_silent(show_thor_equations("the block did not converge", model))
+  expect_silent(show_thor_equations("equation 'eq_99'", model))
+})
+
 test_that("readconfig still understands rcpp_option, and Rcpp wins over it", {
   f <- solver_config_files("rcpp_option = FALSE")
   expect_false(readconfig(f$input, f$output)$input$advanced_config$Rcpp)

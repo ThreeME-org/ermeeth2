@@ -12,6 +12,9 @@ First version of `ermeeth2`, seeded from `ermeeth` 0.4.00.0 (branch
 * **No limit on the size of the model.** `eviews_checks()` no longer refuses
   the R solver to a large `model.prg`, and `max_tresthor_capability` is gone.
   Asking for EViews anywhere but on Windows switches to the R solver.
+* When thortwo reports an error on an equation by its own id (`eq_2528`),
+  the equation itself is printed. With `Rsolver_sequential = TRUE` that
+  names the equation and the variable that cannot be determined.
 * The variables the translation creates (`@elem` values, coefficients) are
   added to every scenario's database before solving.
 * `aggregate_com_sec()` returns early when no aggregation is requested, so a
@@ -40,8 +43,8 @@ below. A file that leaves one out gets its default.
 
 * **R solver options:** `Rcpp` (`TRUE`, the default, for the compiled solver;
   `FALSE` for the pure R one, which needs no compiler), `Rsolver_decompose`,
-  `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`, `Rsolver_damping`,
-  `Rsolver_verbose`. `Rcpp` was `rcpp_option` in `ermeeth`; the old name is
+  `Rsolver_sequential`, `Rsolver_reuse_jacobian`, `Rsolver_rtol`,
+  `Rsolver_atol`, `Rsolver_max_iter`, `Rsolver_damping`, `Rsolver_verbose`. `Rcpp` was `rcpp_option` in `ermeeth`; the old name is
   still read. `use.superlu` is removed.
 * **EViews solver options:** `eviews_algorithm` (`"broyden"`, `"newton"` or
   `"gauss-seidel"`), `eviews_digits`, `eviews_max_iter`.
@@ -60,6 +63,29 @@ below. A file that leaves one out gets its default.
   and leaves the comments and the rest of the file alone.
   `read_config_values()`, `list_configs()` and `config_fields()` read
   configurations and describe their fields.
+
+## Aggregation rules
+
+* The aggregation rules are a csv file shipped with the package,
+  `aggregation_rules.csv`, in place of the Excel workbook. One table holds
+  both dimensions, told apart by a `sec_com` column (`sectors` or
+  `commodities`), with the columns `var_root`, `sum`, `mean`,
+  `weighted_mean` and `weight_var`. `read_aggregation_rules()` reads it.
+* **The package table is the only copy.** ThreeME_V4 no longer carries one,
+  and a `src/bridges/aggregation_rules.csv` or `.xlsx` left in a project is
+  not read; a message says so. A set of rules under another name can still
+  be passed to `aggregate_com_sec()`.
+* Every variable root of the model has a rule. The 207 that had none, and
+  were averaged with a warning, now have one. Two columns say where a rule
+  stands: `manual_add` is 1 for a rule specified by a user and 0 for one
+  filled in by default; `checked` is 0 until the rule has been reviewed.
+* Twelve price rules asked for a weight that is never in the database
+  (`PMGPD` by `MGPD`, for instance) and fell back to a mean on every run.
+  They are now weighted by a volume that exists (`PMGPD` by `QD`) and
+  marked `manual_add = 0`.
+* The packaged rules also gain six sector rules that only the ThreeME_V4
+  workbook had (`EMS`, `EMS_CI_HFC`, `EMS_CI_PFC`, `EMS_CI_SF6`, `EMS_MAT`,
+  `EMS_Y`).
 
 ## Checks during a run
 

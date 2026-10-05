@@ -231,6 +231,7 @@ test_that("the configuration addin writes the solver options under their config 
 
     session$setInputs(name = "threeme", f_Rcpp = TRUE, f_Rsolver_max_iter = 250,
                       f_Rsolver_damping = FALSE,
+                      f_Rsolver_sequential = TRUE, f_Rsolver_reuse_jacobian = "FALSE",
                       f_eviews_algorithm = "newton", f_eviews_digits = 8,
                       f_eviews_max_iter = 9000)
     session$setInputs(save = 1)
@@ -241,6 +242,9 @@ test_that("the configuration addin writes the solver options under their config 
     expect_true(v$Rcpp)
     expect_equal(v$Rsolver_max_iter, 250)
     expect_false(v$Rsolver_damping)
+    expect_true(v$Rsolver_sequential)
+    # a TRUE / FALSE choice is written as a logical, not as a string
+    expect_identical(v$Rsolver_reuse_jacobian, FALSE)
     expect_equal(v$eviews_algorithm, "newton")
     expect_equal(v$eviews_digits, 8)
     expect_equal(v$eviews_max_iter, 9000)
