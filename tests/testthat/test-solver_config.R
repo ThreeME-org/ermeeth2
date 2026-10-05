@@ -191,3 +191,31 @@ test_that("readconfig follows the scenario folders the file sets", {
   f <- solver_config_files("shock_scenario_folder = c(\"a\", \"b\")")
   expect_error(readconfig(f$input, f$output), "shock_scenario_folder")
 })
+
+test_that("format_duration picks the unit that reads best", {
+  expect_equal(format_duration(c(0.523, 38.44, 59.96, 74.2, 3600, NA)),
+               c("0.52 s", "38.4 s", "1 min 0 s", "1 min 14 s", "60 min 0 s", "n/a"))
+})
+
+test_that("show_solver_timings splits build and compile when thortwo reports them", {
+  build <- structure(c(build = 38.4, compile = 44.1), from_cache = FALSE)
+  expect_message(
+    lines <- show_solver_timings(19.6, 82.5, build, c(baseline = 74, ct1 = 76)),
+    "translation 19.6 s | build 38.4 s | compile 44.1 s", fixed = TRUE)
+  expect_equal(lines[2], "solve: baseline 1 min 14 s | ct1 1 min 16 s")
+
+  # a cache hit compiles nothing
+  cached <- structure(c(build = 0.52, compile = NA), from_cache = TRUE)
+  expect_equal(suppressMessages(show_solver_timings(19.6, 0.6, cached))[1],
+               "translation 19.6 s | build 0.52 s (from the cache)")
+  # a thortwo that does not report its timings: one figure, timed from outside
+  expect_equal(suppressMessages(show_solver_timings(19.6, 82.5, NULL))[1],
+               "translation 19.6 s | build and compile 1 min 22 s")
+})
+
+test_that("Rsolver_timings is on unless the configuration says otherwise", {
+  f <- solver_config_files(character(0))
+  expect_true(readconfig(f$input, f$output)$input$advanced_config$Rsolver_timings)
+  f <- solver_config_files("Rsolver_timings = FALSE")
+  expect_false(readconfig(f$input, f$output)$input$advanced_config$Rsolver_timings)
+})

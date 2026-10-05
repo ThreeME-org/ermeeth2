@@ -32,6 +32,8 @@ plain Newton.
 \item \code{Rsolver_max_iter}: maximum number of Newton iterations per period.
 \item \code{Rsolver_damping}: damp the Newton steps.
 \item \code{Rsolver_verbose}: print the solver's own progress.
+\item \code{Rsolver_timings}: print, at the end of the solve, how long the
+translation, the build, the compilation and each scenario took.
 }
 
 The EViews ones are written into \code{src/EViews/solve.prg} by

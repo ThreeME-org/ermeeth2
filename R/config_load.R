@@ -72,6 +72,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   Rsolver_max_iter = NULL
   Rsolver_damping = NULL
   Rsolver_verbose = NULL
+  Rsolver_timings = NULL
   eviews_algorithm = NULL
   eviews_digits = NULL
   eviews_max_iter = NULL
@@ -181,6 +182,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
         Rsolver_max_iter = Rsolver_max_iter,
         Rsolver_damping = Rsolver_damping,
         Rsolver_verbose = Rsolver_verbose,
+        Rsolver_timings = Rsolver_timings,
         eviews_algorithm = eviews_algorithm,
         eviews_digits = eviews_digits,
         eviews_max_iter = eviews_max_iter,
@@ -222,6 +224,8 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 #'   * `Rsolver_max_iter`: maximum number of Newton iterations per period.
 #'   * `Rsolver_damping`: damp the Newton steps.
 #'   * `Rsolver_verbose`: print the solver's own progress.
+#'   * `Rsolver_timings`: print, at the end of the solve, how long the
+#'     translation, the build, the compilation and each scenario took.
 #'
 #'   The EViews ones are written into `src/EViews/solve.prg` by
 #'   [eviews_solve_options()]:
@@ -246,6 +250,7 @@ config_solver_defaults <- function() {
     Rsolver_max_iter  = 100,
     Rsolver_damping   = TRUE,
     Rsolver_verbose   = FALSE,
+    Rsolver_timings   = TRUE,
     eviews_algorithm  = "broyden",
     eviews_digits     = 10,
     eviews_max_iter   = 5500

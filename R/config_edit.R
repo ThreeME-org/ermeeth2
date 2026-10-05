@@ -151,6 +151,8 @@ config_fields <- function() {
     f("Rsolver_max_iter",  "R solver", "number", "Maximum Newton iterations per period"),
     f("Rsolver_damping",   "R solver", "bool",   "Damp the Newton steps"),
     f("Rsolver_verbose",   "R solver", "bool",   "Print the solver's progress"),
+    f("Rsolver_timings",   "R solver", "bool",
+      "Print how long the translation, the build and each solve took"),
 
     f("path_eviews_exe",  "EViews solver", "text",   "Path to EViews.exe"),
     f("eviews_timeout",   "EViews solver", "number", "EViews timeout (s, 0 = none)"),

@@ -1,3 +1,41 @@
+# ermeeth2 1.0.2
+
+* The R solver prints how long each stage took, at the end of the solve:
+  the translation of `model.prg`, the build and the compilation of the
+  model, and the solve of each scenario.
+
+      Timings: translation 19.6 s | build 38.4 s | compile 44.1 s
+        solve: baseline 1 min 14 s | ct1 1 min 16 s
+
+  New configuration option `Rsolver_timings` (default `TRUE`) switches it
+  off. Build and compilation are told apart with a thortwo that reports
+  them, and shown as one figure otherwise.
+
+# ermeeth2 1.0.1
+
+## Aggregation rules
+
+* The aggregation rules are a csv file shipped with the package,
+  `aggregation_rules.csv`, in place of the Excel workbook. One table holds
+  both dimensions, told apart by a `sec_com` column (`sectors` or
+  `commodities`), with the columns `var_root`, `sum`, `mean`,
+  `weighted_mean` and `weight_var`. `read_aggregation_rules()` reads it.
+* **The package table is the only copy.** ThreeME_V4 no longer carries one,
+  and a `src/bridges/aggregation_rules.csv` or `.xlsx` left in a project is
+  not read; a message says so. A set of rules under another name can still
+  be passed to `aggregate_com_sec()`.
+* Every variable root of the model has a rule. The 207 that had none, and
+  were averaged with a warning, now have one. Two columns say where a rule
+  stands: `manual_add` is 1 for a rule specified by a user and 0 for one
+  filled in by default; `checked` is 0 until the rule has been reviewed.
+* Twelve price rules asked for a weight that is never in the database
+  (`PMGPD` by `MGPD`, for instance) and fell back to a mean on every run.
+  They are now weighted by a volume that exists (`PMGPD` by `QD`) and
+  marked `manual_add = 0`.
+* The packaged rules also gain six sector rules that only the ThreeME_V4
+  workbook had (`EMS`, `EMS_CI_HFC`, `EMS_CI_PFC`, `EMS_CI_SF6`, `EMS_MAT`,
+  `EMS_Y`).
+
 # ermeeth2 1.0.0
 
 First version of `ermeeth2`, seeded from `ermeeth` 0.4.00.0 (branch
@@ -63,29 +101,6 @@ below. A file that leaves one out gets its default.
   and leaves the comments and the rest of the file alone.
   `read_config_values()`, `list_configs()` and `config_fields()` read
   configurations and describe their fields.
-
-## Aggregation rules
-
-* The aggregation rules are a csv file shipped with the package,
-  `aggregation_rules.csv`, in place of the Excel workbook. One table holds
-  both dimensions, told apart by a `sec_com` column (`sectors` or
-  `commodities`), with the columns `var_root`, `sum`, `mean`,
-  `weighted_mean` and `weight_var`. `read_aggregation_rules()` reads it.
-* **The package table is the only copy.** ThreeME_V4 no longer carries one,
-  and a `src/bridges/aggregation_rules.csv` or `.xlsx` left in a project is
-  not read; a message says so. A set of rules under another name can still
-  be passed to `aggregate_com_sec()`.
-* Every variable root of the model has a rule. The 207 that had none, and
-  were averaged with a warning, now have one. Two columns say where a rule
-  stands: `manual_add` is 1 for a rule specified by a user and 0 for one
-  filled in by default; `checked` is 0 until the rule has been reviewed.
-* Twelve price rules asked for a weight that is never in the database
-  (`PMGPD` by `MGPD`, for instance) and fell back to a mean on every run.
-  They are now weighted by a volume that exists (`PMGPD` by `QD`) and
-  marked `manual_add = 0`.
-* The packaged rules also gain six sector rules that only the ThreeME_V4
-  workbook had (`EMS`, `EMS_CI_HFC`, `EMS_CI_PFC`, `EMS_CI_SF6`, `EMS_MAT`,
-  `EMS_Y`).
 
 ## Checks during a run
 
