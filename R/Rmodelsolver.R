@@ -13,7 +13,7 @@
 #'
 #' @details The model is built by `thortwo::thor_model()` on every call.
 #'   thortwo caches what it builds, so a model whose equations have not changed
-#'   is loaded rather than rebuilt; `recompile_model = TRUE` in the
+#'   is loaded rather than rebuilt; `recompile_model_R = TRUE` in the
 #'   configuration forces the rebuild. The remaining solver options
 #'   (`Rsolver_decompose`, `Rsolver_sequential`, `Rsolver_reuse_jacobian`,
 #'   `Rsolver_timings`, `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
@@ -29,7 +29,7 @@ R_model_solver <- function(config_file = configuration,
                            cnb = calib_new_base){
 
   # configuration <- NULL
-  recompile_model <- NULL
+  recompile_model_R <- NULL
   baseyear <- NULL
   lastyear <- NULL
   themodel <- NULL
@@ -77,7 +77,7 @@ R_model_solver <- function(config_file = configuration,
   ## Called every time: thortwo keys its cache on the model itself (variables,
   ## equations, backend, decomposition), so an unchanged model is loaded in a
   ## fraction of a second and an edited one is rebuilt, without this function
-  ## having to keep track. `recompile_model` forces the rebuild.
+  ## having to keep track. `recompile_model_R` forces the rebuild.
   ("Creating the model for simulations") |> message_sub_step()
   ## The timings are printed once, at the end, by this function: thortwo's own
   ## lines are switched off, where the installed thortwo has the argument.
@@ -92,7 +92,7 @@ R_model_solver <- function(config_file = configuration,
       backend      = backend,
       decompose    = isTRUE(Rsolver_decompose),
       sequential   = isTRUE(Rsolver_sequential),
-      recompile    = isTRUE(recompile_model),
+      recompile    = isTRUE(recompile_model_R),
       verbose      = isTRUE(Rsolver_verbose)),
       quiet_timings(thortwo::thor_model)))
   )[["elapsed"]]

@@ -34,7 +34,7 @@ returns the results already reshaped to long format.
 \details{
 The model is built by \code{thortwo::thor_model()} on every call.
 thortwo caches what it builds, so a model whose equations have not changed
-is loaded rather than rebuilt; \code{recompile_model = TRUE} in the
+is loaded rather than rebuilt; \code{recompile_model_R = TRUE} in the
 configuration forces the rebuild. The remaining solver options
 (\code{Rsolver_decompose}, \code{Rsolver_sequential}, \code{Rsolver_reuse_jacobian},
 \code{Rsolver_timings}, \code{Rsolver_rtol}, \code{Rsolver_atol}, \code{Rsolver_max_iter},

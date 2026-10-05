@@ -128,7 +128,7 @@ test_that("config_fields is the list the addin builds its controls from", {
   offered <- c(f$name, config_fields_custom())
   expect_setequal(offered, options)
   expect_false(anyDuplicated(offered) > 0)
-  expect_false(any(c("rcpp_option", "sequential", "max_tresthor_capability") %in% f$name))
+  expect_false(any(c("rcpp_option", "skip_compiler", "sequential", "max_tresthor_capability") %in% f$name))
 })
 
 test_that("list_configs pairs input and output configurations by name", {

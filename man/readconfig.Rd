@@ -41,7 +41,11 @@ The calibration scripts of the scenarios are looked for in
 \code{shock_scenario_folder} (for the \verb{2_calib_shock_<scenario>.R}, and the
 automated shocks files).
 
-\code{rcpp_option}, the old name of \code{Rcpp}, is still understood.
+Two options are still understood under the name they had before:
+\code{rcpp_option} for \code{Rcpp}, and \code{skip_compiler} for \code{skip_dynamo}.
+\code{recompile_model} is \strong{not}: it was one option for both solvers and is
+replaced by \code{recompile_model_R} and \code{recompile_model_eviews}. A file that
+still sets it is told that the line is ignored.
 }
 \examples{
 \dontrun{

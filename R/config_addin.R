@@ -242,8 +242,9 @@ config_addin_app <- function(path = "configuration") {
         shiny::tagList(lapply(seq_len(nrow(rows)), function(i) {
           nm <- rows$name[i]
           val <- v[[nm]]
-          ## `rcpp_option` is the earlier name of `Rcpp`.
-          if (is.null(val) && nm == "Rcpp") val <- v$rcpp_option
+          ## a file may still carry the option under its earlier name
+          old <- config_legacy_names()
+          if (is.null(val) && nm %in% names(old)) val <- v[[old[[nm]]]]
           control(rows[i, ], val %||% defaults[[nm]])
         }))
       })

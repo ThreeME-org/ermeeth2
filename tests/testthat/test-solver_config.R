@@ -22,7 +22,6 @@ solver_config_files <- function(solver_lines, env = parent.frame()) {
     "calib_files = c(lists_files, \"calib.mdl\")",
     "model_files = c(lists_files, \"eq.mdl\")",
     "Rsolver = TRUE",
-    "recompile_model = TRUE",
     solver_lines
   ), input)
   writeLines(c("quartos_to_render <- list()", "quartos_parameters <- list()"), output)

@@ -38,14 +38,14 @@ run_dynamo <- function(config_list = configuration){
     writeLines(file.path("src", last(lists_files)))
 
   ## A if no compiler needed
-  if(advanced_config$skip_compiler == TRUE & advanced_config$recompile_model == TRUE){
+  if(isTRUE(advanced_config$skip_dynamo)){
     if(sum(file.exists(file.path("src","compiler", dynamo_files_out)) ) == length(dynamo_files_out) ){
-      cli::cli_alert_success("Found pre-existing DynaMo output files.")
+      cli::cli_alert_warning("{.code skip_dynamo = TRUE}: DynaMo is not run. The {.file model.prg} and {.file calib.csv} already in {.path src/compiler} are used as they are, so any change made to the {.file .mdl} files since they were written is ignored.")
 
     }else{
       cli::cli_abort(c("Compiler files not found.",
                        "x" = "Some of the compiler output files are missing from {.path src/compiler}.",
-                       "i" = "Add them manually, or set {.code skip_compiler = FALSE} in the config to generate them."))
+                       "i" = "Add them manually, or set {.code skip_dynamo = FALSE} in the config to generate them."))
     }
 
   }else{
@@ -90,7 +90,11 @@ run_dynamo <- function(config_list = configuration){
 
   if(length(missing_files) == 0){
 
-    cli::cli_alert_success("DynaMo succeeded, continuing...")
+    if (isTRUE(advanced_config$skip_dynamo)) {
+      cli::cli_alert_success("DynaMo output files found, continuing...")
+    } else {
+      cli::cli_alert_success("DynaMo succeeded, continuing...")
+    }
 
   }else{
 

@@ -6,6 +6,12 @@
 #'   (`eviews_algorithm`, `eviews_digits`, `eviews_max_iter`) are written into
 #'   `src/EViews/solve.prg` first, by [eviews_solve_options()].
 #'
+#'   With `recompile_model_eviews = FALSE` in the configuration, EViews
+#'   reopens the workfile saved by an earlier run instead of loading the
+#'   model, the calibration and the baseline again. The option is followed as
+#'   given: whether that workfile exists and holds the current model is not
+#'   checked, and cannot be.
+#'
 #' @param config_file list. The configuration object, as returned by
 #'   [readconfig()].
 #' @param before_solving_data data to pass to the solver before solving.
@@ -28,7 +34,7 @@ eviews_model_solver<- function(config_file = configuration,
   baseyear <- NULL
   tolerance_calib_check <- NULL
   lastyear <- NULL
-  recompile_model <- NULL
+  recompile_model_eviews <- NULL
   save_files_res <- NULL
   # . <- NULL
   scenario <- NULL
@@ -41,6 +47,12 @@ eviews_model_solver<- function(config_file = configuration,
   list2env(config_file$input,envir = environment())
   list2env(config_file$input$advanced_config,envir = environment())
   path_eviews_exe_2 = overwrite_eviews
+
+  ## Whether EViews loads the model, the calibration and the baseline afresh,
+  ## or reopens the workfile an earlier run saved. The option is followed as
+  ## given: nothing here can tell whether a workfile found under the expected
+  ## name holds the current model, so there is no check to base a decision on.
+  recompile_model <- !isFALSE(recompile_model_eviews)
 
   compil = "dynamo"
   data_for_solver_2 <- before_solving_data

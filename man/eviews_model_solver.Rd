@@ -33,4 +33,10 @@ EViews for solving, reads the results back, then cleans up the temporary
 calibration files. The solve options of the configuration
 (\code{eviews_algorithm}, \code{eviews_digits}, \code{eviews_max_iter}) are written into
 \code{src/EViews/solve.prg} first, by \code{\link[=eviews_solve_options]{eviews_solve_options()}}.
+
+With \code{recompile_model_eviews = FALSE} in the configuration, EViews
+reopens the workfile saved by an earlier run instead of loading the
+model, the calibration and the baseline again. The option is followed as
+given: whether that workfile exists and holds the current model is not
+checked, and cannot be.
 }

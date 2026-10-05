@@ -19,7 +19,11 @@
 #'   `shock_scenario_folder` (for the `2_calib_shock_<scenario>.R`, and the
 #'   automated shocks files).
 #'
-#'   `rcpp_option`, the old name of `Rcpp`, is still understood.
+#'   Two options are still understood under the name they had before:
+#'   `rcpp_option` for `Rcpp`, and `skip_compiler` for `skip_dynamo`.
+#'   `recompile_model` is **not**: it was one option for both solvers and is
+#'   replaced by `recompile_model_R` and `recompile_model_eviews`. A file that
+#'   still sets it is told that the line is ignored.
 #'
 #' @param input_config_file file path to the configuration input file
 #' @param output_config_file file path to the configuration output file
@@ -73,8 +77,9 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   eviews_timeout = NULL
   warning = NULL
   tolerance_calib_check = NULL
-  skip_compiler = NULL
-  recompile_model = NULL
+  skip_dynamo = NULL
+  recompile_model_R = NULL
+  recompile_model_eviews = NULL
   Rcpp = NULL
   rcpp_option = NULL
   Rsolver_decompose = NULL
@@ -124,10 +129,19 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
                    call = NULL)
   }
 
-  ## `rcpp_option` is the earlier name of `Rcpp`.
-  if (!"Rcpp" %in% set_by_file && "rcpp_option" %in% set_by_file) {
-    assign("Rcpp", get("rcpp_option", envir = cfg), envir = cfg)
-    set_by_file <- c(set_by_file, "Rcpp")
+  ## Options a file may still carry under their earlier name.
+  legacy <- config_legacy_names()
+  for (nm in names(legacy)) {
+    if (!nm %in% set_by_file && legacy[[nm]] %in% set_by_file) {
+      assign(nm, get(legacy[[nm]], envir = cfg), envir = cfg)
+      set_by_file <- c(set_by_file, nm)
+    }
+  }
+
+  ## Replaced, on purpose without a fallback: the one option meant different
+  ## things for the two solvers, and guessing would hide that.
+  if ("recompile_model" %in% set_by_file) {
+    cli::cli_alert_warning("{.code recompile_model} in {.file {basename(input_config_file)}} is no longer read. Set {.code recompile_model_R} and {.code recompile_model_eviews} instead; see {.fn config_defaults}.")
   }
 
   defaulted <- setdiff(names(defaults), set_by_file)
@@ -219,8 +233,9 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
         eviews_timeout = eviews_timeout  ,
         warning = warning ,
         tolerance_calib_check = tolerance_calib_check ,
-        skip_compiler = skip_compiler,
-        recompile_model = recompile_model,
+        skip_dynamo = skip_dynamo,
+        recompile_model_R = recompile_model_R,
+        recompile_model_eviews = recompile_model_eviews,
         Rcpp = Rcpp,
         Rsolver_decompose = Rsolver_decompose,
         Rsolver_sequential = Rsolver_sequential,
@@ -282,7 +297,18 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 #'     [calib_folder_default()].
 #'   * `Rsolver`: `TRUE`, the solver that runs on every system.
 #'   * `warning`: `FALSE`. `tolerance_calib_check`: 0.001.
-#'   * `skip_compiler`: `FALSE`. `recompile_model`: `TRUE`.
+#'   * `skip_dynamo`: `FALSE`, so DynaMo compiles the `.mdl` files on every
+#'     run. An advanced option, to leave alone without a good reason: `TRUE`
+#'     reuses the `model.prg` and `calib.csv` already in `src/compiler`, so
+#'     any change to the `.mdl` files is ignored, and neither solver can tell.
+#'     A run with `TRUE` says so.
+#'   * `recompile_model_R`: `FALSE`. The R solver then reuses the model it
+#'     built before when the equations have not changed, and rebuilds it when
+#'     they have, so `FALSE` is always safe. `TRUE` forces the rebuild.
+#'   * `recompile_model_eviews`: `TRUE`. EViews then loads the model, the
+#'     calibration and the baseline afresh. `FALSE` reopens the workfile an
+#'     earlier run saved, without reloading any of the three: only for a
+#'     rerun where none of them has changed.
 #'   * `save_files_res`: `TRUE`.
 #'   * `output_saved`: none, so no aggregated database is saved.
 #'   * `path_eviews_exe`: empty, which makes [eviews_checks()] search the
@@ -301,6 +327,16 @@ config_required <- function() {
     "lists_files", "calib_files", "model_files")
 }
 
+#' Options that had another name
+#'
+#' @returns a character vector: the earlier name of an option, named by the
+#'   current one. [readconfig()] and the configuration addin read a file that
+#'   still uses the earlier name.
+#' @keywords internal
+config_legacy_names <- function() {
+  c(Rcpp = "rcpp_option", skip_dynamo = "skip_compiler")
+}
+
 #' @rdname config_required
 #' @export
 config_defaults <- function() {
@@ -316,8 +352,9 @@ config_defaults <- function() {
     Rsolver                  = TRUE,
     warning                  = FALSE,
     tolerance_calib_check    = 1e-3,
-    skip_compiler            = FALSE,
-    recompile_model          = TRUE,
+    skip_dynamo              = FALSE,
+    recompile_model_R        = FALSE,
+    recompile_model_eviews   = TRUE,
     save_files_res           = TRUE,
     output_saved             = character(0),
     path_eviews_exe          = "",

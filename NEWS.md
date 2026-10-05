@@ -1,3 +1,29 @@
+# ermeeth2 1.0.4
+
+* `skip_compiler` is renamed `skip_dynamo`, which is what it skips: DynaMo,
+  the compiler of the `.mdl` files. A configuration file that still says
+  `skip_compiler` is read as before. Every `config_input_*.R` of ThreeME_V4
+  uses the new name.
+* `skip_dynamo` is an advanced option, `FALSE` by default and meant to stay
+  so: a run with `TRUE` warns that the `.mdl` files are not recompiled.
+* `skip_dynamo = TRUE` now skips DynaMo whatever the recompile options say.
+  It was only honoured with `recompile_model = TRUE`; with `FALSE`, DynaMo
+  ran anyway and overwrote `model.prg` and `calib.csv`.
+* `recompile_model` is split in two, because it does not mean the same thing
+  for the two solvers:
+  - `recompile_model_R`, default `FALSE`: the R solver reuses the model it
+    built before when the equations have not changed, and rebuilds it when
+    they have. `TRUE` forces the rebuild.
+  - `recompile_model_eviews`, default `TRUE`: EViews loads the model, the
+    calibration and the baseline afresh. `FALSE` reopens the workfile of an
+    earlier run without reloading them. It is followed as given: whether
+    that workfile holds the current model cannot be checked.
+
+  **`recompile_model` itself is no longer read**, with no fallback: a file
+  that still sets it gets a message saying so, and both new options take
+  their default unless the file sets them. In the addin each option is in
+  its solver's tab.
+
 # ermeeth2 1.0.3
 
 * `readconfig()` reads an incomplete configuration input file. Nine options

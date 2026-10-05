@@ -48,7 +48,18 @@ training model.
 \code{\link[=calib_folder_default]{calib_folder_default()}}.
 \item \code{Rsolver}: \code{TRUE}, the solver that runs on every system.
 \item \code{warning}: \code{FALSE}. \code{tolerance_calib_check}: 0.001.
-\item \code{skip_compiler}: \code{FALSE}. \code{recompile_model}: \code{TRUE}.
+\item \code{skip_dynamo}: \code{FALSE}, so DynaMo compiles the \code{.mdl} files on every
+run. An advanced option, to leave alone without a good reason: \code{TRUE}
+reuses the \code{model.prg} and \code{calib.csv} already in \code{src/compiler}, so
+any change to the \code{.mdl} files is ignored, and neither solver can tell.
+A run with \code{TRUE} says so.
+\item \code{recompile_model_R}: \code{FALSE}. The R solver then reuses the model it
+built before when the equations have not changed, and rebuilds it when
+they have, so \code{FALSE} is always safe. \code{TRUE} forces the rebuild.
+\item \code{recompile_model_eviews}: \code{TRUE}. EViews then loads the model, the
+calibration and the baseline afresh. \code{FALSE} reopens the workfile an
+earlier run saved, without reloading any of the three: only for a
+rerun where none of them has changed.
 \item \code{save_files_res}: \code{TRUE}.
 \item \code{output_saved}: none, so no aggregated database is saved.
 \item \code{path_eviews_exe}: empty, which makes \code{\link[=eviews_checks]{eviews_checks()}} search the

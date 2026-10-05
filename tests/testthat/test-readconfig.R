@@ -48,8 +48,9 @@ test_that("a file with only the compulsory options reads, the rest by default", 
   expect_equal(inp$calib_baseline,
                file.path(calib_folder_default(), "1_calib_baseline-steady.R"))
   expect_true(adv$Rsolver)
-  expect_true(adv$recompile_model)
-  expect_false(adv$skip_compiler)
+  expect_false(adv$recompile_model_R)
+  expect_true(adv$recompile_model_eviews)
+  expect_false(adv$skip_dynamo)
   expect_equal(adv$tolerance_calib_check, 1e-3)
   expect_length(adv$output_saved, 0)
   expect_equal(adv$path_eviews_exe, "")
@@ -103,4 +104,31 @@ test_that("a complete file is read without a word about defaults", {
     paste0(nm, " = ", paste(deparse(config_defaults()[[nm]]), collapse = ""))
   }, character(1)))
   expect_silent(readconfig(f$input, f$output))
+})
+
+test_that("skip_compiler is still read as skip_dynamo, which wins over it", {
+  f <- minimal_config(extra = "skip_compiler = TRUE")
+  msgs <- testthat::capture_messages(cfg <- readconfig(f$input, f$output))
+  expect_true(cfg$input$advanced_config$skip_dynamo)
+  expect_null(cfg$input$advanced_config$skip_compiler)
+  # read under its old name, so not reported as left to its default
+  expect_false(grepl("skip_dynamo", paste(msgs, collapse = " ")))
+
+  f <- minimal_config(extra = c("skip_compiler = TRUE", "skip_dynamo = FALSE"))
+  expect_false(readconfig(f$input, f$output, quiet = TRUE)$input$advanced_config$skip_dynamo)
+})
+
+test_that("recompile_model is no longer read, and a file that sets it is told", {
+  f <- minimal_config(extra = "recompile_model = TRUE")
+  expect_message(cfg <- readconfig(f$input, f$output, quiet = TRUE), "no longer read")
+  adv <- cfg$input$advanced_config
+  # the defaults apply, whatever the old line said
+  expect_false(adv$recompile_model_R)
+  expect_true(adv$recompile_model_eviews)
+  expect_null(adv$recompile_model)
+
+  f <- minimal_config(extra = c("recompile_model_R = TRUE", "recompile_model_eviews = FALSE"))
+  expect_silent(cfg <- readconfig(f$input, f$output, quiet = TRUE))
+  expect_true(cfg$input$advanced_config$recompile_model_R)
+  expect_false(cfg$input$advanced_config$recompile_model_eviews)
 })
