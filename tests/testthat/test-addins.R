@@ -325,6 +325,42 @@ test_that("the configuration addin adds ENDOFLINE.mdl itself", {
   })
 })
 
+test_that("the configuration addin edits the aggregated outputs, down to none", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme", name = "threeme")
+    # the Solver tab was never opened: output_saved is left alone
+    expect_false("output_saved" %in% names(edits()))
+
+    session$setInputs(f_Rsolver = TRUE, f_output_saved = c("com", "sec_com"))
+    expect_equal(as.character(edits()$output_saved), 'c("com", "sec_com")')
+    # nothing ticked, with the tab open, means none
+    session$setInputs(f_output_saved = NULL)
+    expect_equal(as.character(edits()$output_saved), "c()")
+    session$setInputs(save = 1)
+    expect_null(read_config_values(f)$output_saved)
+  })
+})
+
+test_that("the configuration addin shows the default of an option the file lacks", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+  # an incomplete file: no max_lags, though firstyear is computed from it
+  writeLines(grep("^max_lags", readLines(f), invert = TRUE, value = TRUE), f)
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme")
+    expect_null(values()$max_lags)
+    expect_equal(values()$firstyear, 2019 - config_defaults()$max_lags)
+  })
+})
+
 test_that("the configuration addin rewrites quartos_to_render only", {
   skip_if_no_shiny()
   d <- local_project()

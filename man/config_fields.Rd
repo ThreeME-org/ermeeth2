@@ -2,14 +2,21 @@
 % Please edit documentation in R/config_edit.R
 \name{config_fields}
 \alias{config_fields}
+\alias{config_fields_custom}
 \title{The configuration fields this package knows how to edit}
 \usage{
 config_fields()
+
+config_fields_custom()
 }
 \value{
 a data frame with \code{name}, \code{section}, \code{type} (\code{text}, \code{number},
-\code{bool} or \code{choice}), \code{label} and \code{choices}. \code{choices} is \code{NA} except for a
-\code{choice} field, where it holds the allowed values separated by \code{|}.
+\code{bool}, \code{choice} or \code{multi}), \code{label} and \code{choices}. \code{choices} is \code{NA}
+except for a \code{choice} field (one value) or a \code{multi} one (any number),
+where it holds the allowed values separated by \code{|}.
+
+\code{config_fields_custom()} returns the names of the options the
+addin edits outside the field table.
 }
 \description{
 Held as data so the addin builds its controls from it rather than repeating
@@ -20,6 +27,12 @@ The solver options are split in three sections, one tab each in the addin:
 \code{Solver} for what applies to both solvers, \verb{R solver} and \verb{EViews solver}
 for what only one of them reads. Their defaults are in
 \code{\link[=config_solver_defaults]{config_solver_defaults()}}.
+
+Together with the fields the addin handles with controls of its own
+(\code{config_fields_custom()}: the scenarios, their folders, the variables to
+keep and the file lists), this covers every option of \code{\link[=config_required]{config_required()}}
+and \code{\link[=config_defaults]{config_defaults()}}. A test holds the two in step, so an option added
+to the configuration cannot be left out of the addin.
 }
 \examples{
 config_fields()

@@ -23,7 +23,10 @@ a named list.
 \description{
 Sources the file in a throwaway environment, so the values come back exactly
 as the pipeline would see them -- \code{firstyear} computed from \code{baseyear},
-\code{calib_files} built from \code{iso3}, and so on.
+\code{calib_files} built from \code{iso3}, and so on. The defaults of
+\code{\link[=config_defaults]{config_defaults()}} are in scope while it is sourced, so an incomplete file
+that uses an option it does not set still reads; only what the file
+assigns itself is returned.
 }
 \examples{
 \dontrun{

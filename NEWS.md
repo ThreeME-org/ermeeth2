@@ -1,3 +1,24 @@
+# ermeeth2 1.0.3
+
+* `readconfig()` reads an incomplete configuration input file. Nine options
+  are compulsory (`config_required()`): `project_name`, `model_folder`,
+  `scenario_baseline`, `scenario`, `baseyear`, `lastyear`, `lists_files`,
+  `calib_files`, `model_files`. A file missing one stops with
+  the names of those missing. Every other option has a default
+  (`config_defaults()`), used when the file does not set it; the options left
+  to their default are listed once, unless `quiet = TRUE`. A file can use an
+  option it does not set (`firstyear = baseyear - max_lags`).
+* `shockyear` is 2021 unless the file sets it. `firstyear` is
+  `baseyear - max_lags` unless the file sets it, and an
+  output configuration without `quartos_to_render` renders nothing.
+* The configuration addin offers every option `readconfig()` knows, and a
+  test holds the two in step. It gains `output_saved` (the aggregated
+  databases to save), which it lacked, and shows the default of any option
+  the file does not set.
+* Fixed: `save_files_res` was forced to `TRUE` whatever the file said.
+* Fixed: `scenario_name` and `shocks_nb` were empty in the configuration
+  list since the scenario folders were added.
+
 # ermeeth2 1.0.2
 
 * The R solver prints how long each stage took, at the end of the solve:

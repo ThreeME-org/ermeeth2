@@ -18,6 +18,9 @@ solver_config_files <- function(solver_lines, env = parent.frame()) {
     "max_lags = 3",
     "firstyear = baseyear - max_lags",
     "automated_shocks = FALSE",
+    "lists_files = \"lists.mdl\"",
+    "calib_files = c(lists_files, \"calib.mdl\")",
+    "model_files = c(lists_files, \"eq.mdl\")",
     "Rsolver = TRUE",
     "recompile_model = TRUE",
     solver_lines

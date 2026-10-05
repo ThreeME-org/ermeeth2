@@ -116,12 +116,18 @@ test_that("read_config_values evaluates the file as the pipeline would", {
 test_that("config_fields is the list the addin builds its controls from", {
   f <- config_fields()
   expect_true(all(c("name", "section", "type", "label", "choices") %in% names(f)))
-  expect_true(all(f$type %in% c("text", "number", "bool", "choice")))
+  expect_true(all(f$type %in% c("text", "number", "bool", "choice", "multi")))
   expect_false(anyDuplicated(f$name) > 0)
   expect_setequal(unique(f$section),
                   c("Basics", "Solver", "R solver", "EViews solver"))
   # every solver option with a default is editable, and nothing else is offered
   expect_true(all(names(config_solver_defaults()) %in% f$name))
+  # the addin is in step with the configuration: every option readconfig()
+  # knows is offered, and it offers no option readconfig() does not know
+  options <- c(config_required(), names(config_defaults()))
+  offered <- c(f$name, config_fields_custom())
+  expect_setequal(offered, options)
+  expect_false(anyDuplicated(offered) > 0)
   expect_false(any(c("rcpp_option", "sequential", "max_tresthor_capability") %in% f$name))
 })
 

@@ -28,8 +28,9 @@ quartos to render.
 The solver takes three tabs. \emph{Solver} chooses between R and EViews and
 holds what applies to both; \emph{R solver} and \emph{EViews solver} hold the
 options only one of them reads. An option the configuration file does not
-set yet is shown at its default (\code{\link[=config_solver_defaults]{config_solver_defaults()}}) and written
-on save.
+set yet is shown at its default (\code{\link[=config_defaults]{config_defaults()}}) and written on
+save, so saving an incomplete file completes it. The addin offers every
+option of \code{\link[=config_required]{config_required()}} and \code{\link[=config_defaults]{config_defaults()}}.
 
 Edits are \strong{surgical}: only the assignments you change are rewritten, and
 every comment, commented-out alternative and live code block in the file is

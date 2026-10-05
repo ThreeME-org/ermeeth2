@@ -6,36 +6,48 @@
 \usage{
 readconfig(
   input_config_file = file.path("configuration", "config_input_threeme.R"),
-  output_config_file = file.path("configuration", "config_output_threeme.R")
+  output_config_file = file.path("configuration", "config_output_threeme.R"),
+  quiet = FALSE
 )
 }
 \arguments{
 \item{input_config_file}{file path to the configuration input file}
 
 \item{output_config_file}{file path to the configuration output file}
+
+\item{quiet}{\code{TRUE} to not list the options left to their default.}
 }
 \value{
 a config list with all the necessary elements to run the simulations
 }
 \description{
-Read the configuration files and create the config list
+Reads a configuration input file and its output file, and
+returns the configuration list the rest of the pipeline works from.
+
+An input file does not have to set everything. A few options are
+\strong{compulsory}, because no value could be guessed for them:
+\code{\link[=config_required]{config_required()}} lists them, and \code{readconfig()} stops, naming the ones
+missing, when a file leaves one out. Every other option has a \strong{default},
+given by \code{\link[=config_defaults]{config_defaults()}}, which is used when the file does not set it.
+That is also what keeps an older file readable when an option is added.
 }
 \details{
+Three values are worked out when the file does not give them:
+\code{firstyear} is \code{baseyear - max_lags}; \code{quartos_to_render} and
+\code{quartos_parameters}, from the output file, are empty lists.
+
 The calibration scripts of the scenarios are looked for in
 \code{baseline_scenario_folder} (for \verb{1_calib_<scenario_baseline>.R}) and
 \code{shock_scenario_folder} (for the \verb{2_calib_shock_<scenario>.R}, and the
-automated shocks files). Both default to \code{\link[=calib_folder_default]{calib_folder_default()}},
-\code{configuration/scenarii_calib}, and are meant to name a subfolder of it.
+automated shocks files).
 
-Solver options a configuration file does not set take the values
-of \code{\link[=config_solver_defaults]{config_solver_defaults()}}, so a file written before an option existed
-still reads. \code{rcpp_option}, the old name of \code{Rcpp}, is still understood.
+\code{rcpp_option}, the old name of \code{Rcpp}, is still understood.
 }
 \examples{
 \dontrun{
-config <- readconfig <- function(
-input_config_file = file.path("configuration", "config_input_threeme.R") ,
-output_config_file = file.path("configuration", "config_output_threeme.R") )
+config <- readconfig(
+  input_config_file = file.path("configuration", "config_input_threeme.R"),
+  output_config_file = file.path("configuration", "config_output_threeme.R"))
 }
 
 }

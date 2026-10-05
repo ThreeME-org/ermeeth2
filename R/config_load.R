@@ -1,30 +1,43 @@
 #' Read the configuration files and create the config list
 #'
-#' @param input_config_file file path to the configuration input file
-#' @param output_config_file file path to the configuration output file
+#' @description Reads a configuration input file and its output file, and
+#'   returns the configuration list the rest of the pipeline works from.
 #'
-#' @details The calibration scripts of the scenarios are looked for in
+#'   An input file does not have to set everything. A few options are
+#'   **compulsory**, because no value could be guessed for them:
+#'   [config_required()] lists them, and `readconfig()` stops, naming the ones
+#'   missing, when a file leaves one out. Every other option has a **default**,
+#'   given by [config_defaults()], which is used when the file does not set it.
+#'   That is also what keeps an older file readable when an option is added.
+#'
+#' @details Three values are worked out when the file does not give them:
+#'   `firstyear` is `baseyear - max_lags`; `quartos_to_render` and
+#'   `quartos_parameters`, from the output file, are empty lists.
+#'
+#'   The calibration scripts of the scenarios are looked for in
 #'   `baseline_scenario_folder` (for `1_calib_<scenario_baseline>.R`) and
 #'   `shock_scenario_folder` (for the `2_calib_shock_<scenario>.R`, and the
-#'   automated shocks files). Both default to [calib_folder_default()],
-#'   `configuration/scenarii_calib`, and are meant to name a subfolder of it.
+#'   automated shocks files).
 #'
-#'   Solver options a configuration file does not set take the values
-#'   of [config_solver_defaults()], so a file written before an option existed
-#'   still reads. `rcpp_option`, the old name of `Rcpp`, is still understood.
+#'   `rcpp_option`, the old name of `Rcpp`, is still understood.
+#'
+#' @param input_config_file file path to the configuration input file
+#' @param output_config_file file path to the configuration output file
+#' @param quiet `TRUE` to not list the options left to their default.
 #'
 #' @returns a config list with all the necessary elements to run the simulations
 #' @export
 #'
 #' @examples
 #' \dontrun{
-#' config <- readconfig <- function(
-#' input_config_file = file.path("configuration", "config_input_threeme.R") ,
-#' output_config_file = file.path("configuration", "config_output_threeme.R") )
+#' config <- readconfig(
+#'   input_config_file = file.path("configuration", "config_input_threeme.R"),
+#'   output_config_file = file.path("configuration", "config_output_threeme.R"))
 #' }
 #'
 readconfig <- function(input_config_file = file.path("configuration", "config_input_threeme.R") ,
-                       output_config_file = file.path("configuration", "config_output_threeme.R")){
+                       output_config_file = file.path("configuration", "config_output_threeme.R"),
+                       quiet = FALSE){
 
   ## CHECKS HERE
   # parameters_range <- NULL ### @Anissa need to correct this !!!
@@ -84,14 +97,54 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   quartos_parameters = NULL
 
   ## Read configs
-  source(input_config_file,local = TRUE)
-  source(output_config_file,local = TRUE)
+  ##
+  ## The files are sourced in an environment of their own, on top of one that
+  ## holds the defaults. A file can therefore use an option it does not set
+  ## (`firstyear = baseyear - max_lags` without a `max_lags`), and what the
+  ## file assigned itself can be told from what was left to its default.
+  defaults <- config_defaults()
+  base <- list2env(defaults, envir = new.env(parent = environment()))
+  cfg <- new.env(parent = base)
+  source(input_config_file, local = cfg)
+  set_by_file <- ls(cfg, all.names = TRUE)
+  out <- new.env(parent = cfg)
+  source(output_config_file, local = out)
 
+  ## Compulsory options. With automated shocks the scenarios come from the
+  ## parameters generator, not from the file.
+  required <- config_required()
+  if (isTRUE(get("automated_shocks", envir = cfg))) required <- setdiff(required, "scenario")
+  missing_required <- required[!vapply(required, function(nm) {
+    nm %in% set_by_file && !is.null(get(nm, envir = cfg))
+  }, logical(1))]
+  if (length(missing_required)) {
+    cli::cli_abort(c("{.file {input_config_file}} is incomplete.",
+                     "x" = "It does not set {.code {missing_required}}, which {?has/have} no default.",
+                     "i" = "See {.fn config_required} for the compulsory options and {.fn config_defaults} for the others."),
+                   call = NULL)
+  }
 
-  ## Where the calibration scripts are: scenarii_calib unless the file says
-  ## otherwise.
-  baseline_scenario_folder <- baseline_scenario_folder %||% calib_folder_default()
-  shock_scenario_folder    <- shock_scenario_folder %||% calib_folder_default()
+  ## `rcpp_option` is the earlier name of `Rcpp`.
+  if (!"Rcpp" %in% set_by_file && "rcpp_option" %in% set_by_file) {
+    assign("Rcpp", get("rcpp_option", envir = cfg), envir = cfg)
+    set_by_file <- c(set_by_file, "Rcpp")
+  }
+
+  defaulted <- setdiff(names(defaults), set_by_file)
+  if (length(defaulted) && !quiet) {
+    ## the wording is settled here: cli would take its plural from the file name
+    n_def <- length(defaulted)
+    cli::cli_alert_info("{n_def} {if (n_def == 1) 'option' else 'options'} not set in {.file {basename(input_config_file)}}, left to {if (n_def == 1) 'its' else 'their'} default:")
+    cli_vector(defaulted)
+  }
+
+  for (nm in union(names(defaults), set_by_file)) {
+    assign(nm, get(nm, envir = cfg))
+  }
+  if (!"firstyear" %in% set_by_file) firstyear <- baseyear - max_lags
+  quartos_to_render  <- if (exists("quartos_to_render", envir = out, inherits = FALSE)) get("quartos_to_render", envir = out) else list()
+  quartos_parameters <- if (exists("quartos_parameters", envir = out, inherits = FALSE)) get("quartos_parameters", envir = out) else list()
+
   for (nm in c("baseline_scenario_folder", "shock_scenario_folder")) {
     folder <- get(nm)
     if (!is.character(folder) || length(folder) != 1L || is.na(folder) || !nzchar(folder)) {
@@ -113,13 +166,9 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
     calib_scenario <- file.path(shock_scenario_folder,paste0("2_calib_shock_",project_name,".R")) ## One unique scenario file will be run
   }
 
-  ## Solver options: `rcpp_option` is the earlier name of `Rcpp`, and
-  ## anything the file leaves out takes its default.
-  if (is.null(Rcpp)) Rcpp <- rcpp_option
-  solver_defaults <- config_solver_defaults()
-  for (nm in names(solver_defaults)) {
-    if (is.null(get(nm))) assign(nm, solver_defaults[[nm]])
-  }
+  scenario_name <- paste(scenario, iso3, sep = "_") |> tolower()
+  shocks_nb <- length(scenario)
+
   ## "auto", TRUE or FALSE; a file may also write it as "true" / "false".
   if (is.character(Rsolver_reuse_jacobian) && length(Rsolver_reuse_jacobian) == 1L &&
       tolower(Rsolver_reuse_jacobian) %in% c("true", "false")) {
@@ -138,7 +187,6 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   }
 
   path_main <- NULL
-  save_files_res <-TRUE
 
   config <- list(
     input = list(
@@ -200,10 +248,88 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 
 }
 
+#' The options a configuration file has to set, and the defaults of the others
+#'
+#' @description `config_required()` names the options of a configuration input
+#'   file that have no default: [readconfig()] stops when one is missing.
+#'
+#'   `config_defaults()` gives the value of every other option, used when a
+#'   file does not set it. It includes the solver options of
+#'   [config_solver_defaults()].
+#'
+#'   Between them they hold every option a configuration input file can set,
+#'   and the configuration addin ([config_addin()]) offers each of them.
+#'
+#' @details The compulsory options:
+#'
+#'   * `project_name`: the stem of the output files.
+#'   * `model_folder`: the folder of `src/model` the model is in.
+#'   * `scenario_baseline`, `scenario`: the baseline and the shocks to run.
+#'     `scenario` is not needed with `automated_shocks = TRUE`.
+#'   * `baseyear`, `lastyear`.
+#'   * `lists_files`, `calib_files`, `model_files`: the `.mdl` files.
+#'
+#'   The defaults, besides the solver options:
+#'
+#'   * `iso3`, `classification`: empty, for a model with neither, such as the
+#'     training model.
+#'   * `automated_shocks`: `FALSE`.
+#'   * `shockyear`: 2021, for now.
+#'   * `max_lags`: 3. `firstyear` is not an option with a default: it is
+#'     `baseyear - max_lags` unless the file sets it.
+#'   * `variables_to_keep`: none, which keeps every variable.
+#'   * `baseline_scenario_folder`, `shock_scenario_folder`:
+#'     [calib_folder_default()].
+#'   * `Rsolver`: `TRUE`, the solver that runs on every system.
+#'   * `warning`: `FALSE`. `tolerance_calib_check`: 0.001.
+#'   * `skip_compiler`: `FALSE`. `recompile_model`: `TRUE`.
+#'   * `save_files_res`: `TRUE`.
+#'   * `output_saved`: none, so no aggregated database is saved.
+#'   * `path_eviews_exe`: empty, which makes [eviews_checks()] search the
+#'     usual locations. `eviews_timeout`: 0, no time out.
+#'
+#' @returns `config_required()` returns a character vector, `config_defaults()`
+#'   a named list.
+#' @export
+#'
+#' @examples
+#' config_required()
+#' str(config_defaults())
+config_required <- function() {
+  c("project_name", "model_folder", "scenario_baseline", "scenario",
+    "baseyear", "lastyear",
+    "lists_files", "calib_files", "model_files")
+}
+
+#' @rdname config_required
+#' @export
+config_defaults <- function() {
+  c(list(
+    iso3                     = "",
+    classification           = "",
+    automated_shocks         = FALSE,
+    shockyear                = 2021,
+    max_lags                 = 3,
+    variables_to_keep        = character(0),
+    baseline_scenario_folder = calib_folder_default(),
+    shock_scenario_folder    = calib_folder_default(),
+    Rsolver                  = TRUE,
+    warning                  = FALSE,
+    tolerance_calib_check    = 1e-3,
+    skip_compiler            = FALSE,
+    recompile_model          = TRUE,
+    save_files_res           = TRUE,
+    output_saved             = character(0),
+    path_eviews_exe          = "",
+    eviews_timeout           = 0),
+    config_solver_defaults())
+}
+
 #' Default values of the solver options
 #'
 #' @description What [readconfig()] uses for a solver option the configuration
-#'   file does not set, and what the configuration addin shows for it.
+#'   file does not set, and what the configuration addin shows for it. They
+#'   are part of [config_defaults()].
 #'
 #'   The R solver options are those of `thortwo::thor_model()` and
 #'   `thortwo::thor_solve()`:

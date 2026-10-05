@@ -11,7 +11,8 @@ a named list.
 }
 \description{
 What \code{\link[=readconfig]{readconfig()}} uses for a solver option the configuration
-file does not set, and what the configuration addin shows for it.
+file does not set, and what the configuration addin shows for it. They
+are part of \code{\link[=config_defaults]{config_defaults()}}.
 
 The R solver options are those of \code{thortwo::thor_model()} and
 \code{thortwo::thor_solve()}:

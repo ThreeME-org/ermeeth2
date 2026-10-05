@@ -35,8 +35,9 @@ scenario_code <- function(x) {
 #'   The solver takes three tabs. *Solver* chooses between R and EViews and
 #'   holds what applies to both; *R solver* and *EViews solver* hold the
 #'   options only one of them reads. An option the configuration file does not
-#'   set yet is shown at its default ([config_solver_defaults()]) and written
-#'   on save.
+#'   set yet is shown at its default ([config_defaults()]) and written on
+#'   save, so saving an incomplete file completes it. The addin offers every
+#'   option of [config_required()] and [config_defaults()].
 #'
 #'   Edits are **surgical**: only the assignments you change are rewritten, and
 #'   every comment, commented-out alternative and live code block in the file is
@@ -100,7 +101,7 @@ config_addin_app <- function(path = "configuration") {
   ## The configuration names its folders from the project root.
   root <- dirname(path)
 
-  defaults <- config_solver_defaults()
+  defaults <- config_defaults()
 
   ## `ENDOFLINE.mdl` closes the calibration and model file lists in a
   ## configuration file. It is there so that commenting a file in or out never
@@ -110,8 +111,10 @@ config_addin_app <- function(path = "configuration") {
   closed_lists <- c("calib_files", "model_files")
   without_marker <- function(x) x[tolower(x) != tolower(end_marker)]
 
-  ## What a `choice` field shows for each value it can take.
+  ## What a `choice` or `multi` field shows for each value it can take.
   choice_labels <- c(eviews_algorithms(),
+                     "By commodity" = "com", "By sector" = "sec",
+                     "By commodity and sector" = "sec_com",
                      "Automatic (on with Rcpp, off in pure R)" = "auto",
                      "Always" = "TRUE", "Never (plain Newton)" = "FALSE")
 
@@ -120,6 +123,13 @@ config_addin_app <- function(path = "configuration") {
     id <- paste0("f_", row$name)
     switch(row$type,
            bool   = shiny::checkboxInput(id, row$label, isTRUE(value), width = "100%"),
+           multi = {
+             allowed <- strsplit(row$choices, "|", fixed = TRUE)[[1]]
+             labels <- names(choice_labels)[match(allowed, choice_labels)]
+             shiny::checkboxGroupInput(id, row$label,
+                                       choices = stats::setNames(allowed, ifelse(is.na(labels), allowed, labels)),
+                                       selected = intersect(as.character(value), allowed))
+           },
            choice = {
              allowed <- strsplit(row$choices, "|", fixed = TRUE)[[1]]
              labels <- names(choice_labels)[match(allowed, choice_labels)]
@@ -422,6 +432,15 @@ config_addin_app <- function(path = "configuration") {
       for (i in seq_len(nrow(fields))) {
         nm <- fields$name[i]
         val <- input[[paste0("f_", nm)]]
+        if (fields$type[i] == "multi") {
+          ## Nothing ticked and "tab never opened" both give NULL: tell them
+          ## apart by whether the other fields of the section are there.
+          others <- fields$name[fields$section == fields$section[i] & fields$type != "multi"]
+          shown <- any(!vapply(others, function(o) is.null(input[[paste0("f_", o)]]), logical(1)))
+          if (!shown) next
+          out[[nm]] <- I(if (length(val)) config_code(as.character(val)) else "c()")
+          next
+        }
         if (is.null(val)) next
         if (fields$type[i] == "number" && is.na(val)) next
         if (fields$type[i] %in% c("text", "choice")) val <- as.character(val)

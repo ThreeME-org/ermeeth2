@@ -108,9 +108,16 @@ config_edit <- function(file, values, out = file) {
 #' for what only one of them reads. Their defaults are in
 #' [config_solver_defaults()].
 #'
+#' Together with the fields the addin handles with controls of its own
+#' (`config_fields_custom()`: the scenarios, their folders, the variables to
+#' keep and the file lists), this covers every option of [config_required()]
+#' and [config_defaults()]. A test holds the two in step, so an option added
+#' to the configuration cannot be left out of the addin.
+#'
 #' @returns a data frame with `name`, `section`, `type` (`text`, `number`,
-#'   `bool` or `choice`), `label` and `choices`. `choices` is `NA` except for a
-#'   `choice` field, where it holds the allowed values separated by `|`.
+#'   `bool`, `choice` or `multi`), `label` and `choices`. `choices` is `NA`
+#'   except for a `choice` field (one value) or a `multi` one (any number),
+#'   where it holds the allowed values separated by `|`.
 #' @export
 #'
 #' @examples
@@ -137,6 +144,8 @@ config_fields <- function() {
     f("skip_compiler",         "Solver", "bool",   "Skip the compiler"),
     f("recompile_model",       "Solver", "bool",   "Recompile the model"),
     f("save_files_res",        "Solver", "bool",   "Save all result files"),
+    f("output_saved",          "Solver", "multi",  "Aggregated databases to save",
+      "com|sec|sec_com"),
 
     f("Rcpp",              "R solver", "bool",
       "Compiled solver, Rcpp (recommended). Off = pure R, no compiler needed"),
@@ -163,11 +172,24 @@ config_fields <- function() {
   )
 }
 
+#' @rdname config_fields
+#' @returns `config_fields_custom()` returns the names of the options the
+#'   addin edits outside the field table.
+#' @export
+config_fields_custom <- function() {
+  c("scenario_baseline", "scenario", "baseline_scenario_folder",
+    "shock_scenario_folder", "variables_to_keep",
+    "lists_files", "calib_files", "model_files")
+}
+
 #' Read the values a configuration file assigns
 #'
 #' Sources the file in a throwaway environment, so the values come back exactly
 #' as the pipeline would see them -- `firstyear` computed from `baseyear`,
-#' `calib_files` built from `iso3`, and so on.
+#' `calib_files` built from `iso3`, and so on. The defaults of
+#' [config_defaults()] are in scope while it is sourced, so an incomplete file
+#' that uses an option it does not set still reads; only what the file
+#' assigns itself is returned.
 #'
 #' @param file path to a configuration input file.
 #' @param fields which names to return. Defaults to everything the file assigns.
@@ -187,16 +209,15 @@ config_fields <- function() {
 #' }
 read_config_values <- function(file, fields = NULL, with = list()) {
   if (!file.exists(file)) cli::cli_abort("no such file: {.file {file}}")
-  env <- new.env(parent = globalenv())
+  base <- list2env(config_defaults(), envir = new.env(parent = globalenv()))
   ## The configs call set_names() and str_c() without qualifying them.
-  env$set_names <- rlang::set_names
-  env$str_c <- stringr::str_c
+  base$set_names <- rlang::set_names
+  base$str_c <- stringr::str_c
   injected <- names(with)
-  for (nm in injected) assign(nm, with[[nm]], envir = env)
+  for (nm in injected) assign(nm, with[[nm]], envir = base)
+  env <- new.env(parent = base)
   sys.source(file, envir = env, keep.source = FALSE)
-  nms <- if (is.null(fields)) {
-    setdiff(ls(env), c("set_names", "str_c", injected))
-  } else fields
+  nms <- if (is.null(fields)) ls(env) else fields
   out <- lapply(nms, function(n) if (exists(n, envir = env, inherits = FALSE)) get(n, envir = env) else NULL)
   stats::setNames(out, nms)
 }
