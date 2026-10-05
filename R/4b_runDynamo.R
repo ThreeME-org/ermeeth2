@@ -82,13 +82,26 @@ runDynaMo <- function(iso3, baseyear, lastyear, calib, model, max_lags = 3,
     model_paths), f)
   close(f)
 
-  sys::exec_wait(dynamo_bin,
+  status <- sys::exec_wait(dynamo_bin,
                  c(
                    file.path(dynamo_path, "compiler","dynamo.cfg"),
                    file.path(dynamo_path, "compiler","calib.csv"),
                    file.path(dynamo_path, "compiler","model.prg")
                  ),
                  std_out = TRUE, std_err = TRUE, timeout = 0)
+
+  # The Linux build ignores the name it is given for the calibration and
+  # writes `datamancer.csv` instead.
+  calib_out <- file.path(dynamo_path, "compiler", "calib.csv")
+  stray <- c("datamancer.csv", file.path(dynamo_path, "compiler", "datamancer.csv"))
+  stray <- stray[file.exists(stray)]
+  if(!file.exists(calib_out) && length(stray) > 0){
+    file.copy(stray[1], calib_out, overwrite = TRUE)
+    file.remove(stray[1])
+    cli::cli_alert_info("DynaMo wrote the calibration to {.file {stray[1]}}, moved to {.file {calib_out}}.")
+  }
+
+  status
 }
 
 
