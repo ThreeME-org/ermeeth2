@@ -397,7 +397,7 @@ config_addin_app <- function(path = "configuration") {
         nm <- fields$name[i]
         val <- input[[paste0("f_", nm)]]
         if (is.null(val) || is.na(val)) next
-        if (fields$type[i] == "text") val <- as.character(val)
+        val <- if (fields$type[i] == "text") as.character(val) else as.numeric(val)
         was <- v[[nm]] %||% defaults[[nm]]
         if (length(was) == 1 && isTRUE(as.character(val) == as.character(was))) next
         over[[nm]] <- I(config_code(val))
@@ -513,6 +513,9 @@ config_addin_app <- function(path = "configuration") {
         if (is.null(val)) next
         if (fields$type[i] == "number" && is.na(val)) next
         if (fields$type[i] %in% c("text", "choice")) val <- as.character(val)
+        ## a whole number comes back from the browser as an integer; written
+        ## as `0L` it breaks the callers that want a double (sys::exec_wait)
+        if (fields$type[i] == "number") val <- as.numeric(val)
         ## a choice of TRUE / FALSE goes into the file as a logical
         if (fields$type[i] == "choice" && val %in% c("TRUE", "FALSE")) val <- as.logical(val)
         out[[nm]] <- I(config_code(val))

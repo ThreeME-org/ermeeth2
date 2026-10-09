@@ -281,7 +281,7 @@ test_that("the configuration addin writes the solver options under their config 
                       f_Rsolver_damping = FALSE,
                       f_Rsolver_sequential = TRUE, f_Rsolver_reuse_jacobian = "FALSE",
                       f_eviews_algorithm = "newton", f_eviews_digits = 8,
-                      f_eviews_max_iter = 9000)
+                      f_eviews_max_iter = 9000L)
     session$setInputs(save = 1)
 
     f <- file.path(cfg, "config_input_threeme.R")
@@ -296,6 +296,9 @@ test_that("the configuration addin writes the solver options under their config 
     expect_equal(v$eviews_algorithm, "newton")
     expect_equal(v$eviews_digits, 8)
     expect_equal(v$eviews_max_iter, 9000)
+    # whole numbers are written as doubles, as the browser sends integers
+    expect_type(v$eviews_max_iter, "double")
+    expect_false(any(grepl("[0-9]L\\b", readLines(f))))
     # `Rcpp` was replaced where it stood, not appended a second time
     expect_equal(sum(grepl("^Rcpp\\s*=", readLines(f))), 1)
   })

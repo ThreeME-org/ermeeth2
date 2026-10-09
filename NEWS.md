@@ -1,3 +1,11 @@
+# ermeeth2 1.0.9
+
+- EViews solver: a run no longer stops with `REAL() can only be applied to a
+  'numeric', not a 'integer'` when the configuration sets `eviews_timeout` as
+  an integer (`0L`). The timeout is now passed to EViews as a double.
+- `config_addin()` writes whole numbers as `0`, `2019`, not `0L`, `2019L`. It
+  was the addin that put the integer timeout in the file.
+
 # ermeeth2 1.0.8
 
 - `config_addin()`: the file lists of the Files tab now follow the Basics tab.

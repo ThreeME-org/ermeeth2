@@ -154,7 +154,7 @@ eviews_model_solver<- function(config_file = configuration,
 
     # Run ThreeME in Eviews
     cli::cli_alert_info("Run ThreeME in EViews: scenario {.val {scen}} ({shock_nb}/{length(scenario)})")
-    sys::exec_wait(normalizePath(path_eviews_exe_2), c(stringr::str_c(eviews_default_path, "run_main_from_R.prg")), timeout = eviews_timeout)
+    sys::exec_wait(normalizePath(path_eviews_exe_2), c(stringr::str_c(eviews_default_path, "run_main_from_R.prg")), timeout = as.numeric(eviews_timeout))
 
     shock_nb = shock_nb + 1
   }
