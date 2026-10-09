@@ -218,6 +218,53 @@ test_that("the configuration addin saves under a new name, preserving comments",
   })
 })
 
+test_that("the configuration addin rebuilds the file lists when the classification changes", {
+  skip_if_no_shiny()
+  d <- local_project()
+  cfg <- file.path(d, "configuration")
+  f <- file.path(cfg, "config_input_threeme.R")
+  config_edit(f, list(
+    lists_files = I('c(str_c("R_lists_", iso3, "_", classification, ".mdl"), "lists.mdl")'),
+    calib_files = I(paste0('c(lists_files,  # ALL VERSIONS\n',
+                           '  str_c("data/R_Calibration_", iso3, "_", classification, "_", baseyear, ".mdl"),\n',
+                           '  "ENDOFLINE.mdl")')),
+    model_files = I('c(lists_files, "SU.mdl", "ENDOFLINE.mdl")')))
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme")
+    expect_equal(file_lists()$lists_files, c("R_lists_FRA_c8_s8.mdl", "lists.mdl"))
+    # the Files tab is open, the model files were edited by hand
+    session$setInputs(
+      name = "threeme",
+      f_lists_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl",
+      f_calib_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl\ndata/R_Calibration_FRA_c8_s8_2019.mdl",
+      f_model_files = "R_lists_FRA_c8_s8.mdl\nlists.mdl\nSU.mdl\nPrices.mdl")
+
+    session$setInputs(f_classification = "c28_s32", f_baseyear = 2020)
+    expect_equal(file_lists()$lists_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl"))
+    expect_equal(file_lists()$calib_files[3], "data/R_Calibration_FRA_c28_s32_2020.mdl")
+
+    # what the browser sends back once the boxes have been updated
+    session$setInputs(
+      f_lists_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl",
+      f_calib_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl\ndata/R_Calibration_FRA_c28_s32_2020.mdl",
+      f_model_files = "R_lists_FRA_c28_s32.mdl\nlists.mdl\nSU.mdl\nPrices.mdl")
+    session$setInputs(save = 1)
+
+    out <- readLines(f)
+    v <- read_config_values(f)
+    expect_equal(v$classification, "c28_s32")
+    expect_equal(v$lists_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl"))
+    expect_equal(v$calib_files[3], "data/R_Calibration_FRA_c28_s32_2020.mdl")
+    # the lists left alone still build their names from the classification
+    expect_true(any(grepl('str_c("R_lists_", iso3', out, fixed = TRUE)))
+    expect_true(any(grepl("ALL VERSIONS", out)))
+    # the edited one is written out, in the new classification
+    expect_equal(v$model_files, c("R_lists_FRA_c28_s32.mdl", "lists.mdl", "SU.mdl",
+                                  "Prices.mdl", "ENDOFLINE.mdl"))
+  })
+})
+
 test_that("the configuration addin writes the solver options under their config names", {
   skip_if_no_shiny()
   d <- local_project()

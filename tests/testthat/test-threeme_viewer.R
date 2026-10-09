@@ -139,3 +139,27 @@ test_that("the generated code runs and reproduces the viewer's output", {
   expect_s3_class(results[[2]], "ggplot")
   expect_s3_class(results[[3]], "gt_tbl")
 })
+
+test_that("the plot and table work off the selected variables only", {
+  skip_if_not_installed("shiny")
+
+  shiny::testServer(threeme_viewer_app(mini_path()), {
+    session$setInputs(
+      source = "file", path = mini_path(),
+      baseline = "baseline", scenarios = "g",
+      variables = c("Y", "MU"), base_year = NA
+    )
+    ## A full model is millions of rows; only the selection is handed on.
+    expect_setequal(unique(dat_sel()$variable), c("Y", "MU"))
+    expect_lt(nrow(dat_sel()), nrow(dat()))
+    expect_null(dat2_sel())
+
+    ## The slice must not move the default base year: it stays the first year
+    ## of the full data, as the generated code would resolve it.
+    expect_equal(base_year_arg(), min(dat()$year))
+    session$setInputs(base_year = 2020)
+    expect_equal(base_year_arg(), 2020)
+
+    expect_equal(meta()$variables, sort(unique(dat()$variable)))
+  })
+})

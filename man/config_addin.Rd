@@ -40,6 +40,9 @@ so regenerating it from a template would throw that away.
 In the Files tab, \code{ENDOFLINE.mdl} is left out of the calibration and model
 file lists: it only closes them in the configuration file, and is added
 back on save. A list that was not changed is not rewritten.
+The lists follow the Basics tab: a configuration that names its files
+after the country, the classification or the base year shows them under
+the values currently entered there, not those of the file as loaded.
 
 Naming a scenario the project has no calibration for offers to create it,
 through the same template \code{\link[=create_shock]{create_shock()}} uses. The Scenarios tab also

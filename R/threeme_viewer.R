@@ -45,6 +45,10 @@ build_call <- function(fn, data_expr, args) {
   paste0(fn, "(\n  ", data_expr, ",\n", paste(lines, collapse = ",\n"), "\n)")
 }
 
+## How many matches the variable picker lists at once. The search itself runs
+## over every variable; this only caps what is drawn in the dropdown.
+viewer_max_options <- 200
+
 ## Candidate ThreeME dataframes sitting in the global environment.
 threeme_candidates <- function(env = globalenv()) {
   objs <- ls(env)
@@ -170,8 +174,12 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
           shiny::selectInput("baseline", "Baseline scenario", choices = NULL),
           shiny::selectizeInput("scenarios", "Scenarios", choices = NULL,
                                 multiple = TRUE),
-          shiny::selectizeInput("variables", "Variables", choices = NULL,
-                                multiple = TRUE),
+          shiny::selectizeInput(
+            "variables", "Variables", choices = NULL, multiple = TRUE,
+            options = list(placeholder = "Type to search...",
+                           maxOptions = viewer_max_options)
+          ),
+          shiny::uiOutput("variables_hint"),
           shiny::selectInput("transformation", "Transformation",
                              choices = transformations, selected = "reldiff")
         ),
@@ -289,6 +297,35 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
       else start_expr
     })
 
+    ## Everything the controls need to know about the data, scanned once per
+    ## dataset rather than once per control.
+    meta <- shiny::reactive({
+      d <- dat()
+      shiny::req(d, all(c("year", "variable", "scenario") %in% names(d)))
+      list(
+        variables = sort(unique(d$variable)),
+        scenarios = sort(unique(d$scenario)),
+        years = range(d$year, na.rm = TRUE)
+      )
+    })
+
+    ## The rows of the selected variables. A full model holds millions of rows
+    ## and a plot needs a few hundred of them: slicing here means that changing
+    ## a title or a palette no longer rescans the whole result.
+    slice_variables <- function(d) {
+      if (is.null(d) || !"variable" %in% names(d)) return(d)
+      d[d$variable %in% input$variables, , drop = FALSE]
+    }
+    dat_sel <- shiny::reactive(slice_variables(dat()))
+    dat2_sel <- shiny::reactive(slice_variables(dat2()))
+
+    ## `base_year` defaults to the first year of the data handed over, which is
+    ## now a slice: pin it to the first year of the full data, as the generated
+    ## code - which runs on the full data - would resolve it.
+    base_year_arg <- shiny::reactive({
+      if (is.na(input$base_year)) meta()$years[1] else input$base_year
+    })
+
     ## What the data is missing, if anything - said out loud rather than
     ## failing further down with a cryptic error.
     output$data_status <- shiny::renderUI({
@@ -306,30 +343,39 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
       shiny::div(
         class = "text-success small",
         sprintf("%s rows, %s variables, %s scenarios, %s-%s",
-                nrow(d), length(unique(d$variable)), length(unique(d$scenario)),
-                min(d$year, na.rm = TRUE), max(d$year, na.rm = TRUE))
+                nrow(d), length(meta()$variables), length(meta()$scenarios),
+                meta()$years[1], meta()$years[2])
       )
     })
 
+    output$variables_hint <- shiny::renderUI({
+      n <- length(meta()$variables)
+      if (n <= viewer_max_options) return(NULL)
+      shiny::helpText(sprintf(
+        "%s variables: the list shows the first %s matches, type to narrow it down.",
+        format(n, big.mark = " "), viewer_max_options
+      ))
+    })
+
     ## Fill the series controls from whatever data got loaded.
-    shiny::observeEvent(dat(), {
-      d <- dat()
-      shiny::req(d, "scenario" %in% names(d))
-      scen <- sort(unique(d$scenario))
+    shiny::observeEvent(meta(), {
+      scen <- meta()$scenarios
       base_guess <- if ("baseline" %in% scen) "baseline" else scen[1]
 
       shiny::updateSelectInput(session, "baseline", choices = scen, selected = base_guess)
       shiny::updateSelectizeInput(session, "scenarios", choices = scen,
                                   selected = setdiff(scen, base_guess))
-      vars <- sort(unique(d$variable))
+      vars <- meta()$variables
       var_guess <- intersect(c("Y", "GDP"), vars)
       if (!length(var_guess)) var_guess <- utils::head(vars, 3)
+      ## Server-side: a full model has tens of thousands of variables, and
+      ## shipping them all to the browser freezes it. The list stays in R and
+      ## the browser only ever receives the matches for what was typed.
       shiny::updateSelectizeInput(session, "variables", choices = vars,
-                                  selected = var_guess)
+                                  selected = var_guess, server = TRUE)
       shiny::updateSliderInput(
         session, "years",
-        min = min(d$year, na.rm = TRUE), max = max(d$year, na.rm = TRUE),
-        value = c(min(d$year, na.rm = TRUE), max(d$year, na.rm = TRUE))
+        min = meta()$years[1], max = meta()$years[2], value = meta()$years
       )
     })
 
@@ -397,7 +443,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     ## --- outputs ----------------------------------------------------------
 
     the_plot <- shiny::reactive({
-      d <- dat()
+      d <- dat_sel()
       shiny::req(d, length(input$variables) > 0)
       p <- try(simple_plot(
         d,
@@ -407,7 +453,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
         labels = if (length(labels_vec())) labels_vec() else NULL,
         startyear = input$years[1],
         endyear = input$years[2],
-        base_year = if (is.na(input$base_year)) NULL else input$base_year,
+        base_year = base_year_arg(),
         name_baseline = input$baseline,
         palette = threeme_palette(keys = input$variables, type = input$palette_type),
         colour_by = if (nzchar(input$colour_by %||% "")) input$colour_by else NULL,
@@ -442,21 +488,21 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     })
 
     output$table <- gt::render_gt({
-      d <- dat()
+      d <- dat_sel()
       shiny::req(d, length(input$variables) > 0)
       tb <- try(table_3me(
         d,
         variables = variables_arg(),
         transformation = transformation_arg(),
         scenarios = input$scenarios,
-        data_secondary = dat2(),
+        data_secondary = dat2_sel(),
         model_names = model_names(),
         horizons = horizons(),
         shock_year = if (is.na(input$shock_year)) NULL else input$shock_year,
         end_year = if (is.na(input$end_year)) NULL else input$end_year,
         labels = if (length(labels_vec())) labels_vec() else NULL,
         name_baseline = input$baseline,
-        base_year = if (is.na(input$base_year)) NULL else input$base_year,
+        base_year = base_year_arg(),
         digits = input$table_digits,
         title = if (nzchar(input$table_title %||% "")) input$table_title else NULL,
         subtitle = if (nzchar(input$table_subtitle %||% "")) input$table_subtitle else NULL,
