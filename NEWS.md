@@ -1,3 +1,21 @@
+# ermeeth2 1.0.11
+
+- `threeme_viewer()` opens on `GDP` alone. `Y` is selected only when the model
+  has no `GDP`; before, both were selected.
+
+# ermeeth2 1.0.10
+
+- `threeme_viewer()` opens a full-size result at once. It now accepts a
+  `.parquet` file and queries it instead of reading it: the list of variables
+  comes from one small query, and only the rows of the variables selected are
+  ever fetched. Pointed at an `.rds`, it uses the `.parquet` that
+  `run_simulations()` wrote next to it, when there is one and it is not older
+  than the `.rds`. On a 28x32 result (31 million rows, 88 000 variables) the
+  data is ready in about 1 s, against 25 s to read the `.rds`. Needs the
+  `arrow` package; without it, or without a parquet file, the `.rds` is read
+  as before.
+- `threeme_viewer(path)` no longer reads the file twice when it starts.
+
 # ermeeth2 1.0.9
 
 - EViews solver: a run no longer stops with `REAL() can only be applied to a

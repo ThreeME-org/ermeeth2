@@ -163,3 +163,41 @@ test_that("the plot and table work off the selected variables only", {
     expect_equal(meta()$variables, sort(unique(dat()$variable)))
   })
 })
+
+test_that("the viewer queries a parquet file instead of reading it", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("arrow")
+  d <- withr::local_tempdir()
+  rds <- file.path(d, "mini.rds")
+  pq <- file.path(d, "mini.parquet")
+  file.copy(mini_path(), rds)
+  full <- readRDS(rds)
+
+  ## an .rds with no parquet next to it is read whole
+  expect_null(viewer_parquet_for(rds))
+  expect_s3_class(viewer_open(rds), "data.frame")
+
+  arrow::write_parquet(full, pq)
+  expect_equal(viewer_parquet_for(rds), pq)
+  ## a parquet older than its .rds belongs to an earlier run
+  Sys.setFileTime(pq, file.mtime(rds) - 60)
+  expect_null(viewer_parquet_for(rds))
+  Sys.setFileTime(pq, file.mtime(rds) + 60)
+
+  for (path in c(rds, pq)) {
+    shiny::testServer(threeme_viewer_app(path), {
+      var <- sort(unique(full$variable))[1]
+      session$setInputs(source = "file", path = path, variables = var)
+      expect_false(is.data.frame(dat()))
+      expect_equal(meta()$variables, sort(unique(full$variable)))
+      expect_setequal(meta()$scenarios, unique(full$scenario))
+      expect_equal(meta()$years, range(full$year))
+      ## only the selected variable is ever materialised
+      expect_s3_class(dat_sel(), "data.frame")
+      expect_equal(nrow(dat_sel()), sum(full$variable == var))
+      expect_type(dat_sel()$scenario, "character")
+    })
+  }
+  expect_equal(viewer_read_code(pq), paste0('arrow::read_parquet("', pq, '")'))
+  expect_equal(viewer_read_code(rds), paste0('readRDS("', rds, '")'))
+})

@@ -49,6 +49,35 @@ build_call <- function(fn, data_expr, args) {
 ## over every variable; this only caps what is drawn in the dropdown.
 viewer_max_options <- 200
 
+## The parquet file to read in place of `path`, or NULL to read `path` itself.
+## run_simulations() writes a .parquet next to each .rds: a full model takes
+## half a minute to read from the .rds and no time to open from the parquet,
+## which is then only ever queried for the variables on screen. A parquet older
+## than its .rds is from an earlier run and is left alone.
+viewer_parquet_for <- function(path) {
+  if (!requireNamespace("arrow", quietly = TRUE)) return(NULL)
+  if (grepl("\\.parquet$", path, ignore.case = TRUE)) return(path)
+  pq <- sub("\\.rds$", ".parquet", path, ignore.case = TRUE)
+  if (identical(pq, path) || !file.exists(pq)) return(NULL)
+  if (file.mtime(pq) < file.mtime(path)) return(NULL)
+  pq
+}
+
+## A result file as the viewer holds it: an arrow dataset, not read yet, when
+## there is a parquet to open, the whole dataframe otherwise.
+viewer_open <- function(path) {
+  if (!isTruthy_chr(path) || !file.exists(path)) return(NULL)
+  pq <- viewer_parquet_for(path)
+  tryCatch(if (is.null(pq)) readRDS(path) else arrow::open_dataset(pq),
+           error = function(e) NULL)
+}
+
+## How the generated code reads a result file.
+viewer_read_code <- function(path) {
+  fn <- if (grepl("\\.parquet$", path, ignore.case = TRUE)) "arrow::read_parquet" else "readRDS"
+  paste0(fn, '("', path, '")')
+}
+
 ## Candidate ThreeME dataframes sitting in the global environment.
 threeme_candidates <- function(env = globalenv()) {
   objs <- ls(env)
@@ -63,7 +92,7 @@ threeme_candidates <- function(env = globalenv()) {
 #' ThreeME viewer
 #'
 #' @description An RStudio addin to look at a simulation result interactively:
-#'   point it at a `data_full` object or `.rds` file, tick the variables you
+#'   point it at a `data_full` object, an `.rds` or a `.parquet` file, tick the variables you
 #'   want, and it draws the plot and builds the table, exposing the arguments of
 #'   [simple_plot()] and [table_3me()] as controls.
 #'
@@ -71,10 +100,17 @@ threeme_candidates <- function(env = globalenv()) {
 #'   with something to paste into a quarto. Inside RStudio, the *Insert code*
 #'   button drops them at the cursor.
 #'
+#'   A full-size result is best opened from its `.parquet` file (needs the
+#'   `arrow` package): the file is not read, only the variables selected are
+#'   fetched from it, so the viewer opens at once. Pointed at an `.rds` it
+#'   uses the `.parquet` that [run_simulations()] wrote next to it, when there
+#'   is one and it is not older; failing that the whole `.rds` is read, which
+#'   takes half a minute for a 28x32 model.
+#'
 #'   Launch it from the Addins menu ("ThreeME viewer"), or call this function.
 #'
 #' @param data an optional starting point: a ThreeME long-format dataframe, or
-#'   the path to an `.rds` file holding one. When `NULL` (default) the viewer
+#'   the path to an `.rds` or `.parquet` file holding one. When `NULL` (default) the viewer
 #'   opens on its data panel.
 #' @param viewer where to open: `"dialog"` for an RStudio dialog, `"browser"`
 #'   for the system browser, `"pane"` for the RStudio viewer pane. Outside
@@ -117,6 +153,10 @@ threeme_viewer <- function(data = NULL, viewer = c("dialog", "browser", "pane"))
 #' @export
 threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
 
+  variable <- NULL
+  scenario <- NULL
+  year <- NULL
+
   for (pkg in c("shiny", "bslib", "rstudioapi")) {
     if (!requireNamespace(pkg, quietly = TRUE)) {
       cli::cli_abort("The ThreeME viewer needs the {.pkg {pkg}} package. Install it first.")
@@ -128,9 +168,9 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
   start_path <- ""
   start_expr <- "data_full"
   if (is.character(data) && length(data) == 1) {
+    ## read by the server, once, when the session starts
     start_path <- data
-    start_data <- tryCatch(readRDS(data), error = function(e) NULL)
-    start_expr <- paste0('readRDS("', data, '")')
+    start_expr <- viewer_read_code(data)
   } else if (is.data.frame(data)) {
     start_data <- data
     if (!is.null(data_expr) && length(data_expr) == 1 && nzchar(data_expr) &&
@@ -153,7 +193,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
           "Data", value = "data", icon = NULL,
           shiny::radioButtons(
             "source", NULL,
-            choices = c("Global environment" = "env", "File (.rds)" = "file"),
+            choices = c("Global environment" = "env", "File (.rds, .parquet)" = "file"),
             selected = if (nzchar(start_path)) "file" else "env",
             inline = TRUE
           ),
@@ -225,7 +265,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
           "Compare two models", value = "compare",
           shiny::helpText("A second simulation, typically the same scenarios run ",
                           "after the equations changed."),
-          shiny::textInput("path2", "Second file (.rds)"),
+          shiny::textInput("path2", "Second file (.rds, .parquet)"),
           shiny::actionButton("browse2", "Browse...", class = "btn-sm"),
           shiny::textInput("model_names", "Model names", value = "model 1, model 2")
         )
@@ -259,7 +299,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     browse_rds <- function(caption) {
       if (!rstudioapi::isAvailable()) return(NULL)
       tryCatch(
-        rstudioapi::selectFile(caption = caption, filter = "R data (*.rds)"),
+        rstudioapi::selectFile(caption = caption, filter = "ThreeME results (*.rds *.parquet)"),
         error = function(e) NULL
       )
     }
@@ -276,8 +316,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     dat <- shiny::reactive({
       if (identical(input$source, "file")) {
         shiny::req(nzchar(input$path %||% ""))
-        if (!file.exists(input$path)) return(NULL)
-        tryCatch(readRDS(input$path), error = function(e) NULL)
+        viewer_open(input$path)
       } else {
         if (!is.null(start_data) && !isTruthy_chr(input$obj)) return(start_data)
         shiny::req(isTruthy_chr(input$obj))
@@ -286,13 +325,11 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     })
 
     dat2 <- shiny::reactive({
-      if (!isTruthy_chr(input$path2)) return(NULL)
-      if (!file.exists(input$path2)) return(NULL)
-      tryCatch(readRDS(input$path2), error = function(e) NULL)
+      viewer_open(input$path2)
     })
 
     data_expr <- shiny::reactive({
-      if (identical(input$source, "file")) paste0('readRDS("', input$path, '")')
+      if (identical(input$source, "file")) viewer_read_code(input$path)
       else if (isTruthy_chr(input$obj)) input$obj
       else start_expr
     })
@@ -302,6 +339,16 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     meta <- shiny::reactive({
       d <- dat()
       shiny::req(d, all(c("year", "variable", "scenario") %in% names(d)))
+      if (!is.data.frame(d)) {
+        ## an arrow dataset: three small queries, the rows stay on disk
+        one <- function(q) dplyr::collect(q)[[1]]
+        return(list(
+          variables = sort(as.character(one(dplyr::distinct(d, variable)))),
+          scenarios = sort(as.character(one(dplyr::distinct(d, scenario)))),
+          years = c(one(dplyr::summarise(d, min(year, na.rm = TRUE))),
+                    one(dplyr::summarise(d, max(year, na.rm = TRUE))))
+        ))
+      }
       list(
         variables = sort(unique(d$variable)),
         scenarios = sort(unique(d$scenario)),
@@ -314,7 +361,13 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
     ## a title or a palette no longer rescans the whole result.
     slice_variables <- function(d) {
       if (is.null(d) || !"variable" %in% names(d)) return(d)
-      d[d$variable %in% input$variables, , drop = FALSE]
+      vars <- input$variables
+      if (is.data.frame(d)) return(d[d$variable %in% vars, , drop = FALSE])
+      ## an arrow dataset: this is the only read of the file's rows
+      out <- as.data.frame(dplyr::collect(dplyr::filter(d, variable %in% vars)))
+      ## a partitioned dataset returns its partition key as a factor
+      if (is.factor(out$scenario)) out$scenario <- as.character(out$scenario)
+      out
     }
     dat_sel <- shiny::reactive(slice_variables(dat()))
     dat2_sel <- shiny::reactive(slice_variables(dat2()))
@@ -332,7 +385,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
       d <- dat()
       if (is.null(d)) {
         return(shiny::div(class = "text-danger small",
-                          "No data loaded. Pick an object or a readable .rds file."))
+                          "No data loaded. Pick an object or a readable .rds or .parquet file."))
       }
       missing_cols <- setdiff(c("year", "variable", "scenario", "values"), names(d))
       if (length(missing_cols) > 0) {
@@ -344,7 +397,10 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
         class = "text-success small",
         sprintf("%s rows, %s variables, %s scenarios, %s-%s",
                 nrow(d), length(meta()$variables), length(meta()$scenarios),
-                meta()$years[1], meta()$years[2])
+                meta()$years[1], meta()$years[2]),
+        if (!is.data.frame(d)) {
+          shiny::div(class = "text-muted", "Read from the parquet file, on demand.")
+        }
       )
     })
 
@@ -366,7 +422,8 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
       shiny::updateSelectizeInput(session, "scenarios", choices = scen,
                                   selected = setdiff(scen, base_guess))
       vars <- meta()$variables
-      var_guess <- intersect(c("Y", "GDP"), vars)
+      ## GDP, or Y in a model that has no GDP
+      var_guess <- utils::head(intersect(c("GDP", "Y"), vars), 1)
       if (!length(var_guess)) var_guess <- utils::head(vars, 3)
       ## Server-side: a full model has tens of thousands of variables, and
       ## shipping them all to the browser freezes it. The list stays in R and
@@ -560,7 +617,7 @@ threeme_viewer_app <- function(data = NULL, data_expr = NULL) {
       if (!is.null(dat2())) {
         table_args <- append(
           table_args,
-          list(data_secondary = paste0('readRDS("', input$path2, '")')),
+          list(data_secondary = viewer_read_code(input$path2)),
           after = 2
         )
       }

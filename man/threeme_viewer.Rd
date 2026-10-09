@@ -11,7 +11,7 @@ threeme_viewer_app(data = NULL, data_expr = NULL)
 }
 \arguments{
 \item{data}{an optional starting point: a ThreeME long-format dataframe, or
-the path to an \code{.rds} file holding one. When \code{NULL} (default) the viewer
+the path to an \code{.rds} or \code{.parquet} file holding one. When \code{NULL} (default) the viewer
 opens on its data panel.}
 
 \item{viewer}{where to open: \code{"dialog"} for an RStudio dialog, \code{"browser"}
@@ -31,13 +31,20 @@ outside RStudio.
 }
 \description{
 An RStudio addin to look at a simulation result interactively:
-point it at a \code{data_full} object or \code{.rds} file, tick the variables you
+point it at a \code{data_full} object, an \code{.rds} or a \code{.parquet} file, tick the variables you
 want, and it draws the plot and builds the table, exposing the arguments of
 \code{\link[=simple_plot]{simple_plot()}} and \code{\link[=table_3me]{table_3me()}} as controls.
 
 The Code tab shows the two calls it just ran, so a session of clicking ends
 with something to paste into a quarto. Inside RStudio, the \emph{Insert code}
 button drops them at the cursor.
+
+A full-size result is best opened from its \code{.parquet} file (needs the
+\code{arrow} package): the file is not read, only the variables selected are
+fetched from it, so the viewer opens at once. Pointed at an \code{.rds} it
+uses the \code{.parquet} that \code{\link[=run_simulations]{run_simulations()}} wrote next to it, when there
+is one and it is not older; failing that the whole \code{.rds} is read, which
+takes half a minute for a 28x32 model.
 
 Launch it from the Addins menu ("ThreeME viewer"), or call this function.
 }
