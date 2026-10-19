@@ -1,3 +1,11 @@
+# ermeeth2 1.1.1
+
+- `prg_to_thor()` is more than twice as fast on a large model, with the same
+  result: 8 s instead of 18 s on FRA 29x33 (26,439 equations). The `@elem` are
+  substituted only in the equations that hold one, an `@elem` reads the
+  calibration without searching its column names, and the endogenous variable
+  of every equation is found in one pass (`prg_first_variable()`).
+
 # ermeeth2 1.0.21
 
 - `table_3me()`: the default look is a plain `gt` table (`theme = "none"`),

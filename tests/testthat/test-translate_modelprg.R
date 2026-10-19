@@ -187,3 +187,25 @@ test_that("base.year is required", {
 
   expect_error(prg_to_thor(prg, calib, verbose = FALSE), "base.year")
 })
+
+test_that("prg_first_variable() gives the first name of prg_variables(), for a whole vector", {
+  x <- c("pch_cind*ch_cind=chd_cind+chm_cind",
+         "log(y_sind)-log(lag(y_sind,1))",
+         "delta(1,w_sser)/w_sser",
+         "2*gdp",
+         "0.5+1",
+         "")
+  expected <- vapply(x, function(s) {
+    v <- prg_variables(s)
+    if (length(v)) v[1L] else NA_character_
+  }, character(1), USE.NAMES = FALSE)
+  expect_identical(prg_first_variable(x), expected)
+  expect_identical(prg_first_variable(x)[1:4], c("pch_cind", "y_sind", "w_sser", "gdp"))
+})
+
+test_that("an @elem is evaluated whatever the number of columns of the calibration", {
+  calib <- data.frame(year = 2018:2020, a = c(1, 2, 3), b = c(10, 20, 30))
+  expect_equal(prg_eval_elem("a/b(-1)", 2020, calib), 3 / 20)
+  expect_true(is.na(prg_eval_elem("not_there", 2020, calib)))
+  expect_true(is.na(prg_eval_elem("a", 2050, calib)))
+})

@@ -97,6 +97,37 @@ prg_variables <- function(string) {
 }
 
 
+#' The first variable of each of a set of expressions
+#'
+#' @description [prg_variables()] on each string, keeping the first name, but
+#'   with every substitution applied to the whole vector at once: on a model
+#'   of 26,000 equations, one call per equation took seconds.
+#'
+#' @param strings a character vector.
+#'
+#' @returns A character vector as long as `strings`, `NA` where a string holds
+#'   no variable.
+#' @keywords internal
+prg_first_variable <- function(strings) {
+  fn <- c(prg_functions(), toupper(prg_functions()),
+          "delta", "newdiff", "lag", "mylg")
+  function_pattern <- paste(paste0(fn, "\\("), collapse = "|")
+  symbol_pattern   <- "(\\+|\\*|,|-|/|\\^|\\(|\\)|=)|\\\\"
+
+  x <- gsub("\\s+", "", strings)
+  x <- gsub(function_pattern, "@", x)
+  x <- gsub(symbol_pattern, "@", x)
+  x <- gsub("@+", ",", x)
+  x <- gsub(",[0-9]+(\\.[0-9]+)?", ",", x)
+  x <- gsub("^[0-9]+(\\.[0-9]+)?", "", x)
+  x <- gsub("^,|,$", "", x)
+  ## the first non-empty name: empty fields only come from adjacent commas
+  first <- sub("^,*([^,]*).*$", "\\1", x)
+  first[!nzchar(first)] <- NA_character_
+  first
+}
+
+
 #' Rewrite EViews logical tests as smooth indicators
 #'
 #' @description `(A < B)` evaluates to 1 or 0 in EViews. The solver has no
@@ -297,11 +328,14 @@ prg_eval_elem <- function(expr, year, calib) {
   e <- gsub('(?<![."a-z0-9_])([a-z][a-z0-9_]*)(?!\\s*\\(|["a-z0-9_])',
             '.v("\\1",.y)', e, perl = TRUE)
 
+  ## `calib[[nm]]` rather than `nm %in% names(calib)`: the calibration has
+  ## thousands of columns, and this is called for every variable of every @elem
   .v <- function(nm, yr) {
-    if (!nm %in% names(calib)) return(NA_real_)
-    row <- which(calib$year == yr)
-    if (length(row) != 1L) return(NA_real_)
-    as.numeric(calib[[nm]][row])
+    x <- calib[[nm]]
+    if (is.null(x)) return(NA_real_)
+    row <- match(yr, calib$year)
+    if (is.na(row)) return(NA_real_)
+    as.numeric(x[row])
   }
   env <- list2env(list(.v = .v, .y = year), parent = baseenv())
 
@@ -434,10 +468,15 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
     }
 
     ## Substituted as literal text, longest first, so no occurrence can be
-    ## rewritten inside another one.
+    ## rewritten inside another one. Only in the equations that hold an @elem:
+    ## most hold none, and scanning all of them for each @elem was a third of
+    ## the translation of a large model.
+    has <- grepl("@elem(", eqs, fixed = TRUE)
+    with_elem <- eqs[has]
     for (k in order(nchar(elem$original), decreasing = TRUE)) {
-      eqs <- gsub(elem$original[k], elem$name[k], eqs, fixed = TRUE)
+      with_elem <- gsub(elem$original[k], elem$name[k], with_elem, fixed = TRUE)
     }
+    eqs[has] <- with_elem
 
     left <- sum(grepl("@elem", eqs, fixed = TRUE))
     if (left) warn(sprintf("%d @elem left in the equations after substitution", left))
@@ -485,10 +524,7 @@ prg_to_thor <- function(modfile = file.path("src", "compiler", "model.prg"),
   ## The endogenous variable of an equation is the first one on its left-hand
   ## side: the compiler emits equations already normalised that way.
   lhs <- sub("=.*$", "", eqs)
-  endo <- vapply(lhs, function(s) {
-    v <- prg_variables(s)
-    if (length(v) == 0L) NA_character_ else v[1L]
-  }, character(1), USE.NAMES = FALSE)
+  endo <- prg_first_variable(lhs)
 
   if (anyNA(endo)) {
     warn(sprintf("%d equation(s) have no variable on the left-hand side",
