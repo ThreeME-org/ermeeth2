@@ -1,3 +1,9 @@
+# ermeeth2 1.1.2
+
+- Removed `shiny_trial/`. The trial Shiny app now lives in its own repository,
+  `threeme_webapp` (OFCE), where each model size ships as an R package built
+  with `thortwo::thor_package()` instead of an `.rds` bundle.
+
 # ermeeth2 1.1.1
 
 - `prg_to_thor()` is more than twice as fast on a large model, with the same
