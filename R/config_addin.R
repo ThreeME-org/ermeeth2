@@ -60,6 +60,10 @@ scenario_code <- function(x) {
 #'   (`baseline_scenario_folder`, `shock_scenario_folder`): `scenarii_calib`
 #'   or one of its subfolders.
 #'
+#'   After a save, when the `readconfig()` call of the project's `Main.R` reads
+#'   other configuration files, the addin offers to point it to the ones just
+#'   saved. Only the arguments of the call are rewritten.
+#'
 #'   Only works inside a ThreeME v4 project: it reads and writes
 #'   `configuration/config_input_*.R` and `config_output_*.R`.
 #'
@@ -606,7 +610,47 @@ config_addin_app <- function(path = "configuration") {
       configs(list_configs(path))
       shiny::showNotification(paste("Wrote", paste(basename(written), collapse = ", ")),
                               type = "message")
+
+      ## Offer to make Main.R read the configuration just saved. The output
+      ## file is only pointed to when there is one under the new name.
+      main_file <- file.path(root, "Main.R")
+      if (file.exists(main_file)) {
+        rel <- function(f) file.path(basename(path), basename(f))
+        updated <- tryCatch(
+          main_config_update(readLines(main_file, warn = FALSE), rel(tgt_in),
+                             if (file.exists(tgt_out)) rel(tgt_out)),
+          error = function(e) NULL)
+        if (isTRUE(attr(updated, "changed"))) {
+          pending_main(list(file = main_file, lines = updated, written = written))
+          shiny::showModal(shiny::modalDialog(
+            title = "Update Main.R?",
+            shiny::p("Make the ", shiny::code("readconfig()"), " call of ",
+                     shiny::code("Main.R"), " read the configuration just saved?"),
+            shiny::tags$ul(
+              shiny::tags$li(shiny::code(rel(tgt_in))),
+              if (file.exists(tgt_out)) shiny::tags$li(shiny::code(rel(tgt_out)))),
+            footer = shiny::tagList(
+              shiny::actionButton("main_skip", "Leave Main.R as it is"),
+              shiny::actionButton("main_update", "Update Main.R", class = "btn-primary")),
+            easyClose = FALSE))
+          return()
+        }
+      }
       shiny::stopApp(invisible(list(files = written)))
+    })
+
+    pending_main <- shiny::reactiveVal(NULL)
+    shiny::observeEvent(input$main_update, {
+      p <- pending_main()
+      ok <- tryCatch({ writeLines(p$lines, p$file); TRUE },
+                     error = function(e) { shiny::showNotification(
+                       conditionMessage(e), type = "error"); FALSE })
+      shiny::removeModal()
+      shiny::stopApp(invisible(list(files = if (ok) c(p$written, p$file) else p$written)))
+    })
+    shiny::observeEvent(input$main_skip, {
+      shiny::removeModal()
+      shiny::stopApp(invisible(list(files = pending_main()$written)))
     })
 
     shiny::observeEvent(input$cancel, shiny::stopApp(invisible(NULL)))

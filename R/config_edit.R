@@ -437,6 +437,83 @@ read_config_values <- function(file, fields = NULL, with = list()) {
   stats::setNames(out, nms)
 }
 
+#' Point the `readconfig()` calls of a script to other configuration files
+#'
+#' Used by the configuration addin to offer to update `Main.R` after a save.
+#' Only the arguments are rewritten, each as `file.path("configuration",
+#' "config_input_x.R")`: the rest of the script, comments included, is left as
+#' it is. Every `readconfig()` call that is code (not a comment) is updated; an
+#' argument given by position is matched as `readconfig()` matches it, and one
+#' that is not given is added.
+#'
+#' @param lines the script, as lines.
+#' @param input_file,output_file the configuration files to read, as paths
+#'   from the project root. `NULL` leaves that argument alone.
+#'
+#' @returns the updated lines, with attribute `changed` (`TRUE` when they
+#'   differ from `lines`) and `calls` (the number of `readconfig()` calls found).
+#' @keywords internal
+main_config_update <- function(lines, input_file, output_file = NULL) {
+  lines <- as.character(lines)
+  path_code <- function(f) {
+    parts <- strsplit(f, "/", fixed = TRUE)[[1]]
+    paste0("file.path(", paste0("\"", parts, "\"", collapse = ", "), ")")
+  }
+  wanted <- list(input_config_file = input_file, output_config_file = output_file)
+  wanted <- lapply(Filter(Negate(is.null), wanted), path_code)
+  formal_names <- names(formals(readconfig))
+
+  pd <- utils::getParseData(parse(text = lines, keep.source = TRUE))
+  pd <- pd[order(pd$line1, pd$col1), ]
+  fns <- pd$id[pd$token == "SYMBOL_FUNCTION_CALL" & pd$text == "readconfig"]
+
+  ## One replacement per argument: the span it replaces, or an insertion point.
+  edits <- list()
+  for (fn in fns) {
+    call_id <- pd$parent[pd$id == pd$parent[pd$id == fn]]
+    kids <- pd[pd$parent == call_id & pd$token != "COMMENT", ]
+    close <- kids[kids$token == "')'", ]
+    args <- kids[!kids$token %in% c("'('", "')'"), ][-1, ]   # the first is the function
+    groups <- cumsum(args$token == "','")
+    args <- split(args[args$token != "','", ], groups[args$token != "','"])
+    found <- list()
+    positional <- setdiff(formal_names, vapply(args, function(a)
+      if (a$token[1] == "SYMBOL_SUB") a$text[1] else "", character(1)))
+    for (a in args) {
+      if (!nrow(a)) next
+      if (a$token[1] == "SYMBOL_SUB") {
+        nm <- a$text[1]; val <- a[a$token == "expr", ][1, ]
+      } else {
+        nm <- positional[1]; positional <- positional[-1]; val <- a[1, ]
+      }
+      found[[nm]] <- val
+    }
+    for (nm in names(wanted)) {
+      if (!is.null(found[[nm]])) {
+        v <- found[[nm]]
+        edits[[length(edits) + 1]] <- list(l1 = v$line1, c1 = v$col1, l2 = v$line2,
+                                           c2 = v$col2, text = wanted[[nm]])
+      } else {
+        sep <- if (length(args) && any(vapply(args, nrow, 1L) > 0)) ", " else ""
+        edits[[length(edits) + 1]] <- list(l1 = close$line1, c1 = close$col1,
+                                           l2 = close$line1, c2 = close$col1 - 1L,
+                                           text = paste0(sep, nm, " = ", wanted[[nm]]))
+      }
+    }
+  }
+
+  out <- lines
+  ## From the end of the script, so that the earlier positions still hold.
+  ord <- order(-vapply(edits, `[[`, 1, "l1"), -vapply(edits, `[[`, 1, "c1"))
+  for (e in edits[ord]) {
+    new <- paste0(substr(out[e$l1], 1, e$c1 - 1L), e$text,
+                  substr(out[e$l2], e$c2 + 1L, nchar(out[e$l2])))
+    out <- c(out[seq_len(e$l1 - 1L)], strsplit(new, "\n", fixed = TRUE)[[1]],
+             out[-seq_len(e$l2)])
+  }
+  structure(out, changed = !identical(out, lines), calls = length(fns))
+}
+
 #' Find the configuration files of a project
 #'
 #' @param path the configuration folder.

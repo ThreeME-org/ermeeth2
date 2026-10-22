@@ -233,3 +233,32 @@ test_that("a file list not written one entry per line is written afresh, comment
   expect_true(any(grepl("# \"Exception_ETS.mdl\",", res$lines, fixed = TRUE)))
   expect_equal(res$lines[1:13], l[1:13])
 })
+
+test_that("main_config_update points readconfig() to the new files", {
+  main <- c("# config <- readconfig(\"old.R\")",
+            "config <- readconfig(input_config_file = file.path(\"configuration\", \"config_input_a.R\"),",
+            "                     output_config_file = file.path(\"configuration\", \"config_output_a.R\")",
+            "                     )",
+            "data_full <- run_simulations(configuration = config)")
+  out <- main_config_update(main, "configuration/config_input_b.R",
+                            "configuration/config_output_b.R")
+  expect_true(attr(out, "changed"))
+  expect_equal(attr(out, "calls"), 1)
+  expect_equal(out[1], main[1])                     # comments are left alone
+  expect_equal(out[5], main[5])
+  expect_match(out[2], "config_input_b.R", fixed = TRUE)
+  expect_match(out[3], "config_output_b.R", fixed = TRUE)
+  ## already pointing there: nothing to change
+  again <- main_config_update(out, "configuration/config_input_b.R",
+                              "configuration/config_output_b.R")
+  expect_false(attr(again, "changed"))
+})
+
+test_that("main_config_update matches positional arguments and adds missing ones", {
+  main <- c("cfg <- ermeeth2::readconfig(\"a.R\",", "  quiet = TRUE)", "x <- readconfig()")
+  out <- main_config_update(main, "configuration/config_input_b.R")
+  expect_equal(out[1], "cfg <- ermeeth2::readconfig(file.path(\"configuration\", \"config_input_b.R\"),")
+  expect_equal(out[2], main[2])
+  expect_equal(out[3], "x <- readconfig(input_config_file = file.path(\"configuration\", \"config_input_b.R\"))")
+  expect_false(attr(main_config_update("y <- 1", "configuration/config_input_b.R"), "changed"))
+})

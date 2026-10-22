@@ -53,6 +53,10 @@ sets the folders the baseline and the shocks are read from
 (\code{baseline_scenario_folder}, \code{shock_scenario_folder}): \code{scenarii_calib}
 or one of its subfolders.
 
+After a save, when the \code{readconfig()} call of the project's \code{Main.R} reads
+other configuration files, the addin offers to point it to the ones just
+saved. Only the arguments of the call are rewritten.
+
 Only works inside a ThreeME v4 project: it reads and writes
 \code{configuration/config_input_*.R} and \code{config_output_*.R}.
 

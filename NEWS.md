@@ -1,3 +1,9 @@
+# ermeeth2 1.1.3
+
+- The configuration addin offers, after a save, to update the `readconfig()`
+  call of `Main.R` so that it reads the configuration files just saved. Only
+  the arguments of the call are rewritten (internal `main_config_update()`).
+
 # ermeeth2 1.1.2
 
 - Removed `shiny_trial/`. The trial Shiny app now lives in its own repository,
