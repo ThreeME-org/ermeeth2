@@ -1,3 +1,17 @@
+# ermeeth2 1.1.4
+
+- New R solver option `Rsolver_continuation` (default `TRUE`), passed to
+  `thortwo::thor_solve(continuation = )`. A period that does not solve from
+  the previous year's solution is solved again with the exogenous variables
+  moved there in steps, which is what a large carbon tax from one year to the
+  next needs on ThreeME 29x33 (ct100 with 56.7 EUR/tCO2 in 2020, jumps of
+  22.5 to 56.7 in 2021). Periods that solved before are solved exactly as
+  before. `FALSE` solves each period once. In `readconfig()`, the
+  configuration addin and `config_solver_defaults()`.
+- Needs thortwo 0.9.4, which has continuation, and now says where to get it
+  (`Remotes: OFCE/thortwo`), so that installing ermeeth2 from GitHub brings
+  the right thortwo with it.
+
 # ermeeth2 1.1.3
 
 - The configuration addin offers, after a save, to update the `readconfig()`

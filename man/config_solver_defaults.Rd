@@ -32,6 +32,10 @@ plain Newton.
 \item \code{Rsolver_rtol}, \code{Rsolver_atol}: relative and absolute tolerance.
 \item \code{Rsolver_max_iter}: maximum number of Newton iterations per period.
 \item \code{Rsolver_damping}: damp the Newton steps.
+\item \code{Rsolver_continuation}: when a period does not solve from the previous
+period's solution, solve it again with the exogenous variables moved
+there in steps. Periods that solve directly are not affected. \code{FALSE}
+solves each period once.
 \item \code{Rsolver_verbose}: print the solver's own progress.
 \item \code{Rsolver_timings}: print, at the end of the solve, how long the
 translation, the build, the compilation and each scenario took.

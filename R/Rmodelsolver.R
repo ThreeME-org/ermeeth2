@@ -17,7 +17,8 @@
 #'   configuration forces the rebuild. The remaining solver options
 #'   (`Rsolver_decompose`, `Rsolver_sequential`, `Rsolver_reuse_jacobian`,
 #'   `Rsolver_timings`, `Rsolver_rtol`, `Rsolver_atol`, `Rsolver_max_iter`,
-#'   `Rsolver_damping`, `Rsolver_verbose`) are read from the configuration; see
+#'   `Rsolver_damping`, `Rsolver_continuation`, `Rsolver_verbose`) are read
+#'   from the configuration; see
 #'   [config_solver_defaults()].
 #'
 #' @returns A long-format data.frame with columns `year`, `variable`, one
@@ -47,6 +48,7 @@ R_model_solver <- function(config_file = configuration,
   Rsolver_atol <- NULL
   Rsolver_max_iter <- NULL
   Rsolver_damping <- NULL
+  Rsolver_continuation <- NULL
   Rsolver_verbose <- NULL
   Rsolver_timings <- NULL
 
@@ -195,6 +197,8 @@ R_model_solver <- function(config_file = configuration,
           index_time = "year",
           rtol = Rsolver_rtol, atol = Rsolver_atol,
           max_iter = Rsolver_max_iter, damping = isTRUE(Rsolver_damping),
+          ## on unless the configuration says FALSE, as in thortwo
+          continuation = !isFALSE(Rsolver_continuation),
           ## "auto" leaves the choice to thortwo: on when compiled, off in pure R
           reuse_jacobian = if (is.logical(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian else NULL,
           verbose = isTRUE(Rsolver_verbose)),

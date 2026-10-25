@@ -74,6 +74,15 @@ test_that("readconfig reads Rsolver_reuse_jacobian as auto or a logical", {
   expect_error(adv("Rsolver_reuse_jacobian = \"sometimes\""), "Rsolver_reuse_jacobian")
 })
 
+test_that("readconfig reads Rsolver_continuation, on by default", {
+  adv <- function(lines) {
+    f <- solver_config_files(lines)
+    readconfig(f$input, f$output)$input$advanced_config
+  }
+  expect_true(adv(character(0))$Rsolver_continuation)
+  expect_false(adv("Rsolver_continuation = FALSE")$Rsolver_continuation)
+})
+
 test_that("show_thor_equations prints the equations an error message names", {
   fake <- methods::setClass("fake_thor_model",
                             methods::representation(equations = "data.frame"),

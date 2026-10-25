@@ -377,6 +377,8 @@ config_fields <- function() {
     f("Rsolver_atol",      "R solver", "number", "Absolute tolerance"),
     f("Rsolver_max_iter",  "R solver", "number", "Maximum Newton iterations per period"),
     f("Rsolver_damping",   "R solver", "bool",   "Damp the Newton steps"),
+    f("Rsolver_continuation", "R solver", "bool",
+      "If a period does not solve, solve it again in steps from the previous one"),
     f("Rsolver_verbose",   "R solver", "bool",   "Print the solver's progress"),
     f("Rsolver_timings",   "R solver", "bool",
       "Print how long the translation, the build and each solve took"),

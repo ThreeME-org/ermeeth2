@@ -89,6 +89,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   Rsolver_atol = NULL
   Rsolver_max_iter = NULL
   Rsolver_damping = NULL
+  Rsolver_continuation = NULL
   Rsolver_verbose = NULL
   Rsolver_timings = NULL
   eviews_algorithm = NULL
@@ -244,6 +245,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
         Rsolver_atol = Rsolver_atol,
         Rsolver_max_iter = Rsolver_max_iter,
         Rsolver_damping = Rsolver_damping,
+        Rsolver_continuation = Rsolver_continuation,
         Rsolver_verbose = Rsolver_verbose,
         Rsolver_timings = Rsolver_timings,
         eviews_algorithm = eviews_algorithm,
@@ -386,6 +388,10 @@ config_defaults <- function() {
 #'   * `Rsolver_rtol`, `Rsolver_atol`: relative and absolute tolerance.
 #'   * `Rsolver_max_iter`: maximum number of Newton iterations per period.
 #'   * `Rsolver_damping`: damp the Newton steps.
+#'   * `Rsolver_continuation`: when a period does not solve from the previous
+#'     period's solution, solve it again with the exogenous variables moved
+#'     there in steps. Periods that solve directly are not affected. `FALSE`
+#'     solves each period once.
 #'   * `Rsolver_verbose`: print the solver's own progress.
 #'   * `Rsolver_timings`: print, at the end of the solve, how long the
 #'     translation, the build, the compilation and each scenario took.
@@ -412,6 +418,7 @@ config_solver_defaults <- function() {
     Rsolver_atol      = 1e-8,
     Rsolver_max_iter  = 100,
     Rsolver_damping   = TRUE,
+    Rsolver_continuation = TRUE,
     Rsolver_verbose   = FALSE,
     Rsolver_timings   = TRUE,
     eviews_algorithm  = "broyden",

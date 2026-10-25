@@ -38,6 +38,7 @@ is loaded rather than rebuilt; \code{recompile_model_R = TRUE} in the
 configuration forces the rebuild. The remaining solver options
 (\code{Rsolver_decompose}, \code{Rsolver_sequential}, \code{Rsolver_reuse_jacobian},
 \code{Rsolver_timings}, \code{Rsolver_rtol}, \code{Rsolver_atol}, \code{Rsolver_max_iter},
-\code{Rsolver_damping}, \code{Rsolver_verbose}) are read from the configuration; see
+\code{Rsolver_damping}, \code{Rsolver_continuation}, \code{Rsolver_verbose}) are read
+from the configuration; see
 \code{\link[=config_solver_defaults]{config_solver_defaults()}}.
 }
