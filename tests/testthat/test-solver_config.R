@@ -17,7 +17,6 @@ solver_config_files <- function(solver_lines, env = parent.frame()) {
     "shockyear = 2021",
     "max_lags = 3",
     "firstyear = baseyear - max_lags",
-    "automated_shocks = FALSE",
     "lists_files = \"lists.mdl\"",
     "calib_files = c(lists_files, \"calib.mdl\")",
     "model_files = c(lists_files, \"eq.mdl\")",
@@ -247,4 +246,23 @@ test_that("the sourceCpp hooks are emptied, then put back as they were", {
 
   restore()
   expect_identical(getHook("sourceCpp.onBuildComplete"), list(seen))
+})
+
+test_that("readconfig reads Rsolver_swap, and refuses it malformed or without the R solver", {
+  adv <- readconfig(solver_config_files(character(0))$input,
+                    solver_config_files(character(0))$output)$input$advanced_config
+  expect_identical(adv$Rsolver_swap, list())
+
+  f <- solver_config_files(
+    "Rsolver_swap = list(ct1 = list(endo = \"EMS_CO2\", exo = \"RCO2TAX_VOL\"))")
+  adv <- readconfig(f$input, f$output)$input$advanced_config
+  expect_identical(adv$Rsolver_swap, list(ct1 = list(endo = "ems_co2", exo = "rco2tax_vol")))
+
+  f <- solver_config_files("Rsolver_swap = list(ct1 = list(endo = c(\"a\", \"b\"), exo = \"c\"))")
+  expect_error(readconfig(f$input, f$output), "as many")
+  f <- solver_config_files("Rsolver_swap = list(list(endo = \"a\", exo = \"c\"))")
+  expect_error(readconfig(f$input, f$output), "named by scenario")
+  f <- solver_config_files(c("Rsolver_swap = list(ct1 = list(endo = \"a\", exo = \"c\"))",
+                             "Rsolver = FALSE"))
+  expect_error(readconfig(f$input, f$output), "R solver only")
 })

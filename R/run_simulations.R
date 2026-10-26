@@ -18,7 +18,9 @@
 #'
 #' @returns The main long-format results data.frame. The aggregate, commodity
 #'   and sector datasets are written to `data/output` as a side effect,
-#'   according to the `output_saved` configuration entry.
+#'   according to the `output_saved` configuration entry. With parametric
+#'   shocks, the values each parametric scenario ran with are written there
+#'   too, as `<project_name>_params.csv` (see [read_3me_params()]).
 #' @export
 run_simulations <- function(configuration = config,
                             export_scenarii_to_excel = FALSE,
@@ -33,7 +35,9 @@ run_simulations <- function(configuration = config,
   firstyear <- NULL
   lastyear <- NULL
   Rsolver <- NULL
-  shock_scenario_folder <- NULL
+  calib_scenario <- NULL
+  parametric_runs <- NULL
+  scenario <- NULL
   output_saved <- NULL
   V1 <- NULL
   V2 <- NULL
@@ -94,25 +98,25 @@ run_simulations <- function(configuration = config,
   ### calib_new_base now integrates changes with the baseline scenario and should be used to configure shock scenarii
 
   ## D Scenarii shock calibration
-  if(automated_shocks == FALSE){
-    shock_ch_scenarii <- scenario |>
-      map(~source(file.path(shock_scenario_folder %||% calib_folder_default(), str_c("2_calib_shock_",.x,".R")), local = TRUE )) |>
-      map(~.x$value) |>
-      set_names(scenario)
-  }else{
-    source(calib_scenario, local = TRUE)
-    shock_ch_scenarii <- purrr::set_names(scenario)  |>
-      map( ~safely(automated_calib_shock)(.x,calib_new_base, parameters_range)$results ) |> purrr::compact()
-    failed_scen <- setdiff(scenario, names(shock_ch_scenarii))
-    if(length(failed_scen)>0){
-      cli::cli_alert_warning("Some scenarios could not be calibrated, dropping them: {.val {failed_scen}}")
-      scenario <- names(shock_ch_scenarii)
-
-    }else{
-      cli::cli_alert_success("All scenarios were properly calibrated")
-    }
-
+  ## Each scenario runs its script (the shock sheet, for a parametric one) in
+  ## an environment of its own on top of this one. Every script is run before
+  ## stopping, so that one failure does not hide the others.
+  sim_env <- environment()
+  shock_files <- set_names(calib_scenario, unname(scenario))
+  shock_runs <- shock_files |>
+    imap(function(file, s) {
+      tryCatch(run_shock_sheet(file, sim_env, parametric_runs[[s]]$values),
+               error = function(e) e)
+    })
+  failed <- keep(shock_runs, ~inherits(.x, "error"))
+  if (length(failed)) {
+    cli::cli_abort(c("{length(failed)} scenario{?s} could not be calibrated:",
+                     set_names(paste0(names(failed), ": ", purrr::map_chr(failed, conditionMessage)), rep("x", length(failed)))),
+                   call = NULL)
   }
+  shock_ch_scenarii <- map(shock_runs, "shock_ch")
+  params_meta <- parametric_metadata(parametric_runs,
+                                     used = map(shock_runs, "values") |> purrr::compact())
 
   shock_ch_scenarii |>
     purrr::iwalk(~ check_calibration_years(.x, calib_new_base, paste0("Scenario ", .y)))
@@ -257,6 +261,8 @@ run_simulations <- function(configuration = config,
     save_3me_output(data_list[[2]], project_name, "com",     formats = output_format)}
   if("sec" %in% output_saved){
     save_3me_output(data_list[[3]], project_name, "sec",     formats = output_format)}
+  ## The values each parametric scenario ran with: <project_name>_params.csv
+  write_3me_params(params_meta, project_name)
 
 
 

@@ -41,4 +41,10 @@ configuration forces the rebuild. The remaining solver options
 \code{Rsolver_damping}, \code{Rsolver_continuation}, \code{Rsolver_verbose}) are read
 from the configuration; see
 \code{\link[=config_solver_defaults]{config_solver_defaults()}}.
+
+With \code{Rsolver_swap} set in the configuration, the scenarios it names are
+solved with a model in which some endogenous and exogenous variables swap
+roles, made from the main one by \code{thortwo::thor_swap()}: see
+\code{\link[=normalise_rsolver_swap]{normalise_rsolver_swap()}}. The baseline and every other scenario are
+solved with the main model as usual.
 }

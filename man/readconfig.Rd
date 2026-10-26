@@ -38,8 +38,16 @@ Three values are worked out when the file does not give them:
 
 The calibration scripts of the scenarios are looked for in
 \code{baseline_scenario_folder} (for \verb{1_calib_<scenario_baseline>.R}) and
-\code{shock_scenario_folder} (for the \verb{2_calib_shock_<scenario>.R}, and the
-automated shocks files).
+\code{shock_scenario_folder} (for the \verb{2_calib_shock_<scenario>.R}).
+
+\strong{Parametric shocks.} \code{parametric_shocks} runs a shock sheet for several
+values of its parameters: \code{list(ct = c("redis", "traj"))} runs
+\verb{2_calib_shock_ct.R} with each row of the parameter sheets
+\verb{3_params_ct_redis.R} and \verb{3_params_ct_traj.R}, read from
+\code{shock_params_folder} (the shock folder unless set). Each row is a
+scenario, \code{ct_redis_1}, \code{ct_redis_2}, ..., added after the classic ones
+of \code{scenario}. \code{scenario} may then be left out. See \code{\link[=shock_parameters]{shock_parameters()}}
+and \code{\link[=shock_grid]{shock_grid()}}.
 
 Two options are still understood under the name they had before:
 \code{rcpp_option} for \code{Rcpp}, and \code{skip_compiler} for \code{skip_dynamo}.

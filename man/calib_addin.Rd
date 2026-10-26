@@ -35,6 +35,10 @@ The script pane is editable, so the scenario can be written here rather
 than in a second step. It starts from a template that runs as written and
 changes nothing until edited.
 
+The third type, \emph{Parameter sheet}, writes \verb{3_params_<shock>_<identifier>.R}
+for a parametric shock (\code{\link[=create_params]{create_params()}}): the template lists the
+parameters the shock sheet declares, each at its default.
+
 Only works inside a ThreeME v4 project: it writes into
 \verb{configuration/scenarii_calib/}, a path that only means anything there.
 

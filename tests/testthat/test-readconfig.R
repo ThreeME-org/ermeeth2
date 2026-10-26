@@ -43,7 +43,9 @@ test_that("a file with only the compulsory options reads, the rest by default", 
   expect_equal(inp$max_lags, 3)
   expect_equal(inp$shockyear, 2021)
   expect_equal(inp$firstyear, 2016)
-  expect_false(inp$automated_shocks)
+  expect_equal(inp$parametric_shocks, list())
+  expect_length(inp$parametric_runs, 0)
+  expect_equal(inp$shock_params_folder, inp$shock_scenario_folder)
   expect_length(inp$variables_to_keep, 0)
   expect_equal(inp$calib_baseline,
                file.path(calib_folder_default(), "1_calib_baseline-steady.R"))

@@ -53,6 +53,10 @@ sets the folders the baseline and the shocks are read from
 (\code{baseline_scenario_folder}, \code{shock_scenario_folder}): \code{scenarii_calib}
 or one of its subfolders.
 
+The same tab picks the parametric shocks (\code{parametric_shocks}) among the
+parameter sheets of \code{shock_params_folder}, shown as \code{shock/identifier},
+and offers to create the sheets that do not exist yet (\code{\link[=create_params]{create_params()}}).
+
 After a save, when the \code{readconfig()} call of the project's \code{Main.R} reads
 other configuration files, the addin offers to point it to the ones just
 saved. Only the arguments of the call are rewritten.

@@ -26,7 +26,6 @@ local_project <- function(env = parent.frame()) {
     "shockyear = 2021",
     "max_lags = 3",
     "firstyear = baseyear - max_lags",
-    "automated_shocks = FALSE",
     "variables_to_keep = c()",
     "lists_files = c(\"lists.mdl\")",
     "calib_files = c(\"data/parameters.mdl\",  # ALL VERSIONS",
@@ -538,4 +537,110 @@ test_that("a real project shows no warning banner, a stray folder does", {
   d <- local_project()
   expect_null(project_banner(d))
   expect_false(is.null(project_banner(withr::local_tempdir())))
+})
+
+
+# ---- Parametric shocks in the addins ------------------------------------------
+
+## local_project() plus a parametric shock sheet `ct` and its sheet `redis`.
+local_parametric_addin_project <- function(env = parent.frame()) {
+  d <- local_project(env = env)
+  cal <- file.path(d, "configuration", "scenarii_calib")
+  writeLines(c("shock_parameters(level = 1, redis_h = 0)",
+               "shock_ch <- calib_new_base |> dplyr::select(year)"),
+             file.path(cal, "2_calib_shock_ct.R"))
+  writeLines("shock_grid(redis_h = c(0, 0.5, 1))", file.path(cal, "3_params_ct_redis.R"))
+  d
+}
+
+test_that("the calibration addin writes a parameter sheet listing the shock's parameters", {
+  skip_if_no_shiny()
+  d <- local_parametric_addin_project()
+  cal <- file.path(d, "configuration", "scenarii_calib")
+
+  shiny::testServer(calib_addin_app(path = cal), {
+    session$setInputs(type = "params", name = "ct", identifier = "Bad", title = "",
+                      overwrite = FALSE)
+    expect_null(scenario())
+    session$setInputs(identifier = "levels")
+    expect_equal(scenario(), "ct/levels")
+    expect_match(script_text(), "level = c(1)", fixed = TRUE)
+    expect_match(script_text(), "redis_h = c(0)", fixed = TRUE)
+    session$setInputs(create = 1)
+    f <- file.path(cal, "3_params_ct_levels.R")
+    expect_true(file.exists(f))
+    expect_equal(read_params_sheet(f, new.env()), data.frame(level = 1, redis_h = 0))
+  })
+})
+
+test_that("the configuration addin picks parametric shocks and their folder", {
+  skip_if_no_shiny()
+  d <- local_parametric_addin_project()
+  cfg <- file.path(d, "configuration")
+  sub <- file.path("configuration", "scenarii_calib", "sensitivity")
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme", name = "threeme",
+                      f_scenario_baseline = "baseline-steady", f_scenario = "ct1")
+    expect_true("ct/redis" %in% params_choices())
+    session$setInputs(f_parametric_shocks = c("ct/redis", "ct/fresh"))
+    expect_equal(missing_params(), "ct/fresh")
+
+    session$setInputs(create_missing_params = 1)
+    expect_true(file.exists(file.path(d, "configuration", "scenarii_calib", "3_params_ct_fresh.R")))
+    expect_length(missing_params(), 0)
+
+    session$setInputs(save = 1)
+    v <- read_config_values(file.path(cfg, "config_input_threeme.R"))
+    expect_equal(v$parametric_shocks, list(ct = c("redis", "fresh")))
+    # left on "same as the shock folder": not written
+    expect_false("shock_params_folder" %in% names(v))
+  })
+
+  shiny::testServer(config_addin_app(path = cfg), {
+    session$setInputs(existing = "threeme", name = "threeme",
+                      f_scenario_baseline = "baseline-steady")
+    expect_equal(input$f_parametric_shocks %||% params_pairs(values()$parametric_shocks),
+                 c("ct/redis", "ct/fresh"))
+    # in a folder of their own, the sheets are not there
+    session$setInputs(f_parametric_shocks = "ct/redis", f_shock_params_folder = sub)
+    expect_equal(missing_params(), "ct/redis")
+    session$setInputs(save = 1)
+    v <- read_config_values(file.path(cfg, "config_input_threeme.R"))
+    expect_equal(v$shock_params_folder, sub)
+    expect_equal(v$parametric_shocks, list(ct = "redis"))
+
+    # back to the shock folder, and no parametric shock at all
+    session$setInputs(f_shock_params_folder = "", f_parametric_shocks = character(0))
+    session$setInputs(save = 2)
+  })
+  v <- read_config_values(file.path(cfg, "config_input_threeme.R"))
+  expect_null(v$shock_params_folder)
+  expect_equal(v$parametric_shocks, list())
+})
+
+test_that("the run addin lists the parametric scenarios, all ticked", {
+  skip_if_no_shiny()
+  d <- local_parametric_addin_project()
+  cfg <- file.path(d, "configuration")
+  out <- file.path(d, "data", "output")
+  config_edit(file.path(cfg, "config_input_threeme.R"),
+              list(parametric_shocks = I("list(ct = \"redis\")")))
+
+  shiny::testServer(run_addin_app(path = cfg, output_dir = out), {
+    session$setInputs(config_in = "threeme", config_out = "threeme")
+    expect_equal(run_params$parametric, "ct/redis")
+    expect_equal(names(runs()), paste0("ct_redis_", 1:3))
+    expect_equal(run_params$variations, paste0("ct_redis_", 1:3))
+    expect_equal(runs()$ct_redis_2$values, list(redis_h = 0.5))
+
+    session$setInputs(variations = "ct_redis_3")
+    expect_equal(run_params$variations, "ct_redis_3")
+
+    # a sheet that cannot be read is said so, and blocks the run
+    session$setInputs(parametric = "ct/nope")
+    expect_s3_class(runs(), "error")
+    session$setInputs(project_name = "p", run = 1)
+    expect_length(list.files(out), 0)
+  })
 })

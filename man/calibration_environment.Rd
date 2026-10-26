@@ -4,18 +4,34 @@
 \alias{calibration_environment}
 \title{Creating the scenario calibration environment}
 \usage{
-calibration_environment(baseline_calibration = FALSE, configuration = config)
+calibration_environment(
+  baseline_calibration = FALSE,
+  configuration = config,
+  scenario = NULL
+)
 }
 \arguments{
 \item{baseline_calibration}{Boolean. Whether to create an environment to test a baseline scenario calibration. Default: FALSE}
 
 \item{configuration}{Configuration list to use. Defaul is config. Seldom needs user modification.}
+
+\item{scenario}{a parametric scenario, e.g. \code{"ct_redis_4"}: the shock
+sheet is then tested with its values. \code{NULL} (the default) tests it with
+its defaults.}
 }
 \value{
 a list of all the objects necessary to test a scenario configuration script. the list needs to be expanded in the global environment
 }
 \description{
 The scenario calibration environment, a.k.a. the calibration bubble, creates the necessary objects from a given configuration list to test scenario calibration scripts.
+
+With parametric shocks in the configuration, the bubble of a shock also
+holds \code{parametric_grid}: every parametric scenario with the values of its
+parameters (see \code{\link[=shock_parameters]{shock_parameters()}}). By default, \code{shock_parameters()} in
+a shock sheet run line by line gives the defaults; with \code{scenario}, it gives
+the values of that parametric scenario instead, and says so. Switch to
+another one with \code{\link[=use_parametric_scenario]{use_parametric_scenario()}}, without building the bubble
+again.
 }
 \examples{
 \dontrun{
@@ -25,6 +41,10 @@ The scenario calibration environment, a.k.a. the calibration bubble, creates the
 
   calibration_environment(FALSE, config) |> list2env(envir = globalenv())
 
+  ## a parametric shock sheet, with the values of one of its scenarios
+  calibration_environment(FALSE, config, scenario = "ct_redis_4") |>
+    list2env(envir = globalenv())
+  parametric_grid
 }
 
 

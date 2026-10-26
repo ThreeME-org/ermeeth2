@@ -325,8 +325,9 @@ config_edit <- function(file, values, out = file) {
 #' [config_solver_defaults()].
 #'
 #' Together with the fields the addin handles with controls of its own
-#' (`config_fields_custom()`: the scenarios, their folders, the variables to
-#' keep and the file lists), this covers every option of [config_required()]
+#' (`config_fields_custom()`: the scenarios, the parametric shocks, their
+#' folders, the variables to keep and the file lists), this covers every
+#' option of [config_required()]
 #' and [config_defaults()]. A test holds the two in step, so an option added
 #' to the configuration cannot be left out of the addin.
 #'
@@ -352,7 +353,6 @@ config_fields <- function() {
     f("lastyear",         "Basics", "number", "Last year"),
     f("shockyear",        "Basics", "number", "Shock year"),
     f("max_lags",         "Basics", "number", "Maximum lag"),
-    f("automated_shocks", "Basics", "bool",   "Automated shocks"),
 
     f("Rsolver",               "Solver", "bool",   "Solve in R (off = EViews, Windows only)"),
     f("warning",               "Solver", "bool",   "Solver warning messages"),
@@ -400,8 +400,10 @@ config_fields <- function() {
 #' @export
 config_fields_custom <- function() {
   c("scenario_baseline", "scenario", "baseline_scenario_folder",
-    "shock_scenario_folder", "variables_to_keep",
-    "lists_files", "calib_files", "model_files")
+    "shock_scenario_folder", "shock_params_folder", "parametric_shocks",
+    "variables_to_keep",
+    "lists_files", "calib_files", "model_files",
+    "Rsolver_swap")
 }
 
 #' Read the values a configuration file assigns

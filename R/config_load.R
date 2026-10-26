@@ -16,8 +16,16 @@
 #'
 #'   The calibration scripts of the scenarios are looked for in
 #'   `baseline_scenario_folder` (for `1_calib_<scenario_baseline>.R`) and
-#'   `shock_scenario_folder` (for the `2_calib_shock_<scenario>.R`, and the
-#'   automated shocks files).
+#'   `shock_scenario_folder` (for the `2_calib_shock_<scenario>.R`).
+#'
+#'   **Parametric shocks.** `parametric_shocks` runs a shock sheet for several
+#'   values of its parameters: `list(ct = c("redis", "traj"))` runs
+#'   `2_calib_shock_ct.R` with each row of the parameter sheets
+#'   `3_params_ct_redis.R` and `3_params_ct_traj.R`, read from
+#'   `shock_params_folder` (the shock folder unless set). Each row is a
+#'   scenario, `ct_redis_1`, `ct_redis_2`, ..., added after the classic ones
+#'   of `scenario`. `scenario` may then be left out. See [shock_parameters()]
+#'   and [shock_grid()].
 #'
 #'   Two options are still understood under the name they had before:
 #'   `rcpp_option` for `Rcpp`, and `skip_compiler` for `skip_dynamo`.
@@ -43,20 +51,17 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
                        output_config_file = file.path("configuration", "config_output_threeme.R"),
                        quiet = FALSE){
 
-  ## CHECKS HERE
-  # parameters_range <- NULL ### @Anissa need to correct this !!!
-  ### Check calib files exist
-
   ### initialisation
 
   project_name = NULL
   iso3 = NULL
   classification = NULL
   model_folder = NULL
-  automated_shocks = NULL
   scenario_baseline = NULL
   baseline_scenario_folder = NULL
   shock_scenario_folder = NULL
+  shock_params_folder = NULL
+  parametric_shocks = NULL
   scenario = NULL
   scenario_name = NULL
   shocks_nb = NULL
@@ -92,6 +97,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   Rsolver_continuation = NULL
   Rsolver_verbose = NULL
   Rsolver_timings = NULL
+  Rsolver_swap = NULL
   eviews_algorithm = NULL
   eviews_digits = NULL
   eviews_max_iter = NULL
@@ -116,10 +122,11 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   out <- new.env(parent = cfg)
   source(output_config_file, local = out)
 
-  ## Compulsory options. With automated shocks the scenarios come from the
-  ## parameters generator, not from the file.
+  ## Compulsory options. With parametric shocks, classic scenarios are
+  ## optional.
   required <- config_required()
-  if (isTRUE(get("automated_shocks", envir = cfg))) required <- setdiff(required, "scenario")
+  has_parametric <- length(normalise_parametric_shocks(get("parametric_shocks", envir = cfg))) > 0
+  if (has_parametric) required <- setdiff(required, "scenario")
   missing_required <- required[!vapply(required, function(nm) {
     nm %in% set_by_file && !is.null(get(nm, envir = cfg))
   }, logical(1))]
@@ -144,6 +151,9 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   if ("recompile_model" %in% set_by_file) {
     cli::cli_alert_warning("{.code recompile_model} in {.file {basename(input_config_file)}} is no longer read. Set {.code recompile_model_R} and {.code recompile_model_eviews} instead; see {.fn config_defaults}.")
   }
+  if ("automated_shocks" %in% set_by_file && isTRUE(get("automated_shocks", envir = cfg))) {
+    cli::cli_alert_warning("{.code automated_shocks} in {.file {basename(input_config_file)}} is no longer read. Use {.code parametric_shocks}; see {.fn shock_parameters}.")
+  }
 
   defaulted <- setdiff(names(defaults), set_by_file)
   if (length(defaulted) && !quiet) {
@@ -160,29 +170,28 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
   quartos_to_render  <- if (exists("quartos_to_render", envir = out, inherits = FALSE)) get("quartos_to_render", envir = out) else list()
   quartos_parameters <- if (exists("quartos_parameters", envir = out, inherits = FALSE)) get("quartos_parameters", envir = out) else list()
 
-  for (nm in c("baseline_scenario_folder", "shock_scenario_folder")) {
+  ## The parameter sheets are with the shock sheets unless said otherwise.
+  if (is.null(shock_params_folder)) shock_params_folder <- shock_scenario_folder
+
+  for (nm in c("baseline_scenario_folder", "shock_scenario_folder", "shock_params_folder")) {
     folder <- get(nm)
     if (!is.character(folder) || length(folder) != 1L || is.na(folder) || !nzchar(folder)) {
       cli::cli_abort("{.code {nm}} in {.file {input_config_file}} must be a single folder path.")
     }
   }
 
-  if (automated_shocks){
-    ## if automated shocks, generate range list using
-    source(file.path(shock_scenario_folder,str_c("3_automated_parameters_generator_",project_name,".R")))
-    scenario <- parameters_range$name   ## if automated shocks , the names will be defined in 3_Automated_parameters_generator.R
+  ## Each row of each parameter sheet is a scenario. The sheets run with the
+  ## values of the configuration in scope (`shockyear`, `lastyear`, ...).
+  parametric_shocks <- normalise_parametric_shocks(parametric_shocks)
+  runs <- parametric_runs(parametric_shocks, shock_scenario_folder,
+                          shock_params_folder, env = cfg)
+  if (length(runs) && !quiet) {
+    sheets <- vapply(runs, function(r) paste(r$shock, r$identifier, sep = "_"), character(1))
+    per_sheet <- table(factor(sheets, levels = unique(sheets)))
+    cli::cli_alert_info("Parametric shocks: {length(runs)} scenario{?s}, {paste0(names(per_sheet), ' (', per_sheet, ')', collapse = ', ')}.")
   }
 
-  ## Default Parameters:
   calib_baseline <- file.path(baseline_scenario_folder,paste0("1_calib_",scenario_baseline,".R"))
-  calib_scenario <- file.path(shock_scenario_folder,paste0("2_calib_shock_",scenario,".R"))
-
-  if(automated_shocks){
-    calib_scenario <- file.path(shock_scenario_folder,paste0("2_calib_shock_",project_name,".R")) ## One unique scenario file will be run
-  }
-
-  scenario_name <- paste(scenario, iso3, sep = "_") |> tolower()
-  shocks_nb <- length(scenario)
 
   ## "auto", TRUE or FALSE; a file may also write it as "true" / "false".
   if (is.character(Rsolver_reuse_jacobian) && length(Rsolver_reuse_jacobian) == 1L &&
@@ -195,6 +204,12 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
                      "i" = "Use {.val auto}, {.code TRUE} or {.code FALSE}."))
   }
   if (is.character(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian <- "auto"
+  Rsolver_swap <- normalise_rsolver_swap(Rsolver_swap)
+  if (length(Rsolver_swap) && isFALSE(Rsolver)) {
+    cli::cli_abort(c("{.code Rsolver_swap} is set in {.file {input_config_file}}, but {.code Rsolver = FALSE}.",
+                     "i" = "Swapping endogenous and exogenous variables is done by the R solver only: set {.code Rsolver = TRUE}."),
+                   call = NULL)
+  }
   eviews_algorithm <- tolower(eviews_algorithm)
   if (!eviews_algorithm %in% eviews_algorithms()) {
     cli::cli_abort(c("Unknown {.code eviews_algorithm} in {.file {input_config_file}}: {.val {eviews_algorithm}}.",
@@ -209,13 +224,11 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
       iso3 = tolower(iso3),
       classification = tolower(classification),
       model_folder = model_folder,
-      automated_shocks = automated_shocks ,
       scenario_baseline = tolower(scenario_baseline) ,
       baseline_scenario_folder = baseline_scenario_folder,
       shock_scenario_folder = shock_scenario_folder,
-      scenario = tolower(scenario) ,
-      scenario_name = scenario_name,
-      shocks_nb = shocks_nb ,
+      shock_params_folder = shock_params_folder,
+      parametric_shocks = parametric_shocks,
       baseyear = baseyear,
       lastyear = lastyear,
       shockyear = shockyear,
@@ -226,7 +239,6 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
       calib_files = calib_files,
       model_files = model_files,
       calib_baseline = calib_baseline,
-      calib_scenario = calib_scenario,
 
       advanced_config = list(
         Rsolver = Rsolver,
@@ -248,6 +260,7 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
         Rsolver_continuation = Rsolver_continuation,
         Rsolver_verbose = Rsolver_verbose,
         Rsolver_timings = Rsolver_timings,
+        Rsolver_swap = Rsolver_swap,
         eviews_algorithm = eviews_algorithm,
         eviews_digits = eviews_digits,
         eviews_max_iter = eviews_max_iter,
@@ -263,6 +276,9 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
     )
   )
 
+  ## scenario, scenario_name, shocks_nb, calib_scenario, parametric_runs
+  config$input <- config_scenarios(config$input, scenario, runs)
+  config
 }
 
 #' The options a configuration file has to set, and the defaults of the others
@@ -282,7 +298,8 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 #'   * `project_name`: the stem of the output files.
 #'   * `model_folder`: the folder of `src/model` the model is in.
 #'   * `scenario_baseline`, `scenario`: the baseline and the shocks to run.
-#'     `scenario` is not needed with `automated_shocks = TRUE`.
+#'     `scenario` is not needed when `parametric_shocks` names at least one
+#'     parameter sheet.
 #'   * `baseyear`, `lastyear`.
 #'   * `lists_files`, `calib_files`, `model_files`: the `.mdl` files.
 #'
@@ -290,13 +307,17 @@ readconfig <- function(input_config_file = file.path("configuration", "config_in
 #'
 #'   * `iso3`, `classification`: empty, for a model with neither, such as the
 #'     training model.
-#'   * `automated_shocks`: `FALSE`.
+#'   * `parametric_shocks`: none. Otherwise a list naming, for each shock
+#'     sheet, the parameter sheets to run it with:
+#'     `list(ct = c("redis", "traj"))`. See [shock_parameters()].
 #'   * `shockyear`: 2021, for now.
 #'   * `max_lags`: 3. `firstyear` is not an option with a default: it is
 #'     `baseyear - max_lags` unless the file sets it.
 #'   * `variables_to_keep`: none, which keeps every variable.
 #'   * `baseline_scenario_folder`, `shock_scenario_folder`:
 #'     [calib_folder_default()].
+#'   * `shock_params_folder`, the folder of the parameter sheets: `NULL`,
+#'     which is `shock_scenario_folder`, whatever that is set to.
 #'   * `Rsolver`: `TRUE`, the solver that runs on every system.
 #'   * `warning`: `FALSE`. `tolerance_calib_check`: 0.001.
 #'   * `skip_dynamo`: `FALSE`, so DynaMo compiles the `.mdl` files on every
@@ -345,12 +366,13 @@ config_defaults <- function() {
   c(list(
     iso3                     = "",
     classification           = "",
-    automated_shocks         = FALSE,
+    parametric_shocks        = list(),
     shockyear                = 2021,
     max_lags                 = 3,
     variables_to_keep        = character(0),
     baseline_scenario_folder = calib_folder_default(),
     shock_scenario_folder    = calib_folder_default(),
+    shock_params_folder      = NULL,
     Rsolver                  = TRUE,
     warning                  = FALSE,
     tolerance_calib_check    = 1e-3,
@@ -360,7 +382,9 @@ config_defaults <- function() {
     save_files_res           = TRUE,
     output_saved             = character(0),
     path_eviews_exe          = "",
-    eviews_timeout           = 0),
+    eviews_timeout           = 0,
+    ## a list: edited in the configuration file, not in the addin
+    Rsolver_swap             = list()),
     config_solver_defaults())
 }
 

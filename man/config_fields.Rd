@@ -29,8 +29,9 @@ for what only one of them reads. Their defaults are in
 \code{\link[=config_solver_defaults]{config_solver_defaults()}}.
 
 Together with the fields the addin handles with controls of its own
-(\code{config_fields_custom()}: the scenarios, their folders, the variables to
-keep and the file lists), this covers every option of \code{\link[=config_required]{config_required()}}
+(\code{config_fields_custom()}: the scenarios, the parametric shocks, their
+folders, the variables to keep and the file lists), this covers every
+option of \code{\link[=config_required]{config_required()}}
 and \code{\link[=config_defaults]{config_defaults()}}. A test holds the two in step, so an option added
 to the configuration cannot be left out of the addin.
 }

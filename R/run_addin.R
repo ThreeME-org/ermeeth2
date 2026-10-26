@@ -18,11 +18,11 @@ project_output_files <- function(project_name, dir = file.path("data", "output")
   if (!nzchar(project_name %||% "") || !dir.exists(dir)) return(character(0))
   ## Compared as plain strings rather than a pattern: a project name is free
   ## text and may hold regex metacharacters.
-  wanted <- as.vector(outer(
+  wanted <- c(as.vector(outer(
     c("", "_com", "_sec", "_sec_com"),
     c(".rds", ".parquet"),
     function(suffix, ext) paste0(project_name, suffix, ext)
-  ))
+  )), paste0(project_name, "_params.csv"))
   found <- list.files(dir)
   file.path(dir, found[found %in% wanted])
 }
@@ -38,6 +38,10 @@ project_output_files <- function(project_name, dir = file.path("data", "output")
 #'   Below that, pick the input and output configurations, and adjust the
 #'   baseline and shock scenarios for this run without editing the configuration
 #'   on disk -- the overrides apply to the run only.
+#'
+#'   The parametric shocks of the configuration are shown with the scenarios
+#'   their parameter sheets give, each with its values; untick the ones not to
+#'   run this time.
 #'
 #'   Only works inside a ThreeME v4 project: it compiles the model from `src/`
 #'   and writes the output databases into `data/output`.
@@ -129,6 +133,9 @@ run_addin_app <- function(path = "configuration",
           shiny::selectizeInput("scenarios", "Shock scenarios", choices = character(0),
                                 multiple = TRUE)
         ),
+        shiny::selectizeInput("parametric", "Parametric shocks (shock / parameter sheet)",
+                              choices = character(0), multiple = TRUE, width = "100%"),
+        shiny::uiOutput("parametric_variations"),
         shiny::uiOutput("scenario_warning")
       )
     ),
@@ -192,8 +199,34 @@ run_addin_app <- function(path = "configuration",
     ## mean the run silently used stale values whenever a control had not
     ## initialised yet.
     run_params <- shiny::reactiveValues(
-      project_name = NULL, baseline = NULL, scenarios = NULL
+      project_name = NULL, baseline = NULL, scenarios = NULL,
+      parametric = NULL, variations = NULL
     )
+
+    ## The folder of the parameter sheets, the shock folder unless set.
+    params_folder <- shiny::reactive({
+      v <- cfg_values()
+      v$shock_params_folder %||% v$shock_scenario_folder %||% calib_folder_default()
+    })
+    params_found <- shiny::reactive({
+      cal <- calibs()
+      found <- list_params(in_project(params_folder(), root),
+                           shocks = cal$name[cal$type == "shock"])
+      paste(found$shock, found$identifier, sep = "/")
+    })
+
+    ## The parametric scenarios of the sheets picked, or the error that
+    ## stops them from being read.
+    runs <- shiny::reactive({
+      v <- cfg_values()
+      ps <- params_from_pairs(run_params$parametric)
+      if (!length(ps)) return(list())
+      env <- list2env(utils::modifyList(config_defaults(), v),
+                      envir = new.env(parent = asNamespace("ermeeth2")))
+      tryCatch(parametric_runs(ps, v$shock_scenario_folder %||% calib_folder_default(),
+                               params_folder(), env = env, root = root),
+               error = function(e) e)
+    })
 
     ## Loading a configuration fills in the project name and the scenarios.
     shiny::observeEvent(cfg_values(), {
@@ -203,6 +236,11 @@ run_addin_app <- function(path = "configuration",
       run_params$project_name <- v$project_name %||% ""
       run_params$baseline     <- v$scenario_baseline
       run_params$scenarios    <- unname(v$scenario)
+      run_params$parametric   <- params_pairs(v$parametric_shocks)
+      shiny::updateSelectizeInput(
+        session, "parametric",
+        choices = unique(c(run_params$parametric, params_found())),
+        selected = run_params$parametric)
 
       shiny::updateTextInput(session, "project_name", value = run_params$project_name)
       shiny::updateSelectInput(
@@ -228,6 +266,36 @@ run_addin_app <- function(path = "configuration",
     shiny::observeEvent(input$scenarios, {
       run_params$scenarios <- input$scenarios
     }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    shiny::observeEvent(input$parametric, {
+      run_params$parametric <- input$parametric
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+    shiny::observeEvent(input$variations, {
+      run_params$variations <- input$variations
+    }, ignoreNULL = FALSE, ignoreInit = TRUE)
+
+    ## Every parametric scenario is ticked when the sheets picked change.
+    shiny::observeEvent(runs(), {
+      r <- runs()
+      run_params$variations <- if (inherits(r, "error")) NULL else names(r)
+    })
+
+    output$parametric_variations <- shiny::renderUI({
+      r <- runs()
+      if (inherits(r, "error")) {
+        return(shiny::div(class = "alert alert-danger",
+                          shiny::tags$b("The parametric shocks cannot be read: "),
+                          conditionMessage(r)))
+      }
+      if (!length(r)) return(NULL)
+      labels <- vapply(r, function(x) paste0(
+        names(x$values), " = ", vapply(x$values, format, character(1)), collapse = ", "),
+        character(1))
+      shiny::checkboxGroupInput(
+        "variations",
+        paste0("Parametric scenarios to run (", length(r), ")"),
+        choiceNames = paste0(names(r), ": ", labels),
+        choiceValues = names(r), selected = names(r), width = "100%")
+    })
 
     output$overwrite_warning <- shiny::renderUI({
       nm <- run_params$project_name %||% ""
@@ -291,7 +359,14 @@ run_addin_app <- function(path = "configuration",
           type = "error")
         return()
       }
-      if (!length(run_params$scenarios)) {
+      r <- runs()
+      if (inherits(r, "error")) {
+        shiny::showNotification(paste("The parametric shocks cannot be read:",
+                                      conditionMessage(r)), type = "error")
+        return()
+      }
+      r <- r[intersect(names(r), run_params$variations %||% character(0))]
+      if (!length(run_params$scenarios) && !length(r)) {
         shiny::showNotification("Pick at least one shock scenario.", type = "error")
         return()
       }
@@ -315,18 +390,17 @@ run_addin_app <- function(path = "configuration",
 
       cfg$input$project_name <- run_params$project_name
       cfg$input$scenario_baseline <- tolower(run_params$baseline)
-      cfg$input$scenario <- tolower(run_params$scenarios)
-      cfg$input$scenario_name <- paste(cfg$input$scenario, cfg$input$iso3,
-                                       sep = "_") |> tolower()
-      cfg$input$shocks_nb <- length(cfg$input$scenario)
       cfg$input$calib_baseline <- calib_path(
         cfg$input$scenario_baseline, "baseline",
         path = in_project(cfg$input$baseline_scenario_folder, root))
-      cfg$input$calib_scenario <- vapply(
-        cfg$input$scenario,
-        function(s) calib_path(s, "shock",
-                               path = in_project(cfg$input$shock_scenario_folder, root)),
-        character(1), USE.NAMES = FALSE)
+      cfg$input$parametric_shocks <- params_from_pairs(run_params$parametric)
+      ## scenario, scenario_name, shocks_nb, calib_scenario, parametric_runs
+      cfg$input <- tryCatch(
+        config_scenarios(cfg$input, run_params$scenarios, r, root = root),
+        error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error"); NULL
+        })
+      if (is.null(cfg$input)) return()
 
       log_text(paste0("Running ", cfg$input$project_name, ": ",
                       paste(cfg$input$scenario, collapse = ", "),

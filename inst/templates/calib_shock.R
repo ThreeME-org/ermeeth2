@@ -5,6 +5,13 @@
 ## has been applied), `firstyear`, `baseyear`, `lastyear` and `shockyear`
 ## already in scope. It must finish by defining `shock_ch`: a data.frame of
 ## `year` plus the exogenous variables the shock changes.
+##
+## To run this shock for several values of its parameters (a parametric
+## shock), declare them here with their defaults and use them below, e.g.
+##
+##   shock_parameters(rate = 1.01)
+##
+## then list the values to test in a parameter sheet (create_params()).
 
 # Define the series necessary to calibrate the scenario. Names are lower case.
 series <- c("DWD_C01") |> tolower()

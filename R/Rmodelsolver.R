@@ -21,6 +21,12 @@
 #'   from the configuration; see
 #'   [config_solver_defaults()].
 #'
+#'   With `Rsolver_swap` set in the configuration, the scenarios it names are
+#'   solved with a model in which some endogenous and exogenous variables swap
+#'   roles, made from the main one by `thortwo::thor_swap()`: see
+#'   [normalise_rsolver_swap()]. The baseline and every other scenario are
+#'   solved with the main model as usual.
+#'
 #' @returns A long-format data.frame with columns `year`, `variable`, one
 #'   column per scenario, plus `sector` and `commodity`.
 #' @export
@@ -51,6 +57,7 @@ R_model_solver <- function(config_file = configuration,
   Rsolver_continuation <- NULL
   Rsolver_verbose <- NULL
   Rsolver_timings <- NULL
+  Rsolver_swap <- NULL
 
   list2env(config_file,envir = environment())
   list2env(config_file$input,envir = environment())
@@ -104,6 +111,40 @@ R_model_solver <- function(config_file = configuration,
   )[["elapsed"]]
 
   thortwo::export_model(themodel, filename = file.path(solver_dir, "model_thor.txt"))
+
+  ### A.3 The swapped models, one per scenario that asks for one
+  ##
+  ## Built after the main model, from it: same equations, same backend and
+  ## options, only some variables change roles. Each has a name of its own, so
+  ## thortwo caches it next to the main model and a second run loads it.
+  Rsolver_swap <- normalise_rsolver_swap(Rsolver_swap)
+  unknown <- setdiff(names(Rsolver_swap), setdiff(names(data_for_solver), "baseline"))
+  if (length(unknown)) {
+    cli::cli_abort(c("{.code Rsolver_swap} names {?a scenario/scenarios} that {?is/are} not run: {.val {unknown}}.",
+                     "i" = "Its names are scenario ids, as in {.code scenario}; the baseline is always solved with the main model."),
+                   call = NULL)
+  }
+  if (length(Rsolver_swap) && !"thor_swap" %in% getNamespaceExports("thortwo")) {
+    cli::cli_abort("{.code Rsolver_swap} needs a thortwo with {.fn thor_swap}: please update thortwo.",
+                   call = NULL)
+  }
+  swapped_models <- list()
+  time_swap <- system.time(
+    for (scen in names(Rsolver_swap)) {
+      sw <- Rsolver_swap[[scen]]
+      cli::cli_alert_info("Scenario {.val {scen}}: {.val {sw$endo}} made exogenous, {.val {sw$exo}} endogenous")
+      swapped_models[[scen]] <- do.call(thortwo::thor_swap, c(list(
+        themodel, endo = sw$endo, exo = sw$exo,
+        name      = paste0("themodel_", make.names(scen)),
+        recompile = isTRUE(recompile_model_R),
+        verbose   = isTRUE(Rsolver_verbose)),
+        quiet_timings(thortwo::thor_model)))
+    }
+  )[["elapsed"]]
+  if (length(swapped_models) && !isFALSE(Rsolver_timings)) {
+    n_swap <- length(swapped_models)
+    cli::cli_alert_info("{n_swap} swapped model{?s} ready in {format_duration(time_swap)}")
+  }
 
   data_3me <- model_to_build$data |> filter( year %in% c(firstyear:lastyear))
 
@@ -188,10 +229,11 @@ R_model_solver <- function(config_file = configuration,
     ## No `skip_tests`: thortwo's checks are vectorised over the data matrix
     ## and cost nothing, and they name the missing variable instead of letting
     ## the solve fail twenty periods later.
+    model_solved <- swapped_models[[scenar_solved]] %||% themodel
     time_solve[[scenar_solved]] <- system.time(
       solved <- withCallingHandlers(
         do.call(thortwo::thor_solve, c(list(
-          themodel,
+          model_solved,
           from = baseyear, to = lastyear,
           data = data_for_solver[[scenar_solved]],
           index_time = "year",
@@ -205,7 +247,7 @@ R_model_solver <- function(config_file = configuration,
           quiet_timings(thortwo::thor_solve))),
         ## The equations are passed to thortwo without names, so its messages
         ## refer to them by its own ids (`eq_2528`). Show the equations meant.
-        error = function(e) show_thor_equations(conditionMessage(e), themodel))
+        error = function(e) show_thor_equations(conditionMessage(e), model_solved))
     )[["elapsed"]]
     solved_data[[scenar_solved]] <- solved |>
       select(year, any_of(tolower(variables_to_keep)) )
@@ -227,6 +269,50 @@ R_model_solver <- function(config_file = configuration,
 
 
 
+}
+
+#' Check and tidy the `Rsolver_swap` option
+#'
+#' @description `Rsolver_swap` names the scenarios to solve with a model in
+#'   which variables swap roles: for each, the endogenous variables to fix
+#'   (`endo`, the targets) and the exogenous ones to solve for instead (`exo`,
+#'   the instruments), as many of each. For instance, to find the carbon tax
+#'   that delivers an emissions path set in the shock sheet of `co2_target`:
+#'
+#'   ```r
+#'   Rsolver_swap = list(co2_target = list(endo = "EMS_CO2", exo = "RCO2TAX_VOL"))
+#'   ```
+#'
+#'   The shock sheet of such a scenario sets the targets, over the whole span
+#'   solved, like any exogenous variable; the instruments come out in the
+#'   results. The R solver only: EViews has no equivalent here.
+#'
+#' @param x the value of `Rsolver_swap` in the configuration.
+#'
+#' @returns a named list, one `list(endo, exo)` of lower-case names per
+#'   scenario; an empty list when `x` is `NULL` or empty.
+#' @keywords internal
+normalise_rsolver_swap <- function(x) {
+  if (is.null(x) || length(x) == 0L) return(list())
+  bad <- function(why) {
+    cli::cli_abort(c("{.code Rsolver_swap} is not well formed: {why}.",
+                     "i" = "Write it as {.code list(<scenario> = list(endo = \"EMS_CO2\", exo = \"RCO2TAX_VOL\"))}."),
+                   call = NULL)
+  }
+  if (!is.list(x) || is.null(names(x)) || any(!nzchar(names(x))) || anyDuplicated(names(x))) {
+    bad("it must be a list named by scenario id, each name once")
+  }
+  lapply(stats::setNames(names(x), names(x)), function(scen) {
+    sw <- x[[scen]]
+    if (!is.list(sw) || !all(c("endo", "exo") %in% names(sw)) ||
+        !is.character(sw$endo) || !is.character(sw$exo)) {
+      bad(paste0("the entry of ", scen, " needs character vectors `endo` and `exo`"))
+    }
+    if (length(sw$endo) == 0L || length(sw$endo) != length(sw$exo)) {
+      bad(paste0("the entry of ", scen, " needs as many `exo` as `endo`"))
+    }
+    list(endo = tolower(sw$endo), exo = tolower(sw$exo))
+  })
 }
 
 #' Print the equations a thortwo error message refers to

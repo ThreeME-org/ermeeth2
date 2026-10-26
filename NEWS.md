@@ -1,3 +1,59 @@
+# ermeeth2 1.2.0
+
+- **Endogenous / exogenous swaps** (R solver only), for fitting a target
+  before a simulation: `Rsolver_swap = list(co2_target = list(endo =
+  "EMS_CO2", exo = "RCO2TAX_VOL"))` in the configuration has the scenario
+  `co2_target` solved with EMS_CO2 exogenous, at the path its shock sheet
+  sets, and RCO2TAX_VOL endogenous. The baseline and the other scenarios
+  use the model as it is. `endo` and `exo` take equal-length vectors to swap
+  several pairs at once. The swapped model is made by `thortwo::thor_swap()`
+  and cached like the main one. `readconfig()` stops on a malformed entry or
+  with `Rsolver = FALSE`, and `R_model_solver()` on a scenario that is not run.
+
+- **Parametric shocks**, for sensitivity analysis: one shock sheet run for
+  several values of its parameters. They replace the automated shocks
+  (`automated_shocks`), which never ran in ermeeth2 (every scenario was
+  dropped, and the parameters only reached `run_simulations()` through the
+  global environment).
+  - A shock sheet declares its parameters and their defaults with
+    `shock_parameters(ct_start = 100, ct_end = 200, ...)` and uses them as
+    variables. It stays an ordinary shock script: listed in `scenario`, it
+    runs with the defaults.
+  - A parameter sheet `3_params_<shock>_<identifier>.R` holds the values to
+    test, `shock_grid(redis_h = c(0, 0.5, 1), redis_ls = c(0, 0.5, 1))`:
+    every combination is a scenario, and the grid can be filtered before it
+    ends the sheet. Several parameter sheets can use one shock sheet.
+  - The configuration names the parameter sheets, never the values:
+    `parametric_shocks = list(ct = c("redis", "traj"))`. They are read from
+    `shock_params_folder`, the shock folder unless set. `scenario` is
+    optional when `parametric_shocks` is set, and the classic scenarios still
+    run alongside.
+  - Each row is a scenario `<shock>_<identifier>_<n>` (`ct_redis_1`, ...).
+    `readconfig()` reads the parameter sheets and stops, saying why, on a
+    missing sheet, a shock sheet that declares no parameters, or a parameter
+    it does not declare.
+  - The values each parametric scenario ran with, the shock sheet's defaults
+    included, are written next to the output databases as
+    `<project_name>_params.csv`; `read_3me_params()` reads it back. A later
+    run of the project without parametric shocks removes it.
+  - `create_params()` writes a parameter sheet listing the parameters of its
+    shock sheet at their defaults. `params_path()`, `params_file_name()` and
+    `list_params()` follow the file convention.
+  - In the calibration bubble, `calibration_environment()` also returns
+    `parametric_grid`, the parametric scenarios and their values. With
+    `scenario = "ct_redis_4"`, a shock sheet run line by line gets the values
+    of that scenario from `shock_parameters()` instead of its defaults, and
+    is told so; `use_parametric_scenario()` switches to another scenario, or
+    back to the defaults, without building the bubble again.
+  - Addins: the calibration addin writes parameter sheets; the configuration
+    addin picks the parametric shocks and their folder, and creates the
+    missing sheets; the run addin shows the scenarios of each parameter
+    sheet with their values, to untick some for one run.
+- `automated_shocks` is no longer read; a file that sets it to `TRUE` is told.
+- `run_simulations()` runs every shock script before stopping, and lists each
+  scenario that failed with its error. A script's result is its `shock_ch`
+  rather than the value of its last line.
+
 # ermeeth2 1.1.4
 
 - New R solver option `Rsolver_continuation` (default `TRUE`), passed to

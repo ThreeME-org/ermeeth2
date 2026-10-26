@@ -37,6 +37,10 @@ Below that, pick the input and output configurations, and adjust the
 baseline and shock scenarios for this run without editing the configuration
 on disk -- the overrides apply to the run only.
 
+The parametric shocks of the configuration are shown with the scenarios
+their parameter sheets give, each with its values; untick the ones not to
+run this time.
+
 Only works inside a ThreeME v4 project: it compiles the model from \verb{src/}
 and writes the output databases into \code{data/output}.
 

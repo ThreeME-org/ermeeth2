@@ -30,7 +30,8 @@ The compulsory options:
 \item \code{project_name}: the stem of the output files.
 \item \code{model_folder}: the folder of \code{src/model} the model is in.
 \item \code{scenario_baseline}, \code{scenario}: the baseline and the shocks to run.
-\code{scenario} is not needed with \code{automated_shocks = TRUE}.
+\code{scenario} is not needed when \code{parametric_shocks} names at least one
+parameter sheet.
 \item \code{baseyear}, \code{lastyear}.
 \item \code{lists_files}, \code{calib_files}, \code{model_files}: the \code{.mdl} files.
 }
@@ -39,13 +40,17 @@ The defaults, besides the solver options:
 \itemize{
 \item \code{iso3}, \code{classification}: empty, for a model with neither, such as the
 training model.
-\item \code{automated_shocks}: \code{FALSE}.
+\item \code{parametric_shocks}: none. Otherwise a list naming, for each shock
+sheet, the parameter sheets to run it with:
+\code{list(ct = c("redis", "traj"))}. See \code{\link[=shock_parameters]{shock_parameters()}}.
 \item \code{shockyear}: 2021, for now.
 \item \code{max_lags}: 3. \code{firstyear} is not an option with a default: it is
 \code{baseyear - max_lags} unless the file sets it.
 \item \code{variables_to_keep}: none, which keeps every variable.
 \item \code{baseline_scenario_folder}, \code{shock_scenario_folder}:
 \code{\link[=calib_folder_default]{calib_folder_default()}}.
+\item \code{shock_params_folder}, the folder of the parameter sheets: \code{NULL},
+which is \code{shock_scenario_folder}, whatever that is set to.
 \item \code{Rsolver}: \code{TRUE}, the solver that runs on every system.
 \item \code{warning}: \code{FALSE}. \code{tolerance_calib_check}: 0.001.
 \item \code{skip_dynamo}: \code{FALSE}, so DynaMo compiles the \code{.mdl} files on every

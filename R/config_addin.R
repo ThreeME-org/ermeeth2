@@ -25,6 +25,29 @@ scenario_code <- function(x) {
   paste0(codes, " |> \n  set_names(", config_code(unname(nms)), ")")
 }
 
+#' Parametric shocks as `shock/identifier` pairs, and back
+#'
+#' The addins offer the parameter sheets as one list, `ct/redis` standing for
+#' `3_params_ct_redis.R`; the configuration groups them by shock.
+#'
+#' @param x the `parametric_shocks` entry (`params_pairs()`), or the pairs
+#'   (`params_from_pairs()`).
+#'
+#' @returns `params_pairs()` returns a character vector, `params_from_pairs()`
+#'   a named list.
+#' @keywords internal
+params_pairs <- function(x) {
+  x <- normalise_parametric_shocks(x)
+  unlist(Map(function(s, ids) paste(s, ids, sep = "/"), names(x), x), use.names = FALSE) %||% character(0)
+}
+
+#' @rdname params_pairs
+params_from_pairs <- function(x) {
+  x <- x[grepl("^[^/]+/[^/]+$", x %||% character(0))]
+  if (!length(x)) return(list())
+  normalise_parametric_shocks(stats::setNames(sub("^[^/]+/", "", x), sub("/.*$", "", x)))
+}
+
 #' ThreeME configuration editor
 #'
 #' @description An RStudio addin to fill in a ThreeME configuration. Each
@@ -59,6 +82,10 @@ scenario_code <- function(x) {
 #'   sets the folders the baseline and the shocks are read from
 #'   (`baseline_scenario_folder`, `shock_scenario_folder`): `scenarii_calib`
 #'   or one of its subfolders.
+#'
+#'   The same tab picks the parametric shocks (`parametric_shocks`) among the
+#'   parameter sheets of `shock_params_folder`, shown as `shock/identifier`,
+#'   and offers to create the sheets that do not exist yet ([create_params()]).
 #'
 #'   After a save, when the `readconfig()` call of the project's `Main.R` reads
 #'   other configuration files, the addin offers to point it to the ones just
@@ -211,6 +238,13 @@ config_addin_app <- function(path = "configuration") {
       if (is.null(val) || !nzchar(val)) val <- values()[[paste0(type, "_scenario_folder")]]
       val %||% calib_folder_default()
     }
+    ## The folder of the parameter sheets: "" in the control, or nothing in
+    ## the file, is the shock folder.
+    params_folder <- function() {
+      val <- input$f_shock_params_folder
+      if (is.null(val)) val <- values()$shock_params_folder
+      if (is.null(val) || !nzchar(val)) folder_of("shock") else val
+    }
     ## Reactive on the two folders, and bumped by hand so that creating a
     ## calibration invalidates the warning that pointed out it was missing.
     calib_refresh <- shiny::reactiveVal(0)
@@ -309,9 +343,15 @@ config_addin_app <- function(path = "configuration") {
                               choices = unique(c(cur, known)), selected = cur,
                               options = list(create = TRUE), width = "100%")
       }
+      cur_params <- v$shock_params_folder %||% ""
       shiny::tagList(
         pick("baseline", "Folder of the baseline calibration"),
         pick("shock", "Folder of the shock calibrations"),
+        shiny::selectizeInput("f_shock_params_folder", "Folder of the parameter sheets",
+                              choices = c("Same as the shock calibrations" = "",
+                                          unique(c(cur_params[nzchar(cur_params)], known))),
+                              selected = cur_params,
+                              options = list(create = TRUE), width = "100%"),
         shiny::helpText("scenarii_calib or one of its subfolders. Type a new ",
                         "subfolder to use it: it is created with the first ",
                         "calibration script written into it.")
@@ -337,12 +377,80 @@ config_addin_app <- function(path = "configuration") {
           "f_scenario_names", "Display names, one per scenario, in order",
           value = paste(names(sc) %||% character(0), collapse = "\n"),
           height = "110px"),
+        shiny::selectizeInput("f_parametric_shocks",
+                              "Parametric shocks (shock / parameter sheet)",
+                              choices = params_choices(), selected = params_pairs(v$parametric_shocks),
+                              multiple = TRUE, options = list(create = TRUE)),
+        shiny::helpText("Each runs a shock sheet for every row of a parameter sheet, ",
+                        "3_params_<shock>_<identifier>.R. Type shock/identifier ",
+                        "to name one that does not exist yet."),
         shiny::textAreaInput(
           "f_variables_to_keep", "Variables to keep (blank = all)",
           value = paste(v$variables_to_keep %||% character(0), collapse = "\n"),
           height = "110px"),
-        shiny::uiOutput("missing_calibs")
+        shiny::uiOutput("missing_calibs"),
+        shiny::uiOutput("missing_params")
       )
+    })
+
+    ## The parameter sheets of the folder, as shock/identifier pairs, and those
+    ## the configuration names.
+    params_found <- shiny::reactive({
+      calib_refresh()
+      cal <- calibs()
+      list_params(in_project(params_folder(), root),
+                  shocks = cal$name[cal$type == "shock"])
+    })
+    params_choices <- function() {
+      found <- params_found()
+      pairs <- paste(found$shock, found$identifier, sep = "/")
+      unique(c(params_pairs(shiny::isolate(values())$parametric_shocks), pairs))
+    }
+    ## Named in the configuration, but no parameter sheet behind it.
+    missing_params <- shiny::reactive({
+      sel <- input$f_parametric_shocks
+      if (!length(sel)) return(character(0))
+      found <- params_found()
+      setdiff(sel, paste(found$shock, found$identifier, sep = "/"))
+    })
+
+    output$missing_params <- shiny::renderUI({
+      miss <- missing_params()
+      if (!length(miss)) return(NULL)
+      shiny::div(
+        class = "alert alert-warning",
+        shiny::tags$b("No parameter sheet for: "),
+        paste(miss, collapse = ", "),
+        shiny::br(),
+        shiny::actionButton("create_missing_params",
+                            paste0("Create ", length(miss), " parameter sheet(s)"),
+                            class = "btn-sm btn-warning")
+      )
+    })
+
+    shiny::observeEvent(input$create_missing_params, {
+      made <- character(0)
+      for (pair in missing_params()) {
+        ps <- params_from_pairs(pair)
+        ok <- tryCatch({
+          if (!length(ps)) stop("write a parametric shock as shock/identifier: ", pair)
+          dir <- in_project(params_folder(), root)
+          dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+          create_params(names(ps), ps[[1]], path = dir,
+                        shock_folder = in_project(folder_of("shock"), root),
+                        open = FALSE, quiet = TRUE)
+          TRUE
+        }, error = function(e) {
+          shiny::showNotification(conditionMessage(e), type = "error"); FALSE
+        })
+        if (ok) made <- c(made, pair)
+      }
+      if (length(made)) {
+        shiny::showNotification(
+          paste0("Created ", paste(made, collapse = ", "),
+                 ". Edit them before running."), type = "message")
+        calib_refresh(calib_refresh() + 1)
+      }
     })
 
     ## A scenario named in the configuration with no calibration file behind it
@@ -543,6 +651,17 @@ config_addin_app <- function(path = "configuration") {
         val <- input[[paste0("f_", nm)]]
         if (!is.null(val) && nzchar(val)) out[[nm]] <- I(config_code(val))
       }
+      ## "" is the shock folder, and no parametric shock is none: both are
+      ## only written over a line the file already has (see the save).
+      val <- input$f_shock_params_folder
+      if (!is.null(val)) {
+        out$shock_params_folder <- I(if (nzchar(val)) config_code(val) else "NULL")
+      }
+      ## Nothing selected and "tab never opened" both give NULL: the baseline
+      ## control tells them apart.
+      if (!is.null(input$f_scenario_baseline)) {
+        out$parametric_shocks <- I(config_code(params_from_pairs(input$f_parametric_shocks)))
+      }
       if (!is.null(input$f_variables_to_keep)) {
         vk <- lines_of(input$f_variables_to_keep)
         out$variables_to_keep <- I(if (length(vk)) config_code(vk) else "c()")
@@ -582,7 +701,14 @@ config_addin_app <- function(path = "configuration") {
         }
         file.copy(src_in[[1]], tgt_in)
       }
-      ok <- tryCatch({ config_edit(tgt_in, edits()); TRUE },
+      ## An option left at "nothing" is not added to a file without it.
+      e <- edits()
+      has <- config_assignments(readLines(tgt_in, warn = FALSE))$name
+      empty <- c(shock_params_folder = "NULL", parametric_shocks = "list()")
+      for (opt in names(empty)) {
+        if (identical(as.character(e[[opt]]), empty[[opt]]) && !opt %in% has) e[[opt]] <- NULL
+      }
+      ok <- tryCatch({ config_edit(tgt_in, e); TRUE },
                      error = function(e) { shiny::showNotification(
                        conditionMessage(e), type = "error"); FALSE })
       if (!isTRUE(ok)) return()
@@ -657,9 +783,11 @@ config_addin_app <- function(path = "configuration") {
 
     output$status <- shiny::renderUI({
       miss <- missing_calibs()
-      if (length(miss)) {
+      miss_p <- missing_params()
+      if (length(miss) || length(miss_p)) {
         shiny::div(class = "text-warning", shiny::tags$small(
-          length(miss), " scenario(s) have no calibration file."))
+          if (length(miss)) paste0(length(miss), " scenario(s) have no calibration file. "),
+          if (length(miss_p)) paste0(length(miss_p), " parametric shock(s) have no parameter sheet.")))
       } else {
         shiny::div(class = "text-success", shiny::tags$small(
           "Every scenario has a calibration file."))

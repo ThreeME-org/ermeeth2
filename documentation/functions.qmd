@@ -28,7 +28,7 @@ themes <- list(
                         "4b_runDynamo.R", "Rmodelsolver.R", "eviewsmodelsolver.R",
                         "post_config_check.R", "translate_model_to_tresthor.R"),
   "Configuration and scenarios" = c("config_edit.R", "config_addin.R", "calib_addin.R", "run_addin.R",
-                                    "create_calib.R", "calibration_env.R", "calibration_table.R",
+                                    "create_calib.R", "parametric_shocks.R", "calibration_env.R", "calibration_table.R",
                                     "load_excel_calibration.R", "update_data_merge.R",
                                     "3_interpolation.R", "3b_catmull.R", "3b_quadratic_splines.R"),
   "Reading and reshaping results" = c("output_io.R", "new_data_load.R", "0_loadResults.R", "2_wide_data.R",

@@ -1,7 +1,7 @@
 Package: ermeeth2
 Type: Package
 Title: Functions Used by the ThreeME Team
-Version: 1.1.4
+Version: 1.2.0
 Authors@R: c(
     person("ThreeME", "Team", role = "aut"),
     person("Anissa", "Saumtally", , "anissa.saumtally@sciencespo.fr", role = "cre")
@@ -43,7 +43,7 @@ Imports:
     lubridate,
     openxlsx,
     gt,
-    thortwo (>= 0.9.4),
+    thortwo (>= 0.9.5),
     quarto
 Suggests: 
     arrow,

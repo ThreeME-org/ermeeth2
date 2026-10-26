@@ -28,6 +28,10 @@ calib_template_text <- function(type, title) {
 #'   than in a second step. It starts from a template that runs as written and
 #'   changes nothing until edited.
 #'
+#'   The third type, *Parameter sheet*, writes `3_params_<shock>_<identifier>.R`
+#'   for a parametric shock ([create_params()]): the template lists the
+#'   parameters the shock sheet declares, each at its default.
+#'
 #'   Only works inside a ThreeME v4 project: it writes into
 #'   `configuration/scenarii_calib/`, a path that only means anything there.
 #'
@@ -80,12 +84,20 @@ calib_addin_app <- function(path = calib_folder_default()) {
       width = 340,
       shiny::radioButtons(
         "type", "Type",
-        choices = c("Shock" = "shock", "Baseline" = "baseline"),
+        choices = c("Shock" = "shock", "Baseline" = "baseline",
+                    "Parameter sheet" = "params"),
         selected = "shock"
       ),
       shiny::textInput("name", "Scenario name", placeholder = "e.g. ct2"),
       shiny::helpText("Lower case, starting with a letter. Letters, digits, ",
-                      "`_` and `-`."),
+                      "`_` and `-`. For a parameter sheet, the shock it is for."),
+      shiny::conditionalPanel(
+        "input.type == 'params'",
+        shiny::textInput("identifier", "Parameter sheet identifier",
+                         placeholder = "e.g. redis"),
+        shiny::helpText("Writes 3_params_<shock>_<identifier>.R, the values the ",
+                        "shock is run with (see shock_grid()).")
+      ),
       shiny::selectizeInput("folder", "Folder",
                             choices = list_calib_folders(path), selected = path,
                             options = list(create = TRUE)),
@@ -133,14 +145,42 @@ calib_addin_app <- function(path = calib_folder_default()) {
       list_calibs(path = folder())
     })
 
-    ## The name as the configuration will carry it, or NULL when invalid.
-    scenario <- shiny::reactive({
-      tryCatch(calib_scenario_name(input$name, input$type), error = function(e) NULL)
+    is_params <- shiny::reactive(identical(input$type, "params"))
+
+    ## Why the name (and identifier) cannot be used, or NULL.
+    name_problem <- shiny::reactive({
+      tryCatch({
+        if (is_params()) params_file_name(input$name, input$identifier %||% "")
+        else calib_scenario_name(input$name, input$type)
+        NULL
+      }, error = function(e) conditionMessage(e))
     })
 
-    ## The template for the current type and description.
+    ## The name as the configuration will carry it, or NULL when invalid:
+    ## for a parameter sheet, `shock/identifier`.
+    scenario <- shiny::reactive({
+      if (!is.null(name_problem())) return(NULL)
+      if (is_params()) paste(input$name, input$identifier, sep = "/")
+      else calib_scenario_name(input$name, input$type)
+    })
+
+    ## The file the script goes to.
+    target_of <- function() {
+      if (is_params()) params_path(input$name, input$identifier, path = folder())
+      else calib_path(input$name, input$type, path = folder())
+    }
+
+    ## The template for the current type and description. A parameter sheet
+    ## lists the parameters of its shock sheet, looked for in the folder
+    ## picked, then in `path`.
     template_text <- shiny::reactive({
-      calib_template_text(input$type %||% "shock", input$title %||% "")
+      if (!is_params()) return(calib_template_text(input$type %||% "shock", input$title %||% ""))
+      if (!is.null(name_problem())) {
+        return(paste("## Give the shock and the identifier of the parameter sheet:",
+                     "## its parameters are read from the shock sheet.", sep = "\n"))
+      }
+      shock_dir <- if (file.exists(calib_path(input$name, "shock", path = folder()))) folder() else path
+      paste(params_template_text(input$name, input$identifier, shock_dir), collapse = "\n")
     })
 
     ## What will actually be written: the box once the user has touched it,
@@ -158,14 +198,11 @@ calib_addin_app <- function(path = calib_folder_default()) {
       if (!nzchar(input$name %||% "")) {
         return(shiny::helpText("Give the scenario a name."))
       }
-      msg <- tryCatch({
-        calib_scenario_name(input$name, input$type)
-        NULL
-      }, error = function(e) conditionMessage(e))
+      msg <- name_problem()
       if (!is.null(msg)) {
         return(shiny::div(class = "text-danger", shiny::tags$small(msg)))
       }
-      p <- calib_path(input$name, input$type, path = folder())
+      p <- target_of()
       shiny::div(
         shiny::tags$small("Will write "), shiny::tags$code(p),
         if (file.exists(p)) {
@@ -178,13 +215,20 @@ calib_addin_app <- function(path = calib_folder_default()) {
     ## The template follows the type, and the header follows the description.
     ## Retyping the description should not throw away an edited script, so the
     ## reset is explicit rather than automatic.
-    shiny::observeEvent(input$type, {
-      shiny::updateTextAreaInput(session, "script", value = template_text())
-    }, ignoreInit = FALSE)
-
-    shiny::observeEvent(input$reset, {
-      shiny::updateTextAreaInput(session, "script", value = template_text())
-    })
+    filled <- shiny::reactiveVal("")
+    fill <- function() {
+      filled(template_text())
+      shiny::updateTextAreaInput(session, "script", value = filled())
+    }
+    shiny::observeEvent(input$type, fill(), ignoreInit = FALSE)
+    shiny::observeEvent(input$reset, fill())
+    ## A parameter sheet's template follows the shock named, as long as the
+    ## box still holds the template it was filled with.
+    shiny::observeEvent(list(input$name, input$identifier), {
+      if (!is_params()) return()
+      box <- input$script %||% ""
+      if (!nzchar(trimws(box)) || identical(box, filled())) fill()
+    }, ignoreInit = TRUE)
 
     output$existing <- shiny::renderTable({
       ex <- calibs()
@@ -198,7 +242,7 @@ calib_addin_app <- function(path = calib_folder_default()) {
         shiny::showNotification("Fix the scenario name first.", type = "error")
         return()
       }
-      target <- calib_path(input$name, input$type, path = folder())
+      target <- target_of()
       ## A new subfolder is created; a missing scenarii_calib is not, since
       ## that means the addin was not opened from a ThreeME project.
       if (dir.exists(path) && !dir.exists(folder())) {
