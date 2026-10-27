@@ -30,6 +30,11 @@ and sector datasets are written to \code{data/output} as a side effect,
 according to the \code{output_saved} configuration entry. With parametric
 shocks, the values each parametric scenario ran with are written there
 too, as \verb{<project_name>_params.csv} (see \code{\link[=read_3me_params]{read_3me_params()}}).
+
+With the R solver, a scenario with a period that cannot be solved stops
+the run with an error, after keeping the results up to the failure as
+\code{data_full_FAILED} and \verb{<project_name>_FAILED} in \code{data/output}: see
+\code{\link[=stop_failed_run]{stop_failed_run()}}.
 }
 \description{
 End-to-end driver: compiles the model with DynaMo, runs the

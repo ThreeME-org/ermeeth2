@@ -8,10 +8,12 @@ render_from_template(
   quarto_to_use = "basic_results.qmd",
   quartos_folder = file.path("results", "quarto_templates"),
   interim_file_name = "main_results.qmd",
-  output_file_name = str_c("main_results_", "_", format(Sys.time(),
+  output_file_name = stringr::str_c("main_results_", format(Sys.time(),
     "\%Y-\%m-\%d_\%H-\%M")),
   quarto_parameters_list = list(),
+  format = NULL,
   render_folder = file.path("results", "quarto_render"),
+  keep_qmd = FALSE,
   browse = TRUE
 )
 }
@@ -20,23 +22,40 @@ render_from_template(
 
 \item{quartos_folder}{character. Folder holding the quarto templates.}
 
-\item{interim_file_name}{character. Name of the temporary qmd written before
-rendering.}
+\item{interim_file_name}{character. Name of the copy written at the root
+before rendering.}
 
-\item{output_file_name}{character. Name of the rendered output file.}
+\item{output_file_name}{character. Name of the rendered output file. The
+extension is added from the format when missing.}
 
-\item{quarto_parameters_list}{list. Parameters passed to the template as
-quarto \code{execute_params}.}
+\item{quarto_parameters_list}{list. Values of the template's parameters.}
 
-\item{render_folder}{character. Folder the rendered output lands in.}
+\item{format}{character. \code{"html"}, \code{"revealjs"} or \code{"typst"}, or \code{NULL} to
+follow \code{pres}.}
+
+\item{render_folder}{character. Folder the rendered output lands in (the
+\code{output-dir} of the quarto project).}
+
+\item{keep_qmd}{logical. Whether to keep the copy after rendering.}
 
 \item{browse}{logical. Whether to open the rendered file when it is done.}
 }
 \value{
-Called for its side effect of rendering the report.
+Invisibly, the path of the rendered report.
 }
 \description{
-Copies a quarto template to an interim file, renders it with
-the given parameters, removes the interim file, and optionally opens the
-result.
+Copies a quarto template to the root of the project with the
+given parameters written in as its defaults, renders that copy, then
+removes it unless it is kept.
+}
+\details{
+The copy is self-contained: its \code{params} defaults are the values
+passed in \code{quarto_parameters_list} (written as \code{!expr}, so named vectors
+and lists keep their names), and its \code{format} block lists the format
+rendered first. Kept with \code{keep_qmd = TRUE}, it can be edited and rendered
+again on its own.
+
+Without \code{format}, the format follows the \code{pres} parameter (given, or the
+template's default): \code{revealjs} when \code{TRUE}, \code{html} otherwise. When the
+template declares \code{pres}, it is set to match the format rendered.
 }

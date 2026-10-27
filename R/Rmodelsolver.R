@@ -28,7 +28,11 @@
 #'   solved with the main model as usual.
 #'
 #' @returns A long-format data.frame with columns `year`, `variable`, one
-#'   column per scenario, plus `sector` and `commodity`.
+#'   column per scenario, plus `sector` and `commodity`. When a period of a
+#'   scenario cannot be solved, the scenarios after it are not run, the
+#'   result holds those solved before it and the failed one as the solver left
+#'   it, and a `failure` attribute (thortwo's, plus `scenario`) says what
+#'   failed; see [stop_failed_run()].
 #' @export
 R_model_solver <- function(config_file = configuration,
                             before_solving_data = data_for_solver,
@@ -206,6 +210,9 @@ R_model_solver <- function(config_file = configuration,
   time_solve <- stats::setNames(numeric(tot_scen), scenar_order)
 
 
+  ## the first period that cannot be solved ends the run: see below
+  failure <- NULL
+
   for (item_scen in 1:tot_scen){
 
     ## Everything is kept, except the columns the translation added for the
@@ -243,15 +250,32 @@ R_model_solver <- function(config_file = configuration,
           continuation = !isFALSE(Rsolver_continuation),
           ## "auto" leaves the choice to thortwo: on when compiled, off in pure R
           reuse_jacobian = if (is.logical(Rsolver_reuse_jacobian)) Rsolver_reuse_jacobian else NULL,
-          verbose = isTRUE(Rsolver_verbose)),
+          verbose = isTRUE(Rsolver_verbose),
+          ## a period that cannot be solved hands back the data as they were
+          ## when it failed, instead of an error that loses them
+          on_fail = "return"),
           quiet_timings(thortwo::thor_solve))),
         ## The equations are passed to thortwo without names, so its messages
         ## refer to them by its own ids (`eq_2528`). Show the equations meant.
-        error = function(e) show_thor_equations(conditionMessage(e), model_solved))
+        error = function(e) show_thor_equations(conditionMessage(e), model_solved),
+        ## the failure is reported below, with the scenario it is in
+        warning = function(w) {
+          if (is_thor_failure(conditionMessage(w))) invokeRestart("muffleWarning")
+        })
     )[["elapsed"]]
     solved_data[[scenar_solved]] <- solved |>
       select(year, any_of(tolower(variables_to_keep)) )
 
+    failure <- attr(solved, "failure")
+    if (!is.null(failure)) {
+      cli::cli_alert_danger("Scenario {.val {scenar_solved}} could not be solved at {failure$period}:")
+      cli::cli_verbatim(failure$message)
+      show_thor_equations(failure$message, model_solved)
+      failure$scenario <- scenar_solved
+      ## the scenarios after it are not run
+      scenar_order <- scenar_order[seq_len(item_scen)]
+      break
+    }
   }
 
   if (!isFALSE(Rsolver_timings)) {
@@ -262,13 +286,60 @@ R_model_solver <- function(config_file = configuration,
 
   ### Generate long format datafull
 
-  data_full <- solved_data |> imap(~pivot_longer(.x,cols = !year,names_to = "variable",values_to = .y) |>
+  data_full <- solved_data[scenar_order] |> imap(~pivot_longer(.x,cols = !year,names_to = "variable",values_to = .y) |>
                                       mutate(variable = toupper(variable))) |>
     reduce(full_join, by = c("year","variable")) |>
     mutate(sector = NA_character_,commodity = NA_character_) |> as.data.frame()
 
+  if (!is.null(failure)) attr(data_full, "failure") <- failure
+  data_full
+}
 
+#' Is this thortwo's message for a period that could not be solved
+#'
+#' @param msg a condition message.
+#'
+#' @returns `TRUE` or `FALSE`.
+#' @keywords internal
+is_thor_failure <- function(msg) {
+  grepl("^(Newton did not converge on block|Sequential solve)", msg)
+}
 
+#' Keep what a failed solve left, then stop
+#'
+#' @description Called by [run_simulations()] when a period of a scenario
+#'   could not be solved. The results of the scenarios solved up to it, and of
+#'   the failed one as the solver left it -- the periods before the failure
+#'   solved, the failed period holding the values the solve failed with, the
+#'   later ones as calibrated -- are put in `data_full_FAILED` and written to
+#'   `<project_name>_FAILED` in `dir`. No commodity or sector aggregation is
+#'   done. Then the run stops with an error, so that a failed run is never
+#'   taken for a finished one.
+#'
+#'   To see why it failed, run `thortwo::calibration_check()` on the failed
+#'   scenario's column at the failed period.
+#'
+#' @param data_full the long-format data.frame returned by [R_model_solver()],
+#'   with its `failure` attribute.
+#' @param project_name character. Project name: the file is
+#'   `<project_name>_FAILED`.
+#' @param formats,dir see [save_3me_output()].
+#' @param envir where to put `data_full_FAILED`.
+#'
+#' @returns Does not return: it stops.
+#' @keywords internal
+stop_failed_run <- function(data_full, project_name, formats = "parquet",
+                            dir = file.path("data", "output"), envir = globalenv()) {
+  failure <- attr(data_full, "failure")
+  assign("data_full_FAILED", data_full, envir = envir)
+  attr(data_full, "failure") <- NULL
+  written <- save_3me_output(data_full, paste0(project_name, "_FAILED"), NULL,
+                             formats = formats, dir = dir)
+  cli::cli_abort(c(
+    "Scenario {.val {failure$scenario}} could not be solved at {failure$period}.",
+    "i" = "The results up to the failure are in {.code data_full_FAILED} and {.file {written}}: the scenarios solved before it, and {.val {failure$scenario}} as the solver left it.",
+    "i" = "Its {.code failure} attribute has the details, among them {.code $equations}: the equations that are not a number, and their variables that are zero, negative or missing."),
+    call = NULL)
 }
 
 #' Check and tidy the `Rsolver_swap` option

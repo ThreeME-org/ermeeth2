@@ -97,6 +97,30 @@ test_that("show_thor_equations prints the equations an error message names", {
   expect_silent(show_thor_equations("equation 'eq_99'", model))
 })
 
+test_that("is_thor_failure recognises thortwo's message for a failed period", {
+  expect_true(is_thor_failure("Newton did not converge on block 'heart' at 2003 (row 4) after 0 iterations"))
+  expect_true(is_thor_failure("Sequential solve of block 'prologue' at 2003 (row 4) produced a value"))
+  expect_false(is_thor_failure("NaNs produced"))
+})
+
+test_that("stop_failed_run keeps the data, writes <project>_FAILED and stops", {
+  skip_if_not_installed("arrow")
+  dir <- withr::local_tempdir()
+  env <- new.env()
+  d <- data.frame(year = 2020:2021, variable = "GDP", baseline = c(1, NA),
+                  sector = NA_character_, commodity = NA_character_)
+  attr(d, "failure") <- list(period = "2021", scenario = "baseline",
+                             message = "Newton did not converge on block 'heart' at 2021")
+  expect_error(stop_failed_run(d, "proj", dir = dir, envir = env),
+               "could not be solved at 2021")
+  expect_true(file.exists(file.path(dir, "proj_FAILED.parquet")))
+  expect_identical(env$data_full_FAILED, d)
+  back <- as.data.frame(arrow::read_parquet(file.path(dir, "proj_FAILED.parquet")))
+  expect_equal(back$baseline, c(1, NA))
+  # no commodity or sector database alongside it
+  expect_identical(list.files(dir), "proj_FAILED.parquet")
+})
+
 test_that("readconfig still understands rcpp_option, and Rcpp wins over it", {
   f <- solver_config_files("rcpp_option = FALSE")
   expect_false(readconfig(f$input, f$output)$input$advanced_config$Rcpp)

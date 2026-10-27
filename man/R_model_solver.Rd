@@ -25,7 +25,11 @@ pure R and needs no compiler.}
 }
 \value{
 A long-format data.frame with columns \code{year}, \code{variable}, one
-column per scenario, plus \code{sector} and \code{commodity}.
+column per scenario, plus \code{sector} and \code{commodity}. When a period of a
+scenario cannot be solved, the scenarios after it are not run, the
+result holds those solved before it and the failed one as the solver left
+it, and a \code{failure} attribute (thortwo's, plus \code{scenario}) says what
+failed; see \code{\link[=stop_failed_run]{stop_failed_run()}}.
 }
 \description{
 Solves the model using the R solver rather than EViews, and

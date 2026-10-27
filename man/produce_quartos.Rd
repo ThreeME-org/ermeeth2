@@ -10,27 +10,58 @@ produce_quartos(
   parameters = config$output$quartos_parameters,
   templates_path = file.path("results", "quarto_templates"),
   output_path = file.path("results", "quarto_render"),
-  project_name = config$input$project_name
+  project_name = config$input$project_name,
+  keep_qmd = FALSE
 )
 }
 \arguments{
-\item{Show}{logical. Whether to open each rendered html when it is done.}
+\item{Show}{logical. Whether to open each rendered report when it is done.}
 
-\item{templates_selection}{character vector. Names of the templates to
-render, without the \code{.qmd} extension.}
+\item{templates_selection}{named list of logicals. The templates to render,
+by name (without the \code{.qmd} extension).}
 
-\item{parameters}{list. Quarto parameters, one element per template.}
+\item{parameters}{named list. Quarto parameters, one element per template.}
 
 \item{templates_path}{character. Folder holding the quarto templates.}
 
-\item{output_path}{character. Folder to write the rendered reports to.}
+\item{output_path}{character. Folder the rendered reports land in.}
 
 \item{project_name}{character. Project name, used to build output filenames.}
+
+\item{keep_qmd}{logical. Whether to keep the root copy of every template
+(see Details).}
 }
 \value{
-Called for its side effect of rendering the reports.
+Invisibly, the paths of the rendered reports, named by template.
 }
 \description{
 Renders each selected quarto template with its parameters via
-\code{\link[=render_from_template]{render_from_template()}}, and optionally opens the results in a browser.
+\code{\link[=render_from_template]{render_from_template()}}, and optionally opens the results.
+}
+\details{
+Two entries of a template's parameter list are render options, not
+template parameters, and are not passed on to the template:
+\itemize{
+\item \code{format}: \code{"html"}, \code{"revealjs"} or \code{"typst"}. Without it, the format
+follows the template's \code{pres} parameter: \code{revealjs} when \code{pres} is
+\code{TRUE} (the default of the presentation templates), \code{html} otherwise.
+\item \code{keep_qmd}: \code{TRUE} keeps the copy of the template written at the root of
+the project, as \verb{<template>_<project_name>_<date>.qmd}, with the default
+values of its \code{params} replaced by the ones of the configuration. That
+copy renders on its own, so it can be edited and rendered again to
+adjust a report: the Render button renders it to the format it was made
+for (listed first), \verb{quarto render} on the command line to every format
+it lists. Overrides the \code{keep_qmd} argument for that template.
+}
+}
+\examples{
+\dontrun{
+## in config_output_*.R
+quartos_parameters <- list(
+  standard_shocks = list(project_name = project_name,
+                         format = "typst",     # instead of the slides
+                         keep_qmd = TRUE)      # keep a copy to edit
+)
+produce_quartos()
+}
 }

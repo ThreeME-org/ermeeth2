@@ -1,3 +1,25 @@
+# ermeeth2 1.2.1
+
+- **`produce_quartos()` and `render_from_template()`**, for the reworked
+  ThreeME_V4 templates:
+  - Output format: a template's parameter list may hold `format = "html"`,
+    `"revealjs"` or `"typst"` (PDF). Without it, the format follows the
+    template's `pres` parameter: `revealjs` for the presentations, `html`
+    otherwise. The output gets the matching extension.
+  - `keep_qmd = TRUE` (an argument, or an entry of a template's parameter
+    list) keeps the copy of the template written at the root of the project,
+    `<template>_<project_name>_<date>.qmd`, with the values of the
+    configuration as the defaults of its `params`. It renders on its own and
+    can be edited to adjust a report.
+  - The parameters are written into that copy (as `!expr` when they are not a
+    single value, so named vectors and lists keep their names) instead of being
+    passed through `execute_params`. `format` and `keep_qmd` are not passed
+    to the template.
+  - Fixed: `produce_quartos()` overwrote its `templates_selection`,
+    `parameters` and `templates_path` arguments with the values of the global
+    `config`, so they could not be given.
+  - `yaml` added to Imports.
+
 # ermeeth2 1.2.0
 
 - **Endogenous / exogenous swaps** (R solver only), for fitting a target

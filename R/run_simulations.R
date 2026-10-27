@@ -21,6 +21,11 @@
 #'   according to the `output_saved` configuration entry. With parametric
 #'   shocks, the values each parametric scenario ran with are written there
 #'   too, as `<project_name>_params.csv` (see [read_3me_params()]).
+#'
+#'   With the R solver, a scenario with a period that cannot be solved stops
+#'   the run with an error, after keeping the results up to the failure as
+#'   `data_full_FAILED` and `<project_name>_FAILED` in `data/output`: see
+#'   [stop_failed_run()].
 #' @export
 run_simulations <- function(configuration = config,
                             export_scenarii_to_excel = FALSE,
@@ -225,6 +230,10 @@ run_simulations <- function(configuration = config,
       overwrite_rcpp = Rcpp,
       cnb = calib_new_base
       )
+    ## a scenario that could not be solved: keep what there is, and stop
+    if (!is.null(attr(data_full, "failure"))) {
+      stop_failed_run(data_full, project_name, formats = output_format)
+    }
 
     data_list <-  data_full |>
       aggregate_com_sec(bridge_com = bridge_commodities ,bridge_sec = bridge_sectors ,by_com = reagg_bool ,by_sec = reagg_bool , scenarios =  c("baseline",scenario |> unname())) |> purrr::compact() |>
